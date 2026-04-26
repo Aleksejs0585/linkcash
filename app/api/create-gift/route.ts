@@ -8,6 +8,7 @@ import {
   parseUnits,
 } from "ethers";
 import { ARC_TESTNET } from "../../../utils";
+import { senderGiftStore } from "../../../lib/server/sender-gift-store";
 
 type CreateGiftBody = {
   paymentIdHash?: string;
@@ -132,10 +133,21 @@ export async function POST(request: Request) {
       expiresAt
     );
     const receipt = await tx.wait();
+    const txHash = receipt?.hash ?? tx.hash;
+
+    await senderGiftStore.write({
+      event: "gift_funded",
+      timestamp: new Date().toISOString(),
+      paymentIdHash,
+      refundAddress: refundAddress.toLowerCase(),
+      amountRaw: amountRaw.toString(),
+      expiresAt: Number(expiresAt),
+      txHash,
+    });
 
     return NextResponse.json({
       ok: true,
-      txHash: receipt?.hash ?? tx.hash,
+      txHash,
       refundAddress,
       expiresAt: Number(expiresAt),
     });

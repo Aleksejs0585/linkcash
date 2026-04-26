@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Contract, JsonRpcProvider, formatUnits, isAddress } from "ethers";
 import { useExportWallet, usePrivy, useWallets } from "@privy-io/react-auth";
 import GlassCard from "../../components/ui/glass-card";
+import { useAddressBook } from "../../hooks/useAddressBook";
 import {
   ARC_TESTNET,
   getArcExplorerAddressUrl,
@@ -38,12 +39,16 @@ function WalletContent() {
   const { ready, authenticated, login } = usePrivy();
   const { wallets } = useWallets();
   const { exportWallet } = useExportWallet();
+  const { contacts, getContactName, setContactName, removeContact } =
+    useAddressBook();
 
   const [balance, setBalance] = useState<string | null>(null);
   const [loadingBalance, setLoadingBalance] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [contactAddress, setContactAddress] = useState("");
+  const [contactName, setContactNameInput] = useState("");
 
   const embeddedWallet = useMemo(
     () =>
@@ -56,6 +61,7 @@ function WalletContent() {
   );
 
   const walletAddress = embeddedWallet?.address ?? null;
+  const walletContactName = getContactName(walletAddress);
 
   const loadBalance = useCallback(async () => {
     if (!walletAddress || !isAddress(walletAddress)) {
@@ -113,6 +119,32 @@ function WalletContent() {
     }
   };
 
+  const onSaveWalletName = () => {
+    if (!walletAddress) return;
+    const current = getContactName(walletAddress) ?? "";
+    const next = window.prompt("Enter contact name", current)?.trim();
+    if (!next) return;
+    setContactName(walletAddress, next);
+  };
+
+  const onSaveContact = () => {
+    const address = contactAddress.trim();
+    const name = contactName.trim();
+    if (!isAddress(address)) {
+      setError("Please enter a valid wallet address.");
+      return;
+    }
+    if (!name) {
+      setError("Please enter a contact name.");
+      return;
+    }
+
+    setContactName(address, name);
+    setContactAddress("");
+    setContactNameInput("");
+    setError(null);
+  };
+
   return (
     <main className="relative flex min-h-screen items-center justify-center px-5 py-10 text-white">
       <div className="pointer-events-none absolute left-1/2 top-1/2 h-[450px] w-[450px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,_rgba(139,92,246,0.2)_0%,_rgba(59,130,246,0.14)_35%,_transparent_70%)] blur-3xl" />
@@ -149,9 +181,14 @@ function WalletContent() {
           <div className="space-y-4">
             <div className="rounded-xl border border-white/10 bg-black/25 p-4">
               <p className="text-xs uppercase tracking-[0.15em] text-white/60">
-                Wallet address
+                Wallet contact
               </p>
-              <p className="mt-2 break-all text-sm text-white/90">{walletAddress}</p>
+              <p className="mt-2 text-sm text-white/90">
+                {walletContactName ?? "Unnamed wallet"}
+              </p>
+              {!walletContactName && (
+                <p className="mt-1 break-all text-xs text-white/60">{walletAddress}</p>
+              )}
               <div className="mt-3 flex gap-2">
                 <button
                   type="button"
@@ -159,6 +196,13 @@ function WalletContent() {
                   className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-white/85 transition hover:bg-white/5"
                 >
                   {copied ? "Copied" : "Copy address"}
+                </button>
+                <button
+                  type="button"
+                  onClick={onSaveWalletName}
+                  className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-white/85 transition hover:bg-white/5"
+                >
+                  {walletContactName ? "Edit name" : "Save name"}
                 </button>
                 <a
                   href={getArcExplorerAddressUrl(walletAddress)}
@@ -195,6 +239,72 @@ function WalletContent() {
             >
               {exporting ? "Opening export..." : "Export wallet"}
             </button>
+
+            <div className="rounded-xl border border-white/10 bg-black/25 p-4">
+              <p className="text-xs uppercase tracking-[0.15em] text-white/60">
+                Address book
+              </p>
+              <div className="mt-3 space-y-2">
+                <input
+                  type="text"
+                  value={contactName}
+                  onChange={(e) => setContactNameInput(e.target.value)}
+                  placeholder="Contact name"
+                  className="w-full rounded-lg border border-white/15 bg-black/35 px-3 py-2 text-sm outline-none"
+                />
+                <input
+                  type="text"
+                  value={contactAddress}
+                  onChange={(e) => setContactAddress(e.target.value)}
+                  placeholder="Wallet address (0x...)"
+                  className="w-full rounded-lg border border-white/15 bg-black/35 px-3 py-2 text-sm outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={onSaveContact}
+                  className="w-full rounded-lg border border-white/15 px-3 py-2 text-sm text-white/85 transition hover:bg-white/5"
+                >
+                  Save contact
+                </button>
+              </div>
+
+              <div className="mt-3 max-h-44 space-y-2 overflow-auto pr-1">
+                {contacts.length === 0 ? (
+                  <p className="text-xs text-white/55">No contacts yet.</p>
+                ) : (
+                  contacts.map((contact) => (
+                    <div
+                      key={contact.address.toLowerCase()}
+                      className="flex items-center justify-between rounded-lg border border-white/10 px-3 py-2"
+                    >
+                      <p className="text-sm text-white/85">{contact.name}</p>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const next = window
+                              .prompt("Edit contact name", contact.name)
+                              ?.trim();
+                            if (!next) return;
+                            setContactName(contact.address, next);
+                          }}
+                          className="text-xs text-white/70 hover:text-white"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeContact(contact.address)}
+                          className="text-xs text-rose-300 hover:text-rose-200"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         )}
 

@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
 import { Contract, JsonRpcProvider, Wallet, isHexString } from "ethers";
 import { ARC_TESTNET } from "../../../utils";
+import { senderGiftStore } from "../../../lib/server/sender-gift-store";
 
 type ReclaimGiftBody = {
   paymentIdHash?: string;
 };
 
-const GIFT_ABI = ["function reclaimExpiredGift(bytes32 paymentIdHash)"];
+const GIFT_ABI = [
+  "function reclaimExpiredGift(bytes32 paymentIdHash)",
+  "function gifts(bytes32 paymentIdHash) view returns (uint256 amount,address refundAddress,uint64 expiresAt,bool claimed)",
+];
 
 export const runtime = "nodejs";
 
@@ -63,12 +67,28 @@ export async function POST(request: Request) {
     const relayer = new Wallet(privateKey, provider);
     const gift = new Contract(contractAddress, GIFT_ABI, relayer);
 
+    const giftState = (await gift.gifts(paymentIdHash)) as {
+      amount: bigint;
+      refundAddress: string;
+      expiresAt: bigint;
+      claimed: boolean;
+    };
+
     const tx = await gift.reclaimExpiredGift(paymentIdHash);
     const receipt = await tx.wait();
+    const txHash = receipt?.hash ?? tx.hash;
+
+    await senderGiftStore.write({
+      event: "gift_reclaimed",
+      timestamp: new Date().toISOString(),
+      paymentIdHash,
+      refundAddress: giftState.refundAddress.toLowerCase(),
+      txHash,
+    });
 
     return NextResponse.json({
       ok: true,
-      txHash: receipt?.hash ?? tx.hash,
+      txHash,
     });
   } catch (error) {
     const message =

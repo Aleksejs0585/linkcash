@@ -34,6 +34,12 @@ export default function HomePage() {
             >
               Open my wallet
             </Link>
+            <Link
+              href="/gifts"
+              className="inline-flex rounded-2xl border border-white/15 px-6 py-3 text-base font-medium text-white/85 transition hover:bg-white/5"
+            >
+              Sender dashboard
+            </Link>
           </div>
         </section>
 
