@@ -35,7 +35,7 @@ export default function GiftPage() {
 }
 
 function GiftClaimContent() {
-  const { ready, authenticated, login } = usePrivy();
+  const { ready, authenticated, login, logout } = usePrivy();
   const { wallets } = useWallets();
   const { claimGift, loading, txHash, error } = useGift();
   const [status, setStatus] = useState<string | null>(null);
@@ -45,10 +45,9 @@ function GiftClaimContent() {
   const successOverlayTimerRef = useRef<number | null>(null);
 
   const receiverAddress = useMemo(() => {
-    const embeddedWallet =
-      wallets.find((wallet) => wallet.walletClientType === "privy") ??
-      wallets[0];
-
+    const embeddedWallet = wallets.find(
+      (wallet) => wallet.walletClientType === "privy"
+    );
     return embeddedWallet?.address ?? null;
   }, [wallets]);
 
@@ -94,7 +93,7 @@ function GiftClaimContent() {
     }
 
     if (!receiverAddress) {
-      setStatus("Wallet not ready yet. Try again.");
+      setStatus("No embedded wallet found. Please sign in again.");
       return;
     }
 
@@ -140,6 +139,11 @@ function GiftClaimContent() {
             <p className="soft-text text-sm">
               Someone sent you your first crypto
             </p>
+            {authenticated && (
+              <p className="mt-2 break-all text-xs text-white/60">
+                Receiving wallet: {receiverAddress ?? "not ready"}
+              </p>
+            )}
           </div>
 
           <p className="countdown-tick text-sm text-white/70">
@@ -147,16 +151,31 @@ function GiftClaimContent() {
           </p>
 
           {!isSuccess && (
-            <motion.button
-              type="button"
-              onClick={onUnwrap}
-              disabled={loading || !ready}
-              whileHover={{ scale: loading ? 1 : 1.03 }}
-              whileTap={{ scale: 0.98 }}
-              className="accent-gradient w-full rounded-2xl px-6 py-4 text-lg font-semibold shadow-[0_16px_40px_rgba(76,85,255,0.42)] transition hover:shadow-[0_18px_46px_rgba(99,102,241,0.5)] disabled:cursor-not-allowed disabled:opacity-65"
-            >
-              {loading ? "Opening your gift..." : "Unwrap your gift"}
-            </motion.button>
+            <div className="space-y-3">
+              <motion.button
+                type="button"
+                onClick={onUnwrap}
+                disabled={loading || !ready}
+                whileHover={{ scale: loading ? 1 : 1.03 }}
+                whileTap={{ scale: 0.98 }}
+                className="accent-gradient w-full rounded-2xl px-6 py-4 text-lg font-semibold shadow-[0_16px_40px_rgba(76,85,255,0.42)] transition hover:shadow-[0_18px_46px_rgba(99,102,241,0.5)] disabled:cursor-not-allowed disabled:opacity-65"
+              >
+                {loading ? "Opening your gift..." : "Unwrap your gift"}
+              </motion.button>
+
+              {authenticated && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    logout();
+                    setStatus("Signed out. Click unwrap to sign in again.");
+                  }}
+                  className="w-full rounded-xl border border-white/15 px-4 py-2.5 text-sm text-white/80 transition hover:bg-white/5"
+                >
+                  Use a different account
+                </button>
+              )}
+            </div>
           )}
 
           {status && (
