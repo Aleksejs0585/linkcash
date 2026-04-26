@@ -10,7 +10,6 @@ import { useGift } from "../../../hooks/useGift";
 import {
   ARC_TESTNET,
   getArcExplorerTxUrl,
-  normalizeChainId,
 } from "../../../utils";
 
 export default function GiftPage() {
@@ -51,16 +50,6 @@ function GiftClaimContent() {
     return embeddedWallet?.address ?? null;
   }, [wallets]);
 
-  const walletChainId = useMemo(() => {
-    const embeddedWallet =
-      wallets.find((wallet) => wallet.walletClientType === "privy") ??
-      wallets[0];
-
-    return normalizeChainId(
-      (embeddedWallet as { chainId?: string | number })?.chainId
-    );
-  }, [wallets]);
-
   useEffect(() => {
     const timer = window.setInterval(() => {
       setRemainingSeconds((value) => {
@@ -96,11 +85,6 @@ function GiftClaimContent() {
 
     if (!receiverAddress) {
       setStatus("Wallet not ready yet. Try again.");
-      return;
-    }
-
-    if (walletChainId && walletChainId !== ARC_TESTNET.chainId) {
-      setStatus(`Switch wallet network to ${ARC_TESTNET.chainName}.`);
       return;
     }
 
