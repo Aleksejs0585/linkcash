@@ -3,6 +3,7 @@ import {
   Contract,
   JsonRpcProvider,
   Wallet,
+  isAddress,
   isHexString,
   parseUnits,
 } from "ethers";
@@ -11,9 +12,13 @@ import { ARC_TESTNET } from "../../../utils";
 type CreateGiftBody = {
   paymentIdHash?: string;
   amountUsdc?: string;
+  refundAddress?: string;
+  expiresInHours?: number;
 };
 
-const GIFT_ABI = ["function fundGift(bytes32 paymentIdHash,uint256 amount)"];
+const GIFT_ABI = [
+  "function fundGift(bytes32 paymentIdHash,uint256 amount,address refundAddress,uint64 expiresAt)",
+];
 const ERC20_ABI = [
   "function allowance(address owner,address spender) view returns (uint256)",
   "function approve(address spender,uint256 amount) returns (bool)",
@@ -26,10 +31,12 @@ export async function POST(request: Request) {
     const body = (await request.json()) as CreateGiftBody;
     const paymentIdHash = body.paymentIdHash;
     const amountUsdc = body.amountUsdc;
+    const refundAddress = body.refundAddress;
+    const expiresInHours = Number(body.expiresInHours ?? 24);
 
-    if (!paymentIdHash || !amountUsdc) {
+    if (!paymentIdHash || !amountUsdc || !refundAddress) {
       return NextResponse.json(
-        { error: "paymentIdHash and amountUsdc are required." },
+        { error: "paymentIdHash, amountUsdc and refundAddress are required." },
         { status: 400 }
       );
     }
@@ -45,6 +52,24 @@ export async function POST(request: Request) {
     if (!Number.isFinite(amount) || amount <= 0) {
       return NextResponse.json(
         { error: "amountUsdc must be a positive number." },
+        { status: 400 }
+      );
+    }
+
+    if (!isAddress(refundAddress)) {
+      return NextResponse.json(
+        { error: "refundAddress must be a valid address." },
+        { status: 400 }
+      );
+    }
+
+    if (
+      !Number.isFinite(expiresInHours) ||
+      expiresInHours <= 0 ||
+      expiresInHours > 24 * 30
+    ) {
+      return NextResponse.json(
+        { error: "expiresInHours must be between 1 and 720." },
         { status: 400 }
       );
     }
@@ -87,6 +112,9 @@ export async function POST(request: Request) {
     const gift = new Contract(contractAddress, GIFT_ABI, relayer);
 
     const amountRaw = parseUnits(amountUsdc, 6);
+    const expiresAt = BigInt(
+      Math.floor(Date.now() / 1000) + Math.floor(expiresInHours * 60 * 60)
+    );
     const allowance = (await usdc.allowance(
       relayer.address,
       contractAddress
@@ -97,12 +125,19 @@ export async function POST(request: Request) {
       await approveTx.wait();
     }
 
-    const tx = await gift.fundGift(paymentIdHash, amountRaw);
+    const tx = await gift.fundGift(
+      paymentIdHash,
+      amountRaw,
+      refundAddress,
+      expiresAt
+    );
     const receipt = await tx.wait();
 
     return NextResponse.json({
       ok: true,
       txHash: receipt?.hash ?? tx.hash,
+      refundAddress,
+      expiresAt: Number(expiresAt),
     });
   } catch (error) {
     const message =

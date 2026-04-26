@@ -1,18 +1,62 @@
 "use client";
 
 import { useState } from "react";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { AnimatePresence, motion } from "framer-motion";
 import GlassCard from "../../components/ui/glass-card";
 import { ARC_TESTNET, generateHash, generateLink, generateSecret } from "../../utils";
 
 export default function CreateGiftPage() {
+  const hasPrivyAppId = Boolean(process.env.NEXT_PUBLIC_PRIVY_APP_ID);
+  if (!hasPrivyAppId) {
+    return (
+      <main className="relative flex min-h-screen items-center justify-center px-5 py-10 text-white">
+        <GlassCard className="w-full max-w-[420px] space-y-3 p-8 text-center">
+          <h1 className="text-3xl font-semibold tracking-tight">Create Gift</h1>
+          <p className="soft-text text-sm">
+            Set <code>NEXT_PUBLIC_PRIVY_APP_ID</code> to enable sender wallet based
+            refunds.
+          </p>
+        </GlassCard>
+      </main>
+    );
+  }
+
+  return <CreateGiftContent />;
+}
+
+function CreateGiftContent() {
+  const { ready, authenticated, login } = usePrivy();
+  const { wallets } = useWallets();
   const [link, setLink] = useState("");
+  const [paymentIdHash, setPaymentIdHash] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [amount, setAmount] = useState("10");
+  const [expiresInHours, setExpiresInHours] = useState("24");
   const [creating, setCreating] = useState(false);
+  const [reclaiming, setReclaiming] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
+  const senderWalletAddress =
+    wallets.find(
+      (wallet) =>
+        wallet.walletClientType === "privy" ||
+        wallet.walletClientType === "privy-v2"
+    )?.address ?? null;
+
   const onCreate = async () => {
+    if (!ready) return;
+    if (!authenticated) {
+      login();
+      return;
+    }
+    if (!senderWalletAddress) {
+      setStatus(
+        "No embedded sender wallet found. Sign out and sign in again to create one."
+      );
+      return;
+    }
+
     setCreating(true);
     setStatus(null);
 
@@ -26,11 +70,18 @@ export default function CreateGiftPage() {
         body: JSON.stringify({
           paymentIdHash: hash,
           amountUsdc: amount,
+          refundAddress: senderWalletAddress,
+          expiresInHours: Number(expiresInHours),
         }),
       });
 
       const data = (await response.json()) as
-        | { ok: true; txHash: string }
+        | {
+            ok: true;
+            txHash: string;
+            refundAddress: string;
+            expiresAt: number;
+          }
         | { error: string };
 
       if (!response.ok || !("txHash" in data)) {
@@ -38,15 +89,49 @@ export default function CreateGiftPage() {
       }
 
       const giftLink = generateLink(hash, secret);
+      setPaymentIdHash(hash);
       setLink(giftLink);
       setCopied(false);
-      setStatus(`Gift funded successfully. Tx: ${data.txHash}`);
+      setStatus(
+        `Gift funded. Refund wallet: ${data.refundAddress}. Expires at: ${new Date(
+          data.expiresAt * 1000
+        ).toLocaleString()}. Tx: ${data.txHash}`
+      );
     } catch (e) {
       setStatus(
         e instanceof Error ? e.message : "Failed to create and fund gift."
       );
     } finally {
       setCreating(false);
+    }
+  };
+
+  const onReclaim = async () => {
+    if (!paymentIdHash) return;
+    setReclaiming(true);
+    setStatus(null);
+
+    try {
+      const response = await fetch("/api/reclaim-gift", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paymentIdHash }),
+      });
+      const data = (await response.json()) as
+        | { ok: true; txHash: string }
+        | { error: string };
+
+      if (!response.ok || !("txHash" in data)) {
+        throw new Error("error" in data ? data.error : "Failed to reclaim gift.");
+      }
+
+      setStatus(`Reclaim submitted successfully. Tx: ${data.txHash}`);
+    } catch (e) {
+      setStatus(
+        e instanceof Error ? e.message : "Failed to reclaim expired gift."
+      );
+    } finally {
+      setReclaiming(false);
     }
   };
 
@@ -78,16 +163,30 @@ export default function CreateGiftPage() {
           </p>
         </motion.div>
 
-        <motion.button
-          type="button"
-          onClick={onCreate}
-          disabled={creating}
-          whileHover={{ scale: creating ? 1 : 1.03 }}
-          whileTap={{ scale: 0.98 }}
-          className="accent-gradient w-full rounded-2xl px-6 py-4 text-lg font-semibold shadow-[0_14px_36px_rgba(76,85,255,0.38)] transition disabled:opacity-65"
-        >
-          {creating ? "Funding gift..." : "Create Gift"}
-        </motion.button>
+        {!ready ? (
+          <p className="text-sm text-white/70">Loading wallet...</p>
+        ) : !authenticated ? (
+          <motion.button
+            type="button"
+            onClick={login}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.98 }}
+            className="accent-gradient w-full rounded-2xl px-6 py-4 text-lg font-semibold shadow-[0_14px_36px_rgba(76,85,255,0.38)] transition"
+          >
+            Sign in to create gift
+          </motion.button>
+        ) : (
+          <motion.button
+            type="button"
+            onClick={onCreate}
+            disabled={creating || !senderWalletAddress}
+            whileHover={{ scale: creating ? 1 : 1.03 }}
+            whileTap={{ scale: 0.98 }}
+            className="accent-gradient w-full rounded-2xl px-6 py-4 text-lg font-semibold shadow-[0_14px_36px_rgba(76,85,255,0.38)] transition disabled:opacity-65"
+          >
+            {creating ? "Funding gift..." : "Create Gift"}
+          </motion.button>
+        )}
 
         <div className="rounded-2xl border border-white/10 bg-black/20 p-4 text-left">
           <label htmlFor="amount" className="soft-text text-xs uppercase tracking-[0.15em]">
@@ -102,6 +201,33 @@ export default function CreateGiftPage() {
             onChange={(e) => setAmount(e.target.value)}
             className="mt-2 w-full rounded-xl border border-white/15 bg-black/30 px-3 py-2 text-sm text-white outline-none ring-blue-500/40 focus:ring-2"
           />
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-black/20 p-4 text-left">
+          <label
+            htmlFor="expiresInHours"
+            className="soft-text text-xs uppercase tracking-[0.15em]"
+          >
+            Expiry (hours)
+          </label>
+          <input
+            id="expiresInHours"
+            type="number"
+            min="1"
+            max="720"
+            step="1"
+            value={expiresInHours}
+            onChange={(e) => setExpiresInHours(e.target.value)}
+            className="mt-2 w-full rounded-xl border border-white/15 bg-black/30 px-3 py-2 text-sm text-white outline-none ring-blue-500/40 focus:ring-2"
+          />
+          {senderWalletAddress ? (
+            <p className="mt-2 break-all text-xs text-white/60">
+              Refund wallet: {senderWalletAddress}
+            </p>
+          ) : (
+            <p className="mt-2 text-xs text-amber-300">
+              Embedded sender wallet not found yet.
+            </p>
+          )}
         </div>
 
         <AnimatePresence>
@@ -123,6 +249,14 @@ export default function CreateGiftPage() {
                 className="mt-4 rounded-xl border border-white/15 px-4 py-2 text-sm font-medium text-white/90 transition hover:border-white/30 hover:bg-white/5"
               >
                 {copied ? "Copied ✓" : "Copy link"}
+              </button>
+              <button
+                type="button"
+                onClick={onReclaim}
+                disabled={reclaiming}
+                className="mt-2 rounded-xl border border-white/15 px-4 py-2 text-sm font-medium text-white/90 transition hover:border-white/30 hover:bg-white/5 disabled:opacity-65"
+              >
+                {reclaiming ? "Reclaiming..." : "Reclaim expired gift"}
               </button>
             </motion.div>
           )}
