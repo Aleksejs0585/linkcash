@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 
-const ADMIN_COOKIE_NAME = "vibelink_admin";
+const ADMIN_COOKIE_NAME = "linkcash_admin";
 const SESSION_TTL_SECONDS = 60 * 60 * 12;
 
 function getAdminPassword(): string {

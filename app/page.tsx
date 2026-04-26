@@ -16,7 +16,7 @@ export default function HomePage() {
             <span className="block soft-text">No wallet setup required.</span>
           </h1>
           <p className="soft-text mx-auto mt-4 max-w-2xl text-base sm:text-lg">
-            VibeLink turns a simple link into a first onchain experience.
+            LinkCash turns a simple link into a first onchain experience.
             Recipients log in with Google/X, receive an embedded wallet, and
             claim funds gaslessly.
           </p>
@@ -80,7 +80,7 @@ export default function HomePage() {
                 opens the link and logs in with Google or X.
               </p>
               <p>
-                <span className="font-semibold text-white">3.</span> VibeLink
+                <span className="font-semibold text-white">3.</span> LinkCash
                 creates an embedded wallet and relays claim gaslessly.
               </p>
               <p>

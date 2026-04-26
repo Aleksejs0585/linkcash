@@ -11,7 +11,7 @@ export default function HelpManual() {
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        aria-label="How VibeLink works"
+        aria-label="How LinkCash works"
         className="fixed right-4 top-4 z-[60] inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/40 text-lg font-semibold text-white shadow-lg backdrop-blur transition hover:scale-105 hover:bg-black/55"
       >
         ?
@@ -38,7 +38,7 @@ export default function HelpManual() {
               className="fixed right-4 top-16 z-[59] w-[min(92vw,420px)] rounded-2xl border border-white/10 bg-[#11131bcc] p-5 text-left text-sm text-white/90 shadow-2xl backdrop-blur-xl"
             >
               <h2 className="text-base font-semibold text-white">
-                How VibeLink works
+                How LinkCash works
               </h2>
 
               <div className="mt-3 space-y-3 text-white/80">

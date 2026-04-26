@@ -174,7 +174,7 @@ export default function AdminPage() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-white/60">
-                VibeLink Admin
+                LinkCash Admin
               </p>
               <h1 className="mt-1 text-3xl font-semibold tracking-tight">
                 Claim Control Panel
