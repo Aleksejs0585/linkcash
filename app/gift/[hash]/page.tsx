@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import confetti from "canvas-confetti";
 import { AnimatePresence, motion } from "framer-motion";
@@ -41,6 +41,8 @@ function GiftClaimContent() {
   const [status, setStatus] = useState<string | null>(null);
   const [remainingSeconds, setRemainingSeconds] = useState(23 * 60 + 59);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [successTxHash, setSuccessTxHash] = useState<string | null>(null);
+  const successOverlayTimerRef = useRef<number | null>(null);
 
   const receiverAddress = useMemo(() => {
     const embeddedWallet =
@@ -73,6 +75,14 @@ function GiftClaimContent() {
     });
   }, [isSuccess]);
 
+  useEffect(() => {
+    return () => {
+      if (successOverlayTimerRef.current) {
+        window.clearTimeout(successOverlayTimerRef.current);
+      }
+    };
+  }, []);
+
   const onUnwrap = async () => {
     if (!ready) {
       return;
@@ -90,8 +100,16 @@ function GiftClaimContent() {
 
     const hash = await claimGift(receiverAddress);
     if (hash) {
-      setStatus(`Success! Tx: ${hash}`);
-      setIsSuccess(true);
+      setSuccessTxHash(hash);
+      setStatus("Success! Finalizing onchain receipt...");
+
+      if (successOverlayTimerRef.current) {
+        window.clearTimeout(successOverlayTimerRef.current);
+      }
+
+      successOverlayTimerRef.current = window.setTimeout(() => {
+        setIsSuccess(true);
+      }, 2200);
     }
   };
 
@@ -154,6 +172,11 @@ function GiftClaimContent() {
               View transaction on Arc Explorer
             </a>
           )}
+          {successTxHash && !isSuccess && (
+            <p className="text-xs text-white/60">
+              Opening success screen in a moment...
+            </p>
+          )}
           {error && <p className="text-sm text-rose-400">{error}</p>}
         </GlassCard>
       </motion.div>
@@ -178,6 +201,16 @@ function GiftClaimContent() {
               <p className="soft-text text-sm">
                 $10 USDC has been added to your wallet
               </p>
+              {successTxHash && (
+                <a
+                  href={getArcExplorerTxUrl(successTxHash)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block break-all text-xs text-blue-300/90 underline decoration-white/30 underline-offset-4 hover:text-blue-200"
+                >
+                  {successTxHash}
+                </a>
+              )}
               <Link
                 href="/create"
                 className="accent-gradient inline-flex w-full items-center justify-center rounded-2xl px-6 py-3.5 text-base font-semibold shadow-[0_14px_36px_rgba(76,85,255,0.38)] transition hover:scale-[1.02]"
