@@ -47,7 +47,7 @@ export async function GET(
       claimed: boolean;
     };
 
-    if (gift.amount <= 0n) {
+    if (gift.amount <= BigInt(0)) {
       return NextResponse.json(
         { ok: false, error: "Gift not found." },
         { status: 404 }
