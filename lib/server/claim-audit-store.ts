@@ -1,0 +1,68 @@
+import { mkdir, appendFile } from "node:fs/promises";
+import path from "node:path";
+
+type ClaimAuditEvent = {
+  requestId: string;
+  timestamp: string;
+  event:
+    | "claim_received"
+    | "claim_rate_limited"
+    | "claim_in_progress"
+    | "claim_cached"
+    | "claim_success"
+    | "claim_error";
+  ip: string;
+  idempotencyKey?: string;
+  receiverAddress?: string;
+  txHash?: string;
+  errorCode?: string;
+  message?: string;
+};
+
+function getAuditLogPath() {
+  const configured = process.env.CLAIM_AUDIT_LOG_PATH?.trim();
+  if (configured) {
+    return path.isAbsolute(configured)
+      ? configured
+      : path.join(/*turbopackIgnore: true*/ process.cwd(), configured);
+  }
+
+  return path.join(
+    /*turbopackIgnore: true*/ process.cwd(),
+    ".logs",
+    "claim-audit.log"
+  );
+}
+
+class ClaimAuditStore {
+  private readonly logPath = getAuditLogPath();
+  private initialized = false;
+
+  private async ensureDirectory() {
+    if (this.initialized) return;
+    await mkdir(path.dirname(this.logPath), { recursive: true });
+    this.initialized = true;
+  }
+
+  async write(event: ClaimAuditEvent) {
+    const record = JSON.stringify(event) + "\n";
+
+    try {
+      await this.ensureDirectory();
+      await appendFile(this.logPath, record, "utf8");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "unknown audit storage error";
+
+      // Never break claim flow because of audit logging issues.
+      console.error(
+        JSON.stringify({
+          event: "claim_audit_store_error",
+          message,
+        })
+      );
+    }
+  }
+}
+
+export const claimAuditStore = new ClaimAuditStore();

@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { Contract, JsonRpcProvider, Wallet, isAddress, isHexString } from "ethers";
 import { ARC_TESTNET, buildClaimIdempotencyKey } from "../../../utils";
+import { claimAuditStore } from "../../../lib/server/claim-audit-store";
+
+export const runtime = "nodejs";
 
 type ClaimBody = {
   secret?: string;
@@ -123,11 +126,28 @@ function cleanupExpiredCaches() {
 export async function POST(request: Request) {
   cleanupExpiredCaches();
   let currentIdempotencyKey: string | null = null;
+  const requestId = crypto.randomUUID();
+  const clientIp = getClientIp(request);
 
   try {
-    const clientIp = getClientIp(request);
+    await claimAuditStore.write({
+      requestId,
+      timestamp: new Date().toISOString(),
+      event: "claim_received",
+      ip: clientIp,
+    });
+
     const limit = enforceRateLimit(clientIp);
     if (limit.limited) {
+      await claimAuditStore.write({
+        requestId,
+        timestamp: new Date().toISOString(),
+        event: "claim_rate_limited",
+        ip: clientIp,
+        errorCode: "RATE_LIMITED",
+        message: "Too many claim attempts.",
+      });
+
       return NextResponse.json(
         {
           ok: false,
@@ -196,6 +216,17 @@ export async function POST(request: Request) {
     const existing = idempotencyStore.get(idempotencyKey);
     if (existing) {
       if (existing.status === "processing") {
+        await claimAuditStore.write({
+          requestId,
+          timestamp: new Date().toISOString(),
+          event: "claim_in_progress",
+          ip: clientIp,
+          idempotencyKey: idempotencyKey.slice(0, 10),
+          receiverAddress,
+          errorCode: "IN_PROGRESS",
+          message: "Claim is already processing.",
+        });
+
         return jsonError(
           "IN_PROGRESS",
           "Claim is already being processed. Retry in a few seconds.",
@@ -209,6 +240,16 @@ export async function POST(request: Request) {
         txHash: existing.txHash,
         cached: true,
       };
+
+      await claimAuditStore.write({
+        requestId,
+        timestamp: new Date().toISOString(),
+        event: "claim_cached",
+        ip: clientIp,
+        idempotencyKey: idempotencyKey.slice(0, 10),
+        receiverAddress,
+        txHash: existing.txHash,
+      });
 
       return NextResponse.json(cached, {
         status: 200,
@@ -253,6 +294,15 @@ export async function POST(request: Request) {
         txHash,
       })
     );
+    await claimAuditStore.write({
+      requestId,
+      timestamp: new Date().toISOString(),
+      event: "claim_success",
+      ip: clientIp,
+      idempotencyKey: idempotencyKey.slice(0, 10),
+      receiverAddress,
+      txHash,
+    });
 
     const response: ClaimSuccessResponse = {
       ok: true,
@@ -277,6 +327,15 @@ export async function POST(request: Request) {
     if (currentIdempotencyKey) {
       idempotencyStore.delete(currentIdempotencyKey);
     }
+    await claimAuditStore.write({
+      requestId,
+      timestamp: new Date().toISOString(),
+      event: "claim_error",
+      ip: clientIp,
+      idempotencyKey: currentIdempotencyKey?.slice(0, 10),
+      errorCode: "RELAY_ERROR",
+      message,
+    });
 
     return jsonError("RELAY_ERROR", message, 500, true);
   }
