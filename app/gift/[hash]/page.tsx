@@ -46,7 +46,9 @@ function GiftClaimContent() {
 
   const receiverAddress = useMemo(() => {
     const embeddedWallet = wallets.find(
-      (wallet) => wallet.walletClientType === "privy"
+      (wallet) =>
+        wallet.walletClientType === "privy" ||
+        wallet.walletClientType === "privy-v2"
     );
     return embeddedWallet?.address ?? null;
   }, [wallets]);

@@ -19,6 +19,12 @@ export default function Providers({ children }: ProvidersProps) {
       appId={appId}
       config={{
         loginMethods: ["google", "twitter"],
+        embeddedWallets: {
+          ethereum: {
+            // Always create an embedded wallet so gifts have a deterministic receiver.
+            createOnLogin: "all-users",
+          },
+        },
       }}
     >
       {children}

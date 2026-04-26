@@ -277,10 +277,37 @@ export async function POST(request: Request) {
 
     const relayer = new Wallet(privateKey, provider);
     const contract = new Contract(contractAddress, CLAIM_ABI, relayer);
+    const receiverBalanceBefore = await provider.getBalance(receiverAddress);
 
     const tx = await contract.claim(secret, receiverAddress);
     const receipt = await tx.wait();
     const txHash = receipt?.hash ?? tx.hash;
+    const receiverBalanceAfter = await provider.getBalance(receiverAddress);
+
+    if (receiverBalanceAfter <= receiverBalanceBefore) {
+      idempotencyStore.delete(idempotencyKey);
+      const noTransferMessage =
+        "Claim transaction confirmed, but receiver balance did not increase. Check claim contract payout logic.";
+
+      await claimAuditStore.write({
+        requestId,
+        timestamp: new Date().toISOString(),
+        event: "claim_error",
+        ip: clientIp,
+        idempotencyKey: idempotencyKey.slice(0, 10),
+        receiverAddress,
+        txHash,
+        errorCode: "RELAY_ERROR",
+        message: noTransferMessage,
+      });
+
+      return jsonError(
+        "RELAY_ERROR",
+        `${noTransferMessage} Tx: ${txHash}`,
+        500,
+        false
+      );
+    }
 
     idempotencyStore.set(idempotencyKey, {
       status: "success",
