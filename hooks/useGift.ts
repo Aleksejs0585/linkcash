@@ -1,10 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { getSecretFromHash } from "../utils";
+import { buildClaimIdempotencyKey, getSecretFromHash } from "../utils";
 
-type ClaimResponse = {
+type ClaimSuccessResponse = {
+  ok: true;
   txHash: string;
+  cached?: boolean;
+};
+
+type ClaimErrorResponse = {
+  ok: false;
+  error: {
+    code: string;
+    message: string;
+    retryable: boolean;
+  };
 };
 
 export function useGift() {
@@ -24,9 +35,14 @@ export function useGift() {
     setError(null);
 
     try {
+      const idempotencyKey = buildClaimIdempotencyKey(secret, receiverAddress);
+
       const response = await fetch("/api/claim", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-idempotency-key": idempotencyKey,
+        },
         body: JSON.stringify({
           secret,
           receiverAddress,
@@ -34,11 +50,15 @@ export function useGift() {
       });
 
       const data = (await response.json()) as
-        | ClaimResponse
-        | { error: string };
+        | ClaimSuccessResponse
+        | ClaimErrorResponse;
 
-      if (!response.ok || !("txHash" in data)) {
-        throw new Error("error" in data ? data.error : "Claim failed.");
+      if (!response.ok || data.ok === false) {
+        const message =
+          data.ok === false
+            ? data.error.message
+            : "Claim failed. Please try again.";
+        throw new Error(message);
       }
 
       setTxHash(data.txHash);

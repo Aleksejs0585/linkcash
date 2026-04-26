@@ -1,36 +1,178 @@
 import { NextResponse } from "next/server";
 import { Contract, JsonRpcProvider, Wallet, isAddress, isHexString } from "ethers";
-import { ARC_TESTNET } from "../../../utils";
+import { ARC_TESTNET, buildClaimIdempotencyKey } from "../../../utils";
 
 type ClaimBody = {
   secret?: string;
   receiverAddress?: string;
 };
 
+type ClaimErrorCode =
+  | "BAD_REQUEST"
+  | "CONFIG_ERROR"
+  | "RATE_LIMITED"
+  | "IN_PROGRESS"
+  | "RELAY_ERROR";
+
+type ClaimErrorResponse = {
+  ok: false;
+  error: {
+    code: ClaimErrorCode;
+    message: string;
+    retryable: boolean;
+  };
+};
+
+type ClaimSuccessResponse = {
+  ok: true;
+  txHash: string;
+  cached?: boolean;
+};
+
+type RateLimitEntry = {
+  count: number;
+  windowStartMs: number;
+};
+
+type IdempotencyEntry =
+  | { status: "processing"; expiresAt: number }
+  | { status: "success"; txHash: string; expiresAt: number };
+
 const CLAIM_ABI = ["function claim(bytes32 secret,address receiver)"];
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const parsedRateLimit = Number(process.env.CLAIM_RATE_LIMIT_PER_MINUTE ?? "12");
+const RATE_LIMIT_MAX_REQUESTS =
+  Number.isFinite(parsedRateLimit) && parsedRateLimit > 0
+    ? parsedRateLimit
+    : 12;
+const IDEMPOTENCY_PROCESSING_TTL_MS = 2 * 60_000;
+const IDEMPOTENCY_SUCCESS_TTL_MS = 24 * 60 * 60_000;
+
+const globalState = globalThis as typeof globalThis & {
+  __claimRateLimitStore?: Map<string, RateLimitEntry>;
+  __claimIdempotencyStore?: Map<string, IdempotencyEntry>;
+};
+
+const rateLimitStore =
+  globalState.__claimRateLimitStore ?? new Map<string, RateLimitEntry>();
+const idempotencyStore =
+  globalState.__claimIdempotencyStore ?? new Map<string, IdempotencyEntry>();
+
+globalState.__claimRateLimitStore = rateLimitStore;
+globalState.__claimIdempotencyStore = idempotencyStore;
+
+function jsonError(
+  code: ClaimErrorCode,
+  message: string,
+  status: number,
+  retryable = false
+) {
+  const payload: ClaimErrorResponse = {
+    ok: false,
+    error: { code, message, retryable },
+  };
+  return NextResponse.json(payload, { status });
+}
+
+function getClientIp(request: Request): string {
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  if (forwardedFor) {
+    return forwardedFor.split(",")[0].trim();
+  }
+
+  const realIp = request.headers.get("x-real-ip");
+  if (realIp) {
+    return realIp.trim();
+  }
+
+  return "unknown";
+}
+
+function enforceRateLimit(clientIp: string): { limited: boolean; retryAfter: number } {
+  const now = Date.now();
+  const current = rateLimitStore.get(clientIp);
+
+  if (!current || now - current.windowStartMs >= RATE_LIMIT_WINDOW_MS) {
+    rateLimitStore.set(clientIp, { count: 1, windowStartMs: now });
+    return { limited: false, retryAfter: 0 };
+  }
+
+  current.count += 1;
+  rateLimitStore.set(clientIp, current);
+
+  if (current.count > RATE_LIMIT_MAX_REQUESTS) {
+    const retryAfter = Math.ceil(
+      (RATE_LIMIT_WINDOW_MS - (now - current.windowStartMs)) / 1000
+    );
+    return { limited: true, retryAfter: Math.max(1, retryAfter) };
+  }
+
+  return { limited: false, retryAfter: 0 };
+}
+
+function cleanupExpiredCaches() {
+  const now = Date.now();
+
+  for (const [key, value] of idempotencyStore.entries()) {
+    if (value.expiresAt <= now) {
+      idempotencyStore.delete(key);
+    }
+  }
+}
 
 export async function POST(request: Request) {
+  cleanupExpiredCaches();
+  let currentIdempotencyKey: string | null = null;
+
   try {
-    const { secret, receiverAddress } = (await request.json()) as ClaimBody;
+    const clientIp = getClientIp(request);
+    const limit = enforceRateLimit(clientIp);
+    if (limit.limited) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: {
+            code: "RATE_LIMITED",
+            message: "Too many claim attempts. Please try again shortly.",
+            retryable: true,
+          },
+        } satisfies ClaimErrorResponse,
+        {
+          status: 429,
+          headers: { "Retry-After": String(limit.retryAfter) },
+        }
+      );
+    }
+
+    let payload: ClaimBody;
+    try {
+      payload = (await request.json()) as ClaimBody;
+    } catch {
+      return jsonError("BAD_REQUEST", "Invalid JSON body.", 400, false);
+    }
+    const { secret, receiverAddress } = payload;
 
     if (!secret || !receiverAddress) {
-      return NextResponse.json(
-        { error: "secret and receiverAddress are required" },
-        { status: 400 }
+      return jsonError(
+        "BAD_REQUEST",
+        "secret and receiverAddress are required.",
+        400
       );
     }
 
     if (!isHexString(secret, 32)) {
-      return NextResponse.json(
-        { error: "secret must be a bytes32 hex string" },
-        { status: 400 }
+      return jsonError(
+        "BAD_REQUEST",
+        "secret must be a bytes32 hex string.",
+        400
       );
     }
 
     if (!isAddress(receiverAddress)) {
-      return NextResponse.json(
-        { error: "receiverAddress must be a valid address" },
-        { status: 400 }
+      return jsonError(
+        "BAD_REQUEST",
+        "receiverAddress must be a valid address.",
+        400
       );
     }
 
@@ -39,18 +181,54 @@ export async function POST(request: Request) {
     const contractAddress = process.env.CONTRACT_ADDRESS;
 
     if (!rpcUrl || !privateKey || !contractAddress) {
-      return NextResponse.json(
-        { error: "Missing RPC_URL, PRIVATE_KEY or CONTRACT_ADDRESS" },
-        { status: 500 }
+      return jsonError(
+        "CONFIG_ERROR",
+        "Missing RPC_URL, PRIVATE_KEY or CONTRACT_ADDRESS.",
+        500
       );
     }
+
+    const explicitKey = request.headers.get("x-idempotency-key")?.trim();
+    const idempotencyKey =
+      explicitKey || buildClaimIdempotencyKey(secret, receiverAddress);
+    currentIdempotencyKey = idempotencyKey;
+
+    const existing = idempotencyStore.get(idempotencyKey);
+    if (existing) {
+      if (existing.status === "processing") {
+        return jsonError(
+          "IN_PROGRESS",
+          "Claim is already being processed. Retry in a few seconds.",
+          409,
+          true
+        );
+      }
+
+      const cached: ClaimSuccessResponse = {
+        ok: true,
+        txHash: existing.txHash,
+        cached: true,
+      };
+
+      return NextResponse.json(cached, {
+        status: 200,
+        headers: { "X-Idempotency-Key": idempotencyKey },
+      });
+    }
+
+    idempotencyStore.set(idempotencyKey, {
+      status: "processing",
+      expiresAt: Date.now() + IDEMPOTENCY_PROCESSING_TTL_MS,
+    });
 
     const provider = new JsonRpcProvider(rpcUrl);
     const network = await provider.getNetwork();
     if (Number(network.chainId) !== ARC_TESTNET.chainId) {
-      return NextResponse.json(
-        { error: `RPC_URL must point to Arc Testnet (${ARC_TESTNET.chainId})` },
-        { status: 500 }
+      idempotencyStore.delete(idempotencyKey);
+      return jsonError(
+        "CONFIG_ERROR",
+        `RPC_URL must point to Arc Testnet (${ARC_TESTNET.chainId}).`,
+        500
       );
     }
 
@@ -59,14 +237,47 @@ export async function POST(request: Request) {
 
     const tx = await contract.claim(secret, receiverAddress);
     const receipt = await tx.wait();
+    const txHash = receipt?.hash ?? tx.hash;
 
-    return NextResponse.json({
-      txHash: receipt?.hash ?? tx.hash,
+    idempotencyStore.set(idempotencyKey, {
+      status: "success",
+      txHash,
+      expiresAt: Date.now() + IDEMPOTENCY_SUCCESS_TTL_MS,
+    });
+
+    console.info(
+      JSON.stringify({
+        event: "claim_success",
+        idempotencyKey: idempotencyKey.slice(0, 10),
+        receiverAddress,
+        txHash,
+      })
+    );
+
+    const response: ClaimSuccessResponse = {
+      ok: true,
+      txHash,
+    };
+
+    return NextResponse.json(response, {
+      headers: { "X-Idempotency-Key": idempotencyKey },
     });
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Internal server error";
+      error instanceof Error ? error.message : "Failed to submit claim.";
 
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error(
+      JSON.stringify({
+        event: "claim_error",
+        idempotencyKey: currentIdempotencyKey?.slice(0, 10) ?? "unknown",
+        message,
+      })
+    );
+
+    if (currentIdempotencyKey) {
+      idempotencyStore.delete(currentIdempotencyKey);
+    }
+
+    return jsonError("RELAY_ERROR", message, 500, true);
   }
 }

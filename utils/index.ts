@@ -1,4 +1,4 @@
-import { keccak256, randomBytes } from "ethers";
+import { keccak256, randomBytes, toUtf8Bytes } from "ethers";
 
 export const ARC_TESTNET = {
   chainId: 5042002,
@@ -17,6 +17,14 @@ export function generateSecret(): string {
 
 export function generateHash(secret: string): string {
   return keccak256(secret);
+}
+
+export function buildClaimIdempotencyKey(
+  secret: string,
+  receiverAddress: string
+): string {
+  const normalized = receiverAddress.toLowerCase();
+  return keccak256(toUtf8Bytes(`${secret}:${normalized}`));
 }
 
 export function generateLink(hash: string, secret: string): string {
