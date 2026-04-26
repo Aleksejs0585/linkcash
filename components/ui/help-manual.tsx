@@ -79,6 +79,13 @@ export default function HelpManual() {
                   compare the recipient address with the embedded wallet address
                   shown by Privy.
                 </p>
+                <p>
+                  <span className="font-semibold text-white">
+                    6) Where to view your wallet:
+                  </span>{" "}
+                  open <code>/wallet</code> to see your embedded wallet address,
+                  USDC balance, explorer link, and wallet export option.
+                </p>
               </div>
             </motion.aside>
           </>

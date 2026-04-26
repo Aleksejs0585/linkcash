@@ -232,12 +232,20 @@ function GiftClaimContent() {
                   {successTxHash}
                 </a>
               )}
-              <Link
-                href="/create"
-                className="accent-gradient inline-flex w-full items-center justify-center rounded-2xl px-6 py-3.5 text-base font-semibold shadow-[0_14px_36px_rgba(76,85,255,0.38)] transition hover:scale-[1.02]"
-              >
-                Send your first gift
-              </Link>
+              <div className="space-y-2">
+                <Link
+                  href="/wallet"
+                  className="accent-gradient inline-flex w-full items-center justify-center rounded-2xl px-6 py-3.5 text-base font-semibold shadow-[0_14px_36px_rgba(76,85,255,0.38)] transition hover:scale-[1.02]"
+                >
+                  Open my wallet
+                </Link>
+                <Link
+                  href="/create"
+                  className="inline-flex w-full items-center justify-center rounded-2xl border border-white/15 px-6 py-3 text-sm font-medium text-white/85 transition hover:bg-white/5"
+                >
+                  Send your first gift
+                </Link>
+              </div>
             </motion.div>
           </motion.div>
         )}

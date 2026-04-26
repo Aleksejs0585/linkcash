@@ -5,6 +5,7 @@ export const ARC_TESTNET = {
   chainName: "Arc Testnet",
   rpcUrl: "https://rpc.testnet.arc.network",
   explorerBaseUrl: "https://testnet.arcscan.app",
+  usdcErc20Address: "0x3600000000000000000000000000000000000000",
 } as const;
 
 export function generateSecret(): string {
@@ -45,6 +46,10 @@ export function getSecretFromHash(): string | null {
 
 export function getArcExplorerTxUrl(txHash: string): string {
   return `${ARC_TESTNET.explorerBaseUrl}/tx/${txHash}`;
+}
+
+export function getArcExplorerAddressUrl(address: string): string {
+  return `${ARC_TESTNET.explorerBaseUrl}/address/${address}`;
 }
 
 export function normalizeChainId(chainId?: string | number | null): number | null {
