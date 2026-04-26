@@ -8,13 +8,46 @@ import { ARC_TESTNET, generateHash, generateLink, generateSecret } from "../../u
 export default function CreateGiftPage() {
   const [link, setLink] = useState("");
   const [copied, setCopied] = useState(false);
+  const [amount, setAmount] = useState("10");
+  const [creating, setCreating] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
 
-  const onCreate = () => {
+  const onCreate = async () => {
+    setCreating(true);
+    setStatus(null);
+
     const secret = generateSecret();
     const hash = generateHash(secret);
-    const giftLink = generateLink(hash, secret);
-    setLink(giftLink);
-    setCopied(false);
+
+    try {
+      const response = await fetch("/api/create-gift", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          paymentIdHash: hash,
+          amountUsdc: amount,
+        }),
+      });
+
+      const data = (await response.json()) as
+        | { ok: true; txHash: string }
+        | { error: string };
+
+      if (!response.ok || !("txHash" in data)) {
+        throw new Error("error" in data ? data.error : "Failed to fund gift.");
+      }
+
+      const giftLink = generateLink(hash, secret);
+      setLink(giftLink);
+      setCopied(false);
+      setStatus(`Gift funded successfully. Tx: ${data.txHash}`);
+    } catch (e) {
+      setStatus(
+        e instanceof Error ? e.message : "Failed to create and fund gift."
+      );
+    } finally {
+      setCreating(false);
+    }
   };
 
   const onCopy = async () => {
@@ -48,12 +81,28 @@ export default function CreateGiftPage() {
         <motion.button
           type="button"
           onClick={onCreate}
-          whileHover={{ scale: 1.03 }}
+          disabled={creating}
+          whileHover={{ scale: creating ? 1 : 1.03 }}
           whileTap={{ scale: 0.98 }}
-          className="accent-gradient w-full rounded-2xl px-6 py-4 text-lg font-semibold shadow-[0_14px_36px_rgba(76,85,255,0.38)] transition"
+          className="accent-gradient w-full rounded-2xl px-6 py-4 text-lg font-semibold shadow-[0_14px_36px_rgba(76,85,255,0.38)] transition disabled:opacity-65"
         >
-          Create Gift
+          {creating ? "Funding gift..." : "Create Gift"}
         </motion.button>
+
+        <div className="rounded-2xl border border-white/10 bg-black/20 p-4 text-left">
+          <label htmlFor="amount" className="soft-text text-xs uppercase tracking-[0.15em]">
+            Gift amount (USDC)
+          </label>
+          <input
+            id="amount"
+            type="number"
+            min="0.01"
+            step="0.01"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            className="mt-2 w-full rounded-xl border border-white/15 bg-black/30 px-3 py-2 text-sm text-white outline-none ring-blue-500/40 focus:ring-2"
+          />
+        </div>
 
         <AnimatePresence>
           {link && (
@@ -78,6 +127,10 @@ export default function CreateGiftPage() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {status && (
+          <p className="text-sm text-white/75 break-all">{status}</p>
+        )}
       </GlassCard>
     </main>
   );

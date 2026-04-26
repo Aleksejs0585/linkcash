@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server";
-import { Contract, JsonRpcProvider, Wallet, isAddress, isHexString } from "ethers";
+import {
+  Contract,
+  JsonRpcProvider,
+  Wallet,
+  isAddress,
+  isHexString,
+  keccak256,
+} from "ethers";
 import { ARC_TESTNET, buildClaimIdempotencyKey } from "../../../utils";
 import { claimAuditStore } from "../../../lib/server/claim-audit-store";
 import { getClaimRuntimeConfig } from "../../../lib/server/claim-config-store";
@@ -8,6 +15,7 @@ export const runtime = "nodejs";
 
 type ClaimBody = {
   secret?: string;
+  paymentIdHash?: string;
   receiverAddress?: string;
 };
 
@@ -42,7 +50,8 @@ type IdempotencyEntry =
   | { status: "processing"; expiresAt: number }
   | { status: "success"; txHash: string; expiresAt: number };
 
-const CLAIM_ABI = ["function claim(bytes32 secret,address receiver)"];
+const CLAIM_ABI = ["function claim(bytes32 paymentIdHash,address receiver)"];
+const ERC20_ABI = ["function balanceOf(address account) view returns (uint256)"];
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const IDEMPOTENCY_PROCESSING_TTL_MS = 2 * 60_000;
 const IDEMPOTENCY_SUCCESS_TTL_MS = 24 * 60 * 60_000;
@@ -172,12 +181,12 @@ export async function POST(request: Request) {
     } catch {
       return jsonError("BAD_REQUEST", "Invalid JSON body.", 400, false);
     }
-    const { secret, receiverAddress } = payload;
+    const { secret, paymentIdHash, receiverAddress } = payload;
 
-    if (!secret || !receiverAddress) {
+    if (!secret || !paymentIdHash || !receiverAddress) {
       return jsonError(
         "BAD_REQUEST",
-        "secret and receiverAddress are required.",
+        "secret, paymentIdHash and receiverAddress are required.",
         400
       );
     }
@@ -198,9 +207,28 @@ export async function POST(request: Request) {
       );
     }
 
+    if (!isHexString(paymentIdHash, 32)) {
+      return jsonError(
+        "BAD_REQUEST",
+        "paymentIdHash must be a bytes32 hex string.",
+        400
+      );
+    }
+
+    const derivedPaymentIdHash = keccak256(secret);
+    if (derivedPaymentIdHash.toLowerCase() !== paymentIdHash.toLowerCase()) {
+      return jsonError(
+        "BAD_REQUEST",
+        "paymentIdHash does not match the provided secret.",
+        400
+      );
+    }
+
     const rpcUrl = process.env.RPC_URL;
     const privateKey = process.env.PRIVATE_KEY;
     const contractAddress = process.env.CONTRACT_ADDRESS;
+    const usdcAddress =
+      process.env.USDC_CONTRACT_ADDRESS || ARC_TESTNET.usdcErc20Address;
 
     if (!rpcUrl || !privateKey || !contractAddress) {
       return jsonError(
@@ -212,7 +240,7 @@ export async function POST(request: Request) {
 
     const explicitKey = request.headers.get("x-idempotency-key")?.trim();
     const idempotencyKey =
-      explicitKey || buildClaimIdempotencyKey(secret, receiverAddress);
+      explicitKey || buildClaimIdempotencyKey(paymentIdHash, receiverAddress);
     currentIdempotencyKey = idempotencyKey;
 
     const existing = idempotencyStore.get(idempotencyKey);
@@ -275,14 +303,30 @@ export async function POST(request: Request) {
       );
     }
 
+    const contractCode = await provider.getCode(contractAddress);
+    if (!contractCode || contractCode === "0x") {
+      idempotencyStore.delete(idempotencyKey);
+      return jsonError(
+        "CONFIG_ERROR",
+        "CONTRACT_ADDRESS is not a deployed contract on the configured network.",
+        500,
+        false
+      );
+    }
+
     const relayer = new Wallet(privateKey, provider);
     const contract = new Contract(contractAddress, CLAIM_ABI, relayer);
-    const receiverBalanceBefore = await provider.getBalance(receiverAddress);
+    const usdc = new Contract(usdcAddress, ERC20_ABI, provider);
+    const receiverBalanceBefore = (await usdc.balanceOf(
+      receiverAddress
+    )) as bigint;
 
-    const tx = await contract.claim(secret, receiverAddress);
+    const tx = await contract.claim(paymentIdHash, receiverAddress);
     const receipt = await tx.wait();
     const txHash = receipt?.hash ?? tx.hash;
-    const receiverBalanceAfter = await provider.getBalance(receiverAddress);
+    const receiverBalanceAfter = (await usdc.balanceOf(
+      receiverAddress
+    )) as bigint;
 
     if (receiverBalanceAfter <= receiverBalanceBefore) {
       idempotencyStore.delete(idempotencyKey);

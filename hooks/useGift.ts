@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { buildClaimIdempotencyKey, getSecretFromHash } from "../utils";
+import {
+  buildClaimIdempotencyKey,
+  getPaymentIdHashFromPath,
+  getSecretFromHash,
+} from "../utils";
 
 type ClaimSuccessResponse = {
   ok: true;
@@ -25,9 +29,10 @@ export function useGift() {
 
   const claimGift = async (receiverAddress: string) => {
     const secret = getSecretFromHash();
+    const paymentIdHash = getPaymentIdHashFromPath();
 
-    if (!secret) {
-      setError("Secret not found in URL.");
+    if (!secret || !paymentIdHash) {
+      setError("Gift link is invalid. Missing secret or payment hash.");
       return null;
     }
 
@@ -35,7 +40,10 @@ export function useGift() {
     setError(null);
 
     try {
-      const idempotencyKey = buildClaimIdempotencyKey(secret, receiverAddress);
+      const idempotencyKey = buildClaimIdempotencyKey(
+        paymentIdHash,
+        receiverAddress
+      );
 
       const response = await fetch("/api/claim", {
         method: "POST",
@@ -45,6 +53,7 @@ export function useGift() {
         },
         body: JSON.stringify({
           secret,
+          paymentIdHash,
           receiverAddress,
         }),
       });

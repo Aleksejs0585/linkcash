@@ -69,3 +69,14 @@ export function normalizeChainId(chainId?: string | number | null): number | nul
   const value = Number(chainId);
   return Number.isNaN(value) ? null : value;
 }
+
+export function getPaymentIdHashFromPath(): string | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const segments = window.location.pathname.split("/").filter(Boolean);
+  const hash = segments[segments.length - 1];
+  if (!hash?.startsWith("0x")) return null;
+  return hash;
+}

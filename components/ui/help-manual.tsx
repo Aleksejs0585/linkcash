@@ -46,8 +46,8 @@ export default function HelpManual() {
                   <span className="font-semibold text-white">
                     1) Where the funds come from:
                   </span>{" "}
-                  USDC is funded by the sender when they create the gift
-                  (in this version, from your onchain wallet/contract balance).
+                  USDC is funded into each gift when it is created. In this MVP,
+                  the app relayer wallet funds the gift transaction onchain.
                 </p>
                 <p>
                   <span className="font-semibold text-white">
