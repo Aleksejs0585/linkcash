@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { Contract, JsonRpcProvider, Wallet, isAddress, isHexString } from "ethers";
+import { ARC_TESTNET } from "../../../utils";
 
 type ClaimBody = {
   secret?: string;
@@ -45,6 +46,14 @@ export async function POST(request: Request) {
     }
 
     const provider = new JsonRpcProvider(rpcUrl);
+    const network = await provider.getNetwork();
+    if (Number(network.chainId) !== ARC_TESTNET.chainId) {
+      return NextResponse.json(
+        { error: `RPC_URL must point to Arc Testnet (${ARC_TESTNET.chainId})` },
+        { status: 500 }
+      );
+    }
+
     const relayer = new Wallet(privateKey, provider);
     const contract = new Contract(contractAddress, CLAIM_ABI, relayer);
 

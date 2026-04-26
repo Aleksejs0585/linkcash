@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import GlassCard from "../../components/ui/glass-card";
-import { generateHash, generateLink, generateSecret } from "../../utils";
+import { ARC_TESTNET, generateHash, generateLink, generateSecret } from "../../utils";
 
 export default function CreateGiftPage() {
   const [link, setLink] = useState("");
@@ -34,6 +34,9 @@ export default function CreateGiftPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, ease: "easeOut" }}
         >
+          <p className="mx-auto mb-3 inline-flex rounded-full border border-white/15 px-3 py-1 text-xs text-white/75">
+            {ARC_TESTNET.chainName}
+          </p>
           <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
             Send crypto like a message
           </h1>

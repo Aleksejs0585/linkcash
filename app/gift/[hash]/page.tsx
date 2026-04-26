@@ -7,6 +7,11 @@ import confetti from "canvas-confetti";
 import { AnimatePresence, motion } from "framer-motion";
 import GlassCard from "../../../components/ui/glass-card";
 import { useGift } from "../../../hooks/useGift";
+import {
+  ARC_TESTNET,
+  getArcExplorerTxUrl,
+  normalizeChainId,
+} from "../../../utils";
 
 export default function GiftPage() {
   const hasPrivyAppId = Boolean(process.env.NEXT_PUBLIC_PRIVY_APP_ID);
@@ -44,6 +49,16 @@ function GiftClaimContent() {
       wallets[0];
 
     return embeddedWallet?.address ?? null;
+  }, [wallets]);
+
+  const walletChainId = useMemo(() => {
+    const embeddedWallet =
+      wallets.find((wallet) => wallet.walletClientType === "privy") ??
+      wallets[0];
+
+    return normalizeChainId(
+      (embeddedWallet as { chainId?: string | number })?.chainId
+    );
   }, [wallets]);
 
   useEffect(() => {
@@ -84,6 +99,11 @@ function GiftClaimContent() {
       return;
     }
 
+    if (walletChainId && walletChainId !== ARC_TESTNET.chainId) {
+      setStatus(`Switch wallet network to ${ARC_TESTNET.chainName}.`);
+      return;
+    }
+
     const hash = await claimGift(receiverAddress);
     if (hash) {
       setStatus(`Success! Tx: ${hash}`);
@@ -108,6 +128,9 @@ function GiftClaimContent() {
       >
         <GlassCard className="relative space-y-6 p-8 text-center">
           <div className="space-y-2">
+            <p className="mx-auto inline-flex rounded-full border border-white/15 px-3 py-1 text-xs text-white/75">
+              {ARC_TESTNET.chainName} · {ARC_TESTNET.chainId}
+            </p>
             <p className="text-sm tracking-[0.06em] text-white/75">
               🎁 You received a gift
             </p>
@@ -138,7 +161,14 @@ function GiftClaimContent() {
             <p className="text-xs text-emerald-300/90">{status}</p>
           )}
           {txHash && (
-            <p className="break-all text-xs text-white/55">{txHash}</p>
+            <a
+              href={getArcExplorerTxUrl(txHash)}
+              target="_blank"
+              rel="noreferrer"
+              className="break-all text-xs text-blue-300/90 underline decoration-white/30 underline-offset-4 hover:text-blue-200"
+            >
+              View transaction on Arc Explorer
+            </a>
           )}
           {error && <p className="text-sm text-rose-400">{error}</p>}
         </GlassCard>
