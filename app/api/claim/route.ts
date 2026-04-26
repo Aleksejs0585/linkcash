@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { Contract, JsonRpcProvider, Wallet, isAddress, isHexString } from "ethers";
 import { ARC_TESTNET, buildClaimIdempotencyKey } from "../../../utils";
 import { claimAuditStore } from "../../../lib/server/claim-audit-store";
+import { getClaimRuntimeConfig } from "../../../lib/server/claim-config-store";
 
 export const runtime = "nodejs";
 
@@ -43,11 +44,6 @@ type IdempotencyEntry =
 
 const CLAIM_ABI = ["function claim(bytes32 secret,address receiver)"];
 const RATE_LIMIT_WINDOW_MS = 60_000;
-const parsedRateLimit = Number(process.env.CLAIM_RATE_LIMIT_PER_MINUTE ?? "12");
-const RATE_LIMIT_MAX_REQUESTS =
-  Number.isFinite(parsedRateLimit) && parsedRateLimit > 0
-    ? parsedRateLimit
-    : 12;
 const IDEMPOTENCY_PROCESSING_TTL_MS = 2 * 60_000;
 const IDEMPOTENCY_SUCCESS_TTL_MS = 24 * 60 * 60_000;
 
@@ -91,7 +87,10 @@ function getClientIp(request: Request): string {
   return "unknown";
 }
 
-function enforceRateLimit(clientIp: string): { limited: boolean; retryAfter: number } {
+function enforceRateLimit(
+  clientIp: string,
+  maxRequests: number
+): { limited: boolean; retryAfter: number } {
   const now = Date.now();
   const current = rateLimitStore.get(clientIp);
 
@@ -103,7 +102,7 @@ function enforceRateLimit(clientIp: string): { limited: boolean; retryAfter: num
   current.count += 1;
   rateLimitStore.set(clientIp, current);
 
-  if (current.count > RATE_LIMIT_MAX_REQUESTS) {
+  if (current.count > maxRequests) {
     const retryAfter = Math.ceil(
       (RATE_LIMIT_WINDOW_MS - (now - current.windowStartMs)) / 1000
     );
@@ -137,7 +136,10 @@ export async function POST(request: Request) {
       ip: clientIp,
     });
 
-    const limit = enforceRateLimit(clientIp);
+    const runtimeConfig = getClaimRuntimeConfig();
+    const limit = runtimeConfig.rateLimitEnabled
+      ? enforceRateLimit(clientIp, runtimeConfig.rateLimitPerMinute)
+      : { limited: false, retryAfter: 0 };
     if (limit.limited) {
       await claimAuditStore.write({
         requestId,

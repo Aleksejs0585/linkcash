@@ -1,7 +1,7 @@
 import { mkdir, appendFile } from "node:fs/promises";
 import path from "node:path";
 
-type ClaimAuditEvent = {
+export type ClaimAuditEvent = {
   requestId: string;
   timestamp: string;
   event:
@@ -19,7 +19,7 @@ type ClaimAuditEvent = {
   message?: string;
 };
 
-function getAuditLogPath() {
+export function resolveClaimAuditLogPath() {
   const configured = process.env.CLAIM_AUDIT_LOG_PATH?.trim();
   if (configured) {
     return path.isAbsolute(configured)
@@ -35,7 +35,7 @@ function getAuditLogPath() {
 }
 
 class ClaimAuditStore {
-  private readonly logPath = getAuditLogPath();
+  private readonly logPath = resolveClaimAuditLogPath();
   private initialized = false;
 
   private async ensureDirectory() {
