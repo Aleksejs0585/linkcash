@@ -1,0 +1,89 @@
+"use client";
+
+import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+
+export default function HelpManual() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-label="How VibeLink works"
+        className="fixed right-4 top-4 z-[60] inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/40 text-lg font-semibold text-white shadow-lg backdrop-blur transition hover:scale-105 hover:bg-black/55"
+      >
+        ?
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <>
+            <motion.button
+              type="button"
+              aria-label="Close help"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setOpen(false)}
+              className="fixed inset-0 z-[58] bg-black/40"
+            />
+
+            <motion.aside
+              initial={{ opacity: 0, y: -10, x: 16 }}
+              animate={{ opacity: 1, y: 0, x: 0 }}
+              exit={{ opacity: 0, y: -10, x: 16 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="fixed right-4 top-16 z-[59] w-[min(92vw,420px)] rounded-2xl border border-white/10 bg-[#11131bcc] p-5 text-left text-sm text-white/90 shadow-2xl backdrop-blur-xl"
+            >
+              <h2 className="text-base font-semibold text-white">
+                How VibeLink works
+              </h2>
+
+              <div className="mt-3 space-y-3 text-white/80">
+                <p>
+                  <span className="font-semibold text-white">
+                    1) Where the funds come from:
+                  </span>{" "}
+                  USDC is funded by the sender when they create the gift
+                  (in this version, from your onchain wallet/contract balance).
+                </p>
+                <p>
+                  <span className="font-semibold text-white">
+                    2) What the link does:
+                  </span>{" "}
+                  the URL path stores only a hash, while the secret is kept
+                  after <code>#</code>. This lets the recipient prove claim
+                  ownership.
+                </p>
+                <p>
+                  <span className="font-semibold text-white">
+                    3) Where funds are received:
+                  </span>{" "}
+                  after Privy login, the recipient uses an embedded wallet and
+                  USDC is sent to that wallet address.
+                </p>
+                <p>
+                  <span className="font-semibold text-white">
+                    4) Who pays gas:
+                  </span>{" "}
+                  gas is paid by the backend relayer, so the recipient does not
+                  need initial balance for the first transaction.
+                </p>
+                <p>
+                  <span className="font-semibold text-white">
+                    5) How to verify:
+                  </span>{" "}
+                  after a successful claim, open the Arc Explorer link and
+                  compare the recipient address with the embedded wallet address
+                  shown by Privy.
+                </p>
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
