@@ -10,8 +10,21 @@ import { useGift } from "../../../hooks/useGift";
 import { useAddressBook } from "../../../hooks/useAddressBook";
 import {
   ARC_TESTNET,
+  getPaymentIdHashFromPath,
   getArcExplorerTxUrl,
 } from "../../../utils";
+
+type GiftDetailsResponse =
+  | {
+      ok: true;
+      amountUsdc: string;
+      expiresAt: number;
+      claimed: boolean;
+    }
+  | {
+      ok: false;
+      error: string;
+    };
 
 export default function GiftPage() {
   const hasPrivyAppId = Boolean(process.env.NEXT_PUBLIC_PRIVY_APP_ID);
@@ -41,7 +54,10 @@ function GiftClaimContent() {
   const { claimGift, loading, txHash, error } = useGift();
   const { getContactName, setContactName } = useAddressBook();
   const [status, setStatus] = useState<string | null>(null);
-  const [remainingSeconds, setRemainingSeconds] = useState(23 * 60 + 59);
+  const [giftAmountUsdc, setGiftAmountUsdc] = useState<string | null>(null);
+  const [expiresAtSec, setExpiresAtSec] = useState<number | null>(null);
+  const [giftLoading, setGiftLoading] = useState(true);
+  const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [successTxHash, setSuccessTxHash] = useState<string | null>(null);
   const successOverlayTimerRef = useRef<number | null>(null);
@@ -55,17 +71,50 @@ function GiftClaimContent() {
     return embeddedWallet?.address ?? null;
   }, [wallets]);
   const receiverName = getContactName(receiverAddress);
+  const paymentIdHash = useMemo(() => getPaymentIdHashFromPath(), []);
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
-      setRemainingSeconds((value) => {
-        if (value <= 0) return 0;
-        return value - 1;
-      });
-    }, 1000);
+    if (!paymentIdHash) {
+      const timeoutId = window.setTimeout(() => setGiftLoading(false), 0);
+      return () => window.clearTimeout(timeoutId);
+    }
 
+    const timeoutId = window.setTimeout(() => {
+      fetch(`/api/gift/${paymentIdHash}`)
+        .then(async (response) => {
+          const data = (await response.json()) as GiftDetailsResponse;
+          if (!response.ok || !data.ok) {
+            throw new Error(data.ok ? "Failed to load gift details." : data.error);
+          }
+
+          setGiftAmountUsdc(data.amountUsdc);
+          setExpiresAtSec(data.expiresAt);
+        })
+        .catch((e) => {
+          setStatus(
+            e instanceof Error
+              ? e.message
+              : "Failed to load gift amount. Try refreshing."
+          );
+        })
+        .finally(() => setGiftLoading(false));
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [paymentIdHash]);
+
+  useEffect(() => {
+    if (!expiresAtSec) return;
+
+    const updateRemaining = () => {
+      const nowSec = Math.floor(Date.now() / 1000);
+      setRemainingSeconds(Math.max(0, expiresAtSec - nowSec));
+    };
+
+    updateRemaining();
+    const timer = window.setInterval(updateRemaining, 1000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [expiresAtSec]);
 
   useEffect(() => {
     if (!isSuccess) return;
@@ -102,6 +151,11 @@ function GiftClaimContent() {
       return;
     }
 
+    if (remainingSeconds !== null && remainingSeconds <= 0) {
+      setStatus("This gift has expired.");
+      return;
+    }
+
     const hash = await claimGift(receiverAddress);
     if (hash) {
       setSuccessTxHash(hash);
@@ -117,10 +171,17 @@ function GiftClaimContent() {
     }
   };
 
-  const minutes = Math.floor(remainingSeconds / 60)
-    .toString()
-    .padStart(2, "0");
-  const seconds = (remainingSeconds % 60).toString().padStart(2, "0");
+  const minutes =
+    remainingSeconds !== null
+      ? Math.floor(remainingSeconds / 60)
+          .toString()
+          .padStart(2, "0")
+      : "--";
+  const seconds =
+    remainingSeconds !== null
+      ? (remainingSeconds % 60).toString().padStart(2, "0")
+      : "--";
+  const amountLabel = giftAmountUsdc ? `${giftAmountUsdc} USDC` : "Gift";
 
   return (
     <main className="relative flex min-h-screen items-center justify-center px-5 py-10 text-white">
@@ -140,7 +201,9 @@ function GiftClaimContent() {
             <p className="text-sm tracking-[0.06em] text-white/75">
               🎁 You received a gift
             </p>
-            <h1 className="text-5xl font-semibold tracking-tight">$10 USDC</h1>
+            <h1 className="text-5xl font-semibold tracking-tight">
+              {giftLoading ? "Loading..." : amountLabel}
+            </h1>
             <p className="soft-text text-sm">
               Someone sent you your first crypto
             </p>
@@ -168,7 +231,11 @@ function GiftClaimContent() {
           </div>
 
           <p className="countdown-tick text-sm text-white/70">
-            Expires in {minutes}:{seconds}
+            {remainingSeconds === null
+              ? "Checking expiry..."
+              : remainingSeconds <= 0
+                ? "Gift expired"
+                : `Expires in ${minutes}:${seconds}`}
           </p>
 
           {!isSuccess && (
@@ -176,7 +243,7 @@ function GiftClaimContent() {
               <motion.button
                 type="button"
                 onClick={onUnwrap}
-                disabled={loading || !ready}
+                disabled={loading || !ready || remainingSeconds === 0}
                 whileHover={{ scale: loading ? 1 : 1.03 }}
                 whileTap={{ scale: 0.98 }}
                 className="accent-gradient w-full rounded-2xl px-6 py-4 text-lg font-semibold shadow-[0_16px_40px_rgba(76,85,255,0.42)] transition hover:shadow-[0_18px_46px_rgba(99,102,241,0.5)] disabled:cursor-not-allowed disabled:opacity-65"
@@ -239,7 +306,9 @@ function GiftClaimContent() {
                 You&apos;re now on-chain
               </h2>
               <p className="soft-text text-sm">
-                $10 USDC has been added to your wallet
+                {giftAmountUsdc
+                  ? `${giftAmountUsdc} USDC has been added to your wallet`
+                  : "Your gift has been added to your wallet"}
               </p>
               {successTxHash && (
                 <a
