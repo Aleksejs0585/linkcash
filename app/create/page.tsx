@@ -5,8 +5,8 @@ import { useState } from "react";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  FaFacebookF,
   FaLink,
+  FaFacebookMessenger,
   FaSnapchatGhost,
   FaTelegramPlane,
   FaWhatsapp,
@@ -153,6 +153,14 @@ function CreateGiftContent() {
   const shareText = "I sent you a USDC gift on LinkCash 🎁 Claim it here";
   const encodedLink = encodeURIComponent(link);
   const encodedText = encodeURIComponent(shareText);
+  const facebookAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID?.trim() ?? "";
+  const messengerShareHref = facebookAppId
+    ? `https://www.facebook.com/dialog/send?app_id=${encodeURIComponent(
+        facebookAppId
+      )}&link=${encodedLink}&redirect_uri=${encodeURIComponent(
+        "https://www.linkcash.app/create"
+      )}`
+    : null;
   const shortLinkText = link
     ? (() => {
         try {
@@ -178,12 +186,16 @@ function CreateGiftContent() {
       icon: FaTelegramPlane,
       iconColor: "#229ED9",
     },
-    {
-      label: "Facebook",
-      href: `https://www.facebook.com/sharer/sharer.php?u=${encodedLink}`,
-      icon: FaFacebookF,
-      iconColor: "#1877F2",
-    },
+    ...(messengerShareHref
+      ? [
+          {
+            label: "Messenger",
+            href: messengerShareHref,
+            icon: FaFacebookMessenger,
+            iconColor: "#1877F2",
+          },
+        ]
+      : []),
     {
       label: "Gmail",
       href: `mailto:?subject=${encodeURIComponent(
