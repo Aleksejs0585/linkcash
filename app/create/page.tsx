@@ -142,7 +142,7 @@ function CreateGiftContent() {
     setTimeout(() => setCopied(false), 1800);
   };
 
-  const shareText = "You received a USDC gift on LinkCash. Claim it here:";
+  const shareText = "I sent you a USDC gift on LinkCash 🎁 Claim it here";
   const encodedLink = encodeURIComponent(link);
   const encodedText = encodeURIComponent(shareText);
   const shareLinks = [
