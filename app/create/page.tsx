@@ -170,19 +170,19 @@ function CreateGiftContent() {
       label: "WhatsApp",
       href: `https://wa.me/?text=${encodedText}%20${encodedLink}`,
       icon: FaWhatsapp,
-      iconClassName: "text-[#25D366]",
+      iconColor: "#25D366",
     },
     {
       label: "Telegram",
       href: `https://t.me/share/url?url=${encodedLink}&text=${encodedText}`,
       icon: FaTelegramPlane,
-      iconClassName: "text-[#229ED9]",
+      iconColor: "#229ED9",
     },
     {
       label: "Facebook",
       href: `https://www.facebook.com/sharer/sharer.php?u=${encodedLink}`,
       icon: FaFacebookF,
-      iconClassName: "text-[#1877F2]",
+      iconColor: "#1877F2",
     },
     {
       label: "Gmail",
@@ -190,13 +190,13 @@ function CreateGiftContent() {
         "You received a USDC gift"
       )}&body=${encodedText}%0A${encodedLink}`,
       icon: SiGmail,
-      iconClassName: "text-[#EA4335]",
+      iconColor: "#EA4335",
     },
     {
       label: "Snapchat",
       href: `https://www.snapchat.com/share?link=${encodedLink}`,
       icon: FaSnapchatGhost,
-      iconClassName: "text-[#FFFC00]",
+      iconColor: "#FFFC00",
     },
   ];
 
@@ -326,7 +326,8 @@ function CreateGiftContent() {
                     className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/15 px-3 py-2 text-center text-xs font-medium text-white/90 transition hover:border-white/30 hover:bg-white/5"
                   >
                     <item.icon
-                      className={`h-3.5 w-3.5 shrink-0 ${item.iconClassName}`}
+                      className="h-3.5 w-3.5 shrink-0"
+                      style={{ color: item.iconColor }}
                     />
                     {item.label}
                   </a>
