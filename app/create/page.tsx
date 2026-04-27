@@ -4,6 +4,14 @@ import Link from "next/link";
 import { useState } from "react";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { AnimatePresence, motion } from "framer-motion";
+import {
+  FaFacebookF,
+  FaLink,
+  FaSnapchatGhost,
+  FaTelegramPlane,
+  FaWhatsapp,
+} from "react-icons/fa";
+import { SiGmail } from "react-icons/si";
 import GlassCard from "../../components/ui/glass-card";
 import { ARC_TESTNET, generateHash, generateLink, generateSecret } from "../../utils";
 
@@ -145,28 +153,45 @@ function CreateGiftContent() {
   const shareText = "I sent you a USDC gift on LinkCash 🎁 Claim it here";
   const encodedLink = encodeURIComponent(link);
   const encodedText = encodeURIComponent(shareText);
+  const shortLinkText = link
+    ? (() => {
+        try {
+          const parsed = new URL(link);
+          const segments = parsed.pathname.split("/").filter(Boolean);
+          const hash = segments[segments.length - 1] ?? "";
+          return `${parsed.hostname}/gift/${hash.slice(0, 8)}...${hash.slice(-6)}`;
+        } catch {
+          return "Open gift link";
+        }
+      })()
+    : "";
   const shareLinks = [
     {
       label: "WhatsApp",
       href: `https://wa.me/?text=${encodedText}%20${encodedLink}`,
+      icon: FaWhatsapp,
     },
     {
       label: "Telegram",
       href: `https://t.me/share/url?url=${encodedLink}&text=${encodedText}`,
+      icon: FaTelegramPlane,
     },
     {
       label: "Facebook",
       href: `https://www.facebook.com/sharer/sharer.php?u=${encodedLink}`,
+      icon: FaFacebookF,
     },
     {
       label: "Gmail",
       href: `mailto:?subject=${encodeURIComponent(
         "You received a USDC gift"
       )}&body=${encodedText}%0A${encodedLink}`,
+      icon: SiGmail,
     },
     {
       label: "Snapchat",
       href: `https://www.snapchat.com/share?link=${encodedLink}`,
+      icon: FaSnapchatGhost,
     },
   ];
 
@@ -270,7 +295,15 @@ function CreateGiftContent() {
               <p className="soft-text text-xs uppercase tracking-[0.18em]">
                 Gift link
               </p>
-              <p className="mt-2 break-all text-sm text-white/90">{link}</p>
+              <a
+                href={link}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-blue-300 underline decoration-white/20 underline-offset-4 transition hover:text-blue-200"
+              >
+                <FaLink className="h-3.5 w-3.5 shrink-0" />
+                Open gift link ({shortLinkText})
+              </a>
               <button
                 type="button"
                 onClick={onCopy}
@@ -285,8 +318,9 @@ function CreateGiftContent() {
                     href={item.href}
                     target="_blank"
                     rel="noreferrer"
-                    className="rounded-xl border border-white/15 px-3 py-2 text-center text-xs font-medium text-white/90 transition hover:border-white/30 hover:bg-white/5"
+                    className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/15 px-3 py-2 text-center text-xs font-medium text-white/90 transition hover:border-white/30 hover:bg-white/5"
                   >
+                    <item.icon className="h-3.5 w-3.5 shrink-0" />
                     {item.label}
                   </a>
                 ))}
