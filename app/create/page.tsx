@@ -5,7 +5,6 @@ import { useState } from "react";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  FaFacebookF,
   FaLink,
   FaFacebookMessenger,
   FaSnapchatGhost,
@@ -162,7 +161,6 @@ function CreateGiftContent() {
         "https://www.linkcash.app/create"
       )}`
     : null;
-  const facebookShareHref = `https://www.facebook.com/sharer/sharer.php?u=${encodedLink}`;
   const shareLinks = [
     {
       label: "WhatsApp",
@@ -175,12 +173,6 @@ function CreateGiftContent() {
       href: `https://t.me/share/url?url=${encodedLink}&text=${encodedText}`,
       icon: FaTelegramPlane,
       iconColor: "#229ED9",
-    },
-    {
-      label: "Facebook",
-      href: facebookShareHref,
-      icon: FaFacebookF,
-      iconColor: "#1877F2",
     },
     ...(messengerShareHref
       ? [
