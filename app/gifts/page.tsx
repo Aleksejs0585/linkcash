@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { isAddress } from "ethers";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import GlassCard from "../../components/ui/glass-card";
-import { useAddressBook } from "../../hooks/useAddressBook";
 import { ARC_TESTNET, getArcExplorerTxUrl } from "../../utils";
 
 type SenderGiftStatus = "active" | "expired" | "claimed" | "reclaimed";
@@ -52,7 +51,6 @@ export default function SenderDashboardPage() {
 function SenderDashboardContent() {
   const { ready, authenticated, login } = usePrivy();
   const { wallets } = useWallets();
-  const { getContactName, setContactName } = useAddressBook();
   const [loading, setLoading] = useState(false);
   const [reclaimingHash, setReclaimingHash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +66,6 @@ function SenderDashboardContent() {
       )?.address ?? null,
     [wallets]
   );
-  const senderName = getContactName(senderWalletAddress);
 
   const loadGifts = useCallback(async () => {
     if (!senderWalletAddress || !isAddress(senderWalletAddress)) {
@@ -180,24 +177,9 @@ function SenderDashboardContent() {
               No embedded wallet found for this account.
             </p>
           ) : (
-            <div className="space-y-2">
-              <p className="rounded-xl border border-white/10 bg-black/25 p-3 text-xs text-white/70">
-                Sender: {senderName ?? senderWalletAddress}
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  if (!senderWalletAddress) return;
-                  const current = getContactName(senderWalletAddress) ?? "";
-                  const next = window.prompt("Sender name", current)?.trim();
-                  if (!next) return;
-                  setContactName(senderWalletAddress, next);
-                }}
-                className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-white/85 transition hover:bg-white/5"
-              >
-                {senderName ? "Edit sender name" : "Save sender name"}
-              </button>
-            </div>
+            <p className="break-all rounded-xl border border-white/10 bg-black/25 p-3 text-xs text-white/70">
+              Sender wallet: {senderWalletAddress}
+            </p>
           )}
 
           {status && <p className="text-sm text-emerald-300 break-all">{status}</p>}

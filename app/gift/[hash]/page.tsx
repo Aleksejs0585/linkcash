@@ -7,7 +7,6 @@ import confetti from "canvas-confetti";
 import { AnimatePresence, motion } from "framer-motion";
 import GlassCard from "../../../components/ui/glass-card";
 import { useGift } from "../../../hooks/useGift";
-import { useAddressBook } from "../../../hooks/useAddressBook";
 import {
   ARC_TESTNET,
   getPaymentIdHashFromPath,
@@ -52,7 +51,6 @@ function GiftClaimContent() {
   const { ready, authenticated, login, logout } = usePrivy();
   const { wallets } = useWallets();
   const { claimGift, loading, txHash, error } = useGift();
-  const { getContactName, setContactName } = useAddressBook();
   const [status, setStatus] = useState<string | null>(null);
   const [giftAmountUsdc, setGiftAmountUsdc] = useState<string | null>(null);
   const [expiresAtSec, setExpiresAtSec] = useState<number | null>(null);
@@ -70,7 +68,6 @@ function GiftClaimContent() {
     );
     return embeddedWallet?.address ?? null;
   }, [wallets]);
-  const receiverName = getContactName(receiverAddress);
   const paymentIdHash = useMemo(() => getPaymentIdHashFromPath(), []);
 
   useEffect(() => {
@@ -208,25 +205,9 @@ function GiftClaimContent() {
               Someone sent you your first crypto
             </p>
             {authenticated && (
-              <div className="mt-2 space-y-2">
-                <p className="text-xs text-white/60">
-                  Receiving wallet: {receiverName ?? receiverAddress ?? "not ready"}
-                </p>
-                {receiverAddress && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const current = getContactName(receiverAddress) ?? "";
-                      const next = window.prompt("Recipient name", current)?.trim();
-                      if (!next) return;
-                      setContactName(receiverAddress, next);
-                    }}
-                    className="rounded-lg border border-white/15 px-3 py-1 text-xs text-white/80 transition hover:bg-white/5"
-                  >
-                    {receiverName ? "Edit recipient name" : "Save recipient name"}
-                  </button>
-                )}
-              </div>
+              <p className="mt-2 break-all text-xs text-white/60">
+                Receiving wallet: {receiverAddress ?? "not ready"}
+              </p>
             )}
           </div>
 

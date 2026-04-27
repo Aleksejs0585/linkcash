@@ -5,7 +5,6 @@ import { useState } from "react";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { AnimatePresence, motion } from "framer-motion";
 import GlassCard from "../../components/ui/glass-card";
-import { useAddressBook } from "../../hooks/useAddressBook";
 import { ARC_TESTNET, generateHash, generateLink, generateSecret } from "../../utils";
 
 export default function CreateGiftPage() {
@@ -30,7 +29,6 @@ export default function CreateGiftPage() {
 function CreateGiftContent() {
   const { ready, authenticated, login } = usePrivy();
   const { wallets } = useWallets();
-  const { getContactName, setContactName } = useAddressBook();
   const [link, setLink] = useState("");
   const [paymentIdHash, setPaymentIdHash] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -46,8 +44,6 @@ function CreateGiftContent() {
         wallet.walletClientType === "privy" ||
         wallet.walletClientType === "privy-v2"
     )?.address ?? null;
-  const senderName = getContactName(senderWalletAddress);
-
   const onCreate = async () => {
     if (!ready) return;
     if (!authenticated) {
@@ -97,9 +93,7 @@ function CreateGiftContent() {
       setLink(giftLink);
       setCopied(false);
       setStatus(
-        `Gift funded. Refund wallet: ${
-          getContactName(data.refundAddress) ?? data.refundAddress
-        }. Expires at: ${new Date(
+        `Gift funded. Refund wallet: ${data.refundAddress}. Expires at: ${new Date(
           data.expiresAt * 1000
         ).toLocaleString()}. Tx: ${data.txHash}`
       );
@@ -147,6 +141,34 @@ function CreateGiftContent() {
     setCopied(true);
     setTimeout(() => setCopied(false), 1800);
   };
+
+  const shareText = "You received a USDC gift on LinkCash. Claim it here:";
+  const encodedLink = encodeURIComponent(link);
+  const encodedText = encodeURIComponent(shareText);
+  const shareLinks = [
+    {
+      label: "WhatsApp",
+      href: `https://wa.me/?text=${encodedText}%20${encodedLink}`,
+    },
+    {
+      label: "Telegram",
+      href: `https://t.me/share/url?url=${encodedLink}&text=${encodedText}`,
+    },
+    {
+      label: "Facebook",
+      href: `https://www.facebook.com/sharer/sharer.php?u=${encodedLink}`,
+    },
+    {
+      label: "Gmail",
+      href: `mailto:?subject=${encodeURIComponent(
+        "You received a USDC gift"
+      )}&body=${encodedText}%0A${encodedLink}`,
+    },
+    {
+      label: "Snapchat",
+      href: `https://www.snapchat.com/share?link=${encodedLink}`,
+    },
+  ];
 
   return (
     <main className="relative flex min-h-screen items-center justify-center px-5 py-10 text-white">
@@ -226,23 +248,9 @@ function CreateGiftContent() {
             className="mt-2 w-full rounded-xl border border-white/15 bg-black/30 px-3 py-2 text-sm text-white outline-none ring-blue-500/40 focus:ring-2"
           />
           {senderWalletAddress ? (
-            <div className="mt-2 space-y-2">
-              <p className="text-xs text-white/60">
-                Refund wallet: {senderName ?? senderWalletAddress}
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  const current = getContactName(senderWalletAddress) ?? "";
-                  const next = window.prompt("Sender name", current)?.trim();
-                  if (!next) return;
-                  setContactName(senderWalletAddress, next);
-                }}
-                className="rounded-lg border border-white/15 px-3 py-1 text-xs text-white/80 transition hover:bg-white/5"
-              >
-                {senderName ? "Edit sender name" : "Save sender name"}
-              </button>
-            </div>
+            <p className="mt-2 break-all text-xs text-white/60">
+              Refund wallet: {senderWalletAddress}
+            </p>
           ) : (
             <p className="mt-2 text-xs text-amber-300">
               Embedded sender wallet not found yet.
@@ -270,6 +278,19 @@ function CreateGiftContent() {
               >
                 {copied ? "Copied ✓" : "Copy link"}
               </button>
+              <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {shareLinks.map((item) => (
+                  <a
+                    key={item.label}
+                    href={item.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-xl border border-white/15 px-3 py-2 text-center text-xs font-medium text-white/90 transition hover:border-white/30 hover:bg-white/5"
+                  >
+                    {item.label}
+                  </a>
+                ))}
+              </div>
               <button
                 type="button"
                 onClick={onReclaim}
