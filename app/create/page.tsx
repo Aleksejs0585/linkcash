@@ -163,18 +163,6 @@ function CreateGiftContent() {
       )}`
     : null;
   const facebookShareHref = `https://www.facebook.com/sharer/sharer.php?u=${encodedLink}`;
-  const shortLinkText = link
-    ? (() => {
-        try {
-          const parsed = new URL(link);
-          const segments = parsed.pathname.split("/").filter(Boolean);
-          const hash = segments[segments.length - 1] ?? "";
-          return `${parsed.hostname}/gift/${hash.slice(0, 8)}...${hash.slice(-6)}`;
-        } catch {
-          return "Open gift link";
-        }
-      })()
-    : "";
   const shareLinks = [
     {
       label: "WhatsApp",
@@ -327,7 +315,7 @@ function CreateGiftContent() {
                 className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-blue-300 underline decoration-white/20 underline-offset-4 transition hover:text-blue-200"
               >
                 <FaLink className="h-3.5 w-3.5 shrink-0" />
-                Open gift link ({shortLinkText})
+                Open gift link
               </a>
               <button
                 type="button"
