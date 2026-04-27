@@ -5,6 +5,7 @@ import { useState } from "react";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  FaFacebookF,
   FaLink,
   FaFacebookMessenger,
   FaSnapchatGhost,
@@ -161,6 +162,7 @@ function CreateGiftContent() {
         "https://www.linkcash.app/create"
       )}`
     : null;
+  const facebookShareHref = `https://www.facebook.com/sharer/sharer.php?u=${encodedLink}`;
   const shortLinkText = link
     ? (() => {
         try {
@@ -185,6 +187,12 @@ function CreateGiftContent() {
       href: `https://t.me/share/url?url=${encodedLink}&text=${encodedText}`,
       icon: FaTelegramPlane,
       iconColor: "#229ED9",
+    },
+    {
+      label: "Facebook",
+      href: facebookShareHref,
+      icon: FaFacebookF,
+      iconColor: "#1877F2",
     },
     ...(messengerShareHref
       ? [
@@ -335,13 +343,14 @@ function CreateGiftContent() {
                     href={item.href}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/15 px-3 py-2 text-center text-xs font-medium text-white/90 transition hover:border-white/30 hover:bg-white/5"
+                    aria-label={item.label}
+                    title={item.label}
+                    className="inline-flex h-10 items-center justify-center rounded-xl border border-white/15 px-3 py-2 text-center text-xs font-medium text-white/90 transition hover:border-white/30 hover:bg-white/5"
                   >
                     <item.icon
-                      className="h-3.5 w-3.5 shrink-0"
+                      className="h-5 w-5 shrink-0"
                       style={{ color: item.iconColor }}
                     />
-                    {item.label}
                   </a>
                 ))}
               </div>
