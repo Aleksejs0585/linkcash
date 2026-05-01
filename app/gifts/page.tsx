@@ -277,14 +277,6 @@ function SenderDashboardContent() {
           )}
         </GlassCard>
 
-        <div className="text-center">
-          <Link
-            href="/create"
-            className="text-sm text-white/70 underline decoration-white/25 underline-offset-4"
-          >
-            Back to create gift
-          </Link>
-        </div>
       </div>
     </main>
   );

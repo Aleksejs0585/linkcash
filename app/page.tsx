@@ -130,54 +130,11 @@ export default async function HomePage() {
           </GlassCard>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-2">
-          <GlassCard className="p-6">
-            <h2 className="text-xl font-semibold">How it works</h2>
-            <div className="mt-4 space-y-3 text-sm text-white/85">
-              <p>
-                <span className="font-semibold text-white">1.</span> Sender funds
-                a gift and generates a secure claim link.
-              </p>
-              <p>
-                <span className="font-semibold text-white">2.</span> Recipient
-                opens the link and logs in with Google or X.
-              </p>
-              <p>
-                <span className="font-semibold text-white">3.</span> LinkCash
-                creates an embedded wallet and relays claim gaslessly.
-              </p>
-              <p>
-                <span className="font-semibold text-white">4.</span> Recipient
-                sees funds in the wallet and can export keys anytime.
-              </p>
-            </div>
-          </GlassCard>
-
-          <GlassCard className="p-6">
-            <h2 className="text-xl font-semibold">Built for trust</h2>
-            <div className="mt-4 space-y-3 text-sm text-white/85">
-              <p>
-                Arc Testnet settlement with explorer-verified transactions.
-              </p>
-              <p>
-                Idempotent claim flow with server-side rate limits and audit logs.
-              </p>
-              <p>
-                Wallet hub for non-crypto users with address, balance, and export.
-              </p>
-              <p>
-                Admin control panel for runtime claim safety operations.
-              </p>
-            </div>
-          </GlassCard>
-        </section>
-
         <section className="grid gap-4 md:grid-cols-[1.2fr_1fr]">
           <GlassCard className="p-6">
-            <h2 className="text-xl font-semibold">Trust layer: How funds move</h2>
+            <h2 className="text-xl font-semibold">How funds move</h2>
             <p className="soft-text mt-2 text-sm">
-              This is the exact settlement path your money follows, with every
-              step visible onchain.
+              Simple flow, transparent settlement, and explorer-verifiable proof.
             </p>
 
             <div className="mt-5 space-y-3">
@@ -203,11 +160,26 @@ export default async function HomePage() {
               </div>
               <p className="text-center text-xs text-white/50">▼</p>
               <div className="rounded-xl border border-white/15 bg-white/5 p-3">
-                <p className="text-sm font-medium">4) Funds arrive in recipient wallet</p>
+                <p className="text-sm font-medium">4) Funds reach recipient wallet</p>
                 <p className="soft-text mt-1 text-xs">
                   Recipient can verify tx hash in explorer and use/export wallet.
                 </p>
               </div>
+            </div>
+
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Link
+                href="/create"
+                className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-white/85 transition hover:bg-white/5"
+              >
+                Try create flow
+              </Link>
+              <Link
+                href="/gifts"
+                className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-violet-300 transition hover:bg-white/5"
+              >
+                Track gift statuses
+              </Link>
             </div>
           </GlassCard>
 
@@ -267,17 +239,6 @@ export default async function HomePage() {
                 <p className="soft-text mt-2">
                   The UI can lag behind network confirmation by a few seconds.
                   Refresh the page or open the tx in explorer for final state.
-                </p>
-              </details>
-
-              <details className="rounded-xl border border-white/10 bg-black/20 p-3">
-                <summary className="cursor-pointer font-medium text-white">
-                  Are the funds with me or with LinkCash?
-                </summary>
-                <p className="soft-text mt-2">
-                  After successful claim, funds are held by your wallet address.
-                  LinkCash only relays the transaction and does not hold your
-                  wallet keys on the landing page.
                 </p>
               </details>
             </div>

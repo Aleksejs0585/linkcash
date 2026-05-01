@@ -1,4 +1,3 @@
-import Link from "next/link";
 import GlassCard from "@/components/ui/glass-card";
 import BackButton from "@/components/ui/back-button";
 import { parseGiftHashInput } from "@/entities/gift/server/gift-validation";
@@ -182,14 +181,6 @@ export default async function GiftStatusPage({
           </div>
         </GlassCard>
 
-        <div className="text-center">
-          <Link
-            href="/create"
-            className="text-sm text-white/70 underline decoration-white/25 underline-offset-4"
-          >
-            Back to create gift
-          </Link>
-        </div>
       </div>
     </main>
   );

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Contract, JsonRpcProvider, formatUnits, isAddress } from "ethers";
 import { useExportWallet, usePrivy, useWallets } from "@privy-io/react-auth";
@@ -207,12 +206,6 @@ function WalletContent() {
 
         {error && <p className="text-sm text-rose-400">{error}</p>}
 
-        <Link
-          href="/create"
-          className="block text-center text-sm text-white/70 underline decoration-white/25 underline-offset-4"
-        >
-          Back to create gift
-        </Link>
       </GlassCard>
     </main>
   );
