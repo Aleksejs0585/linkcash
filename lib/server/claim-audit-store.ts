@@ -1,4 +1,4 @@
-import { mkdir, appendFile } from "node:fs/promises";
+import { mkdir, appendFile, readFile } from "node:fs/promises";
 import path from "node:path";
 
 export type ClaimAuditEvent = {
@@ -61,6 +61,32 @@ class ClaimAuditStore {
           message,
         })
       );
+    }
+  }
+
+  async readRecent(limit = 200): Promise<ClaimAuditEvent[]> {
+    try {
+      const content = await readFile(this.logPath, "utf8");
+      if (!content.trim()) return [];
+
+      const lines = content.trim().split("\n");
+      const slice = lines.slice(Math.max(0, lines.length - limit));
+
+      return slice
+        .map((line) => {
+          try {
+            return JSON.parse(line) as ClaimAuditEvent;
+          } catch {
+            return null;
+          }
+        })
+        .filter((entry): entry is ClaimAuditEvent => entry !== null);
+    } catch (error) {
+      const nodeError = error as NodeJS.ErrnoException;
+      if (nodeError.code === "ENOENT") {
+        return [];
+      }
+      throw error;
     }
   }
 }
