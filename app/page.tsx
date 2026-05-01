@@ -65,12 +65,12 @@ export default async function HomePage() {
 
       <div className="relative mx-auto flex w-full max-w-5xl flex-col gap-7">
         <section className="mx-auto w-full max-w-3xl text-center">
-          <p className="mx-auto inline-flex rounded-full border border-white/15 bg-white/5 px-4 py-1 text-xs tracking-[0.18em] text-white/75">
+          <p className="mx-auto inline-flex rounded-full border border-fuchsia-300/30 bg-fuchsia-400/10 px-4 py-1 text-xs tracking-[0.18em] text-fuchsia-200">
             SOCIAL-FIRST CRYPTO ONBOARDING
           </p>
           <h1 className="mt-5 text-5xl font-semibold leading-tight tracking-tight sm:text-6xl">
             Send USDC like a message.
-            <span className="block soft-text">No wallet setup required.</span>
+            <span className="rainbow-text block">No wallet setup required.</span>
           </h1>
           <p className="soft-text mx-auto mt-4 max-w-2xl text-base sm:text-lg">
             LinkCash turns a simple link into a first onchain experience.
@@ -101,8 +101,8 @@ export default async function HomePage() {
         </section>
 
         <section className="grid gap-4 md:grid-cols-3">
-          <GlassCard className="space-y-2 p-5">
-            <p className="text-xs uppercase tracking-[0.15em] text-white/60">
+          <GlassCard className="space-y-2 border-fuchsia-300/25 p-5">
+            <p className="text-xs uppercase tracking-[0.15em] text-fuchsia-200/80">
               Time to first claim
             </p>
             <p className="text-3xl font-semibold">{"< 60s"}</p>
@@ -110,8 +110,8 @@ export default async function HomePage() {
               Social login + embedded wallet + relayer execution.
             </p>
           </GlassCard>
-          <GlassCard className="space-y-2 p-5">
-            <p className="text-xs uppercase tracking-[0.15em] text-white/60">
+          <GlassCard className="space-y-2 border-blue-300/25 p-5">
+            <p className="text-xs uppercase tracking-[0.15em] text-blue-200/80">
               User friction
             </p>
             <p className="text-3xl font-semibold">Near-zero</p>
@@ -119,8 +119,8 @@ export default async function HomePage() {
               No seed phrase, no extension install, no gas setup required.
             </p>
           </GlassCard>
-          <GlassCard className="space-y-2 p-5">
-            <p className="text-xs uppercase tracking-[0.15em] text-white/60">
+          <GlassCard className="space-y-2 border-emerald-300/25 p-5">
+            <p className="text-xs uppercase tracking-[0.15em] text-emerald-200/80">
               Perfect for
             </p>
             <p className="text-3xl font-semibold">Growth loops</p>
