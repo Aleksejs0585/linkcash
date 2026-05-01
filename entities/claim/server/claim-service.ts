@@ -46,6 +46,7 @@ export async function submitClaim(params: {
       timestamp: new Date().toISOString(),
       event: "claim_rate_limited",
       ip: clientIp,
+      paymentIdHash: input.paymentIdHash,
       errorCode: "RATE_LIMITED",
       message: "Too many claim attempts.",
     });
@@ -70,6 +71,7 @@ export async function submitClaim(params: {
         event: "claim_in_progress",
         ip: clientIp,
         idempotencyKey: idempotencyKey.slice(0, 10),
+        paymentIdHash: input.paymentIdHash,
         receiverAddress: input.receiverAddress,
         errorCode: "IN_PROGRESS",
         message: "Claim is already processing.",
@@ -87,6 +89,7 @@ export async function submitClaim(params: {
       event: "claim_cached",
       ip: clientIp,
       idempotencyKey: idempotencyKey.slice(0, 10),
+      paymentIdHash: input.paymentIdHash,
       receiverAddress: input.receiverAddress,
       txHash: existing.txHash,
     });
@@ -122,6 +125,7 @@ export async function submitClaim(params: {
         event: "claim_error",
         ip: clientIp,
         idempotencyKey: idempotencyKey.slice(0, 10),
+        paymentIdHash: input.paymentIdHash,
         receiverAddress: input.receiverAddress,
         txHash,
         errorCode: "RELAY_ERROR",
@@ -139,6 +143,7 @@ export async function submitClaim(params: {
       event: "claim_success",
       ip: clientIp,
       idempotencyKey: idempotencyKey.slice(0, 10),
+      paymentIdHash: input.paymentIdHash,
       receiverAddress: input.receiverAddress,
       txHash,
     });

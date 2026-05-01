@@ -13,6 +13,7 @@ export type ClaimAuditEvent = {
     | "claim_error";
   ip: string;
   idempotencyKey?: string;
+  paymentIdHash?: string;
   receiverAddress?: string;
   txHash?: string;
   errorCode?: string;

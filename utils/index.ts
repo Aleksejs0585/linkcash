@@ -35,6 +35,13 @@ export function generateLink(hash: string, secret: string): string {
   return `${base}/gift/${hash}#${secret}`;
 }
 
+export function generateStatusLink(hash: string): string {
+  const base =
+    typeof window !== "undefined" ? window.location.origin : "";
+
+  return `${base}/status/${hash}`;
+}
+
 export function getSecretFromHash(): string | null {
   if (typeof window === "undefined") {
     return null;

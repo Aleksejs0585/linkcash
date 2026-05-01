@@ -2,7 +2,12 @@
 
 import { useMemo, useState } from "react";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
-import { generateHash, generateLink, generateSecret } from "@/utils";
+import {
+  generateHash,
+  generateLink,
+  generateSecret,
+  generateStatusLink,
+} from "@/utils";
 import { buildShareLinks } from "./share-links";
 
 type CreateGiftSuccess = {
@@ -43,6 +48,10 @@ export function useCreateGift() {
   const shareLinks = useMemo(
     () => buildShareLinks(link, facebookAppId),
     [facebookAppId, link]
+  );
+  const statusLink = useMemo(
+    () => (paymentIdHash ? generateStatusLink(paymentIdHash) : ""),
+    [paymentIdHash]
   );
 
   const onCreate = async () => {
@@ -154,6 +163,8 @@ export function useCreateGift() {
     login,
     senderWalletAddress,
     link,
+    paymentIdHash,
+    statusLink,
     copied,
     amount,
     expiresInHours,

@@ -225,6 +225,12 @@ function SenderDashboardContent() {
                   </p>
 
                   <div className="mt-3 flex flex-wrap gap-2">
+                    <Link
+                      href={`/status/${gift.paymentIdHash}`}
+                      className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-violet-300 transition hover:bg-white/5"
+                    >
+                      Track status
+                    </Link>
                     <a
                       href={getArcExplorerTxUrl(gift.fundedTxHash)}
                       target="_blank"

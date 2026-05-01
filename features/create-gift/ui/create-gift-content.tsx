@@ -14,6 +14,8 @@ export function CreateGiftContent() {
     login,
     senderWalletAddress,
     link,
+    paymentIdHash,
+    statusLink,
     copied,
     amount,
     expiresInHours,
@@ -139,6 +141,14 @@ export function CreateGiftContent() {
                 <FaLink className="h-3.5 w-3.5 shrink-0" />
                 Open gift link
               </a>
+              {paymentIdHash && (
+                <Link
+                  href={statusLink}
+                  className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-violet-300 underline decoration-white/20 underline-offset-4 transition hover:text-violet-200"
+                >
+                  Track public status
+                </Link>
+              )}
               <button
                 type="button"
                 onClick={onCopy}

@@ -43,6 +43,7 @@ function jsonError(
 
 export async function POST(request: Request) {
   let currentIdempotencyKey: string | null = null;
+  let currentPaymentIdHash: string | null = null;
   const requestId = crypto.randomUUID();
   const clientIp = getClientIp(request);
 
@@ -65,6 +66,7 @@ export async function POST(request: Request) {
     }
 
     const input = parseClaimInput(rawBody);
+    currentPaymentIdHash = input.paymentIdHash;
     const idempotencyKey = request.headers.get("x-idempotency-key")?.trim() ?? null;
     currentIdempotencyKey = idempotencyKey;
     const result = await submitClaim({
@@ -95,6 +97,7 @@ export async function POST(request: Request) {
       event: "claim_error",
       ip: clientIp,
       idempotencyKey: currentIdempotencyKey?.slice(0, 10),
+      paymentIdHash: currentPaymentIdHash ?? undefined,
       errorCode: code,
       message,
     });
