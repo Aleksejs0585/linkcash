@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { isAdminAuthenticated } from "../../../../lib/server/admin-auth";
 import {
   type ClaimAuditEvent,
@@ -14,6 +15,13 @@ type UpdateConfigBody = {
   rateLimitEnabled?: boolean;
   rateLimitPerMinute?: number;
 };
+
+const updateConfigSchema = z
+  .object({
+    rateLimitEnabled: z.boolean().optional(),
+    rateLimitPerMinute: z.number().finite().positive().optional(),
+  })
+  .strict();
 
 export const runtime = "nodejs";
 
@@ -64,7 +72,14 @@ export async function POST(request: Request) {
 
   let body: UpdateConfigBody;
   try {
-    body = (await request.json()) as UpdateConfigBody;
+    const parsed = updateConfigSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { ok: false, error: "Invalid request body." },
+        { status: 400 }
+      );
+    }
+    body = parsed.data;
   } catch {
     return NextResponse.json(
       { ok: false, error: "Invalid JSON body." },
