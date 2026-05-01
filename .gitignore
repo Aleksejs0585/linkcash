@@ -1,3 +1,25 @@
+# dependencies
+node_modules/
+
+# next.js
+.next/
+out/
+
+# build and runtime artifacts
+dist/
+coverage/
+.logs/
+
+# local environment and secrets
+.env
+.env.*
+!.env.example
+
+# local tooling
+.DS_Store
+*.log
+*.tsbuildinfo
+
 node_modules
 .next
 .env
