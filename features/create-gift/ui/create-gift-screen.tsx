@@ -1,6 +1,7 @@
 "use client";
 
 import GlassCard from "@/components/ui/glass-card";
+import BackButton from "@/components/ui/back-button";
 import { CreateGiftContent } from "./create-gift-content";
 
 export function CreateGiftScreen() {
@@ -9,6 +10,9 @@ export function CreateGiftScreen() {
     return (
       <main className="relative flex min-h-screen items-center justify-center px-5 py-10 text-white">
         <GlassCard className="w-full max-w-[420px] space-y-3 p-8 text-center">
+          <div className="flex justify-start">
+            <BackButton fallbackHref="/" />
+          </div>
           <h1 className="text-3xl font-semibold tracking-tight">Create Gift</h1>
           <p className="soft-text text-sm">
             Set <code>NEXT_PUBLIC_PRIVY_APP_ID</code> to enable sender wallet based

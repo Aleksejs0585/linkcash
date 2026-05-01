@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { isAddress } from "ethers";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import GlassCard from "../../components/ui/glass-card";
+import BackButton from "../../components/ui/back-button";
 import { ARC_TESTNET, getArcExplorerTxUrl } from "../../utils";
 
 type SenderGiftStatus = "active" | "expired" | "claimed" | "reclaimed";
@@ -36,6 +37,9 @@ export default function SenderDashboardPage() {
     return (
       <main className="relative flex min-h-screen items-center justify-center px-5 py-10 text-white">
         <GlassCard className="w-full max-w-[520px] space-y-3 p-8 text-center">
+          <div className="flex justify-start">
+            <BackButton fallbackHref="/" />
+          </div>
           <h1 className="text-3xl font-semibold tracking-tight">Sender Dashboard</h1>
           <p className="soft-text text-sm">
             Set <code>NEXT_PUBLIC_PRIVY_APP_ID</code> to view sender gifts.
@@ -153,13 +157,16 @@ function SenderDashboardContent() {
                 Track all funded gifts and reclaim expired ones.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => loadGifts().catch(() => undefined)}
-              className="rounded-xl border border-white/15 px-3 py-2 text-sm text-white/85 transition hover:bg-white/5"
-            >
-              Refresh
-            </button>
+            <div className="flex items-center gap-2">
+              <BackButton fallbackHref="/" />
+              <button
+                type="button"
+                onClick={() => loadGifts().catch(() => undefined)}
+                className="rounded-xl border border-white/15 px-3 py-2 text-sm text-white/85 transition hover:bg-white/5"
+              >
+                Refresh
+              </button>
+            </div>
           </div>
 
           {!ready ? (

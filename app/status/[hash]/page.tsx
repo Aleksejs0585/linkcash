@@ -1,5 +1,6 @@
 import Link from "next/link";
 import GlassCard from "@/components/ui/glass-card";
+import BackButton from "@/components/ui/back-button";
 import { parseGiftHashInput } from "@/entities/gift/server/gift-validation";
 import { getPublicGiftStatus } from "@/entities/gift/server/gift-status-service";
 import { ARC_TESTNET, getArcExplorerTxUrl } from "@/utils";
@@ -58,6 +59,9 @@ export default async function GiftStatusPage({
 
       <div className="relative mx-auto w-full max-w-3xl space-y-5">
         <GlassCard className="space-y-4 p-6">
+          <div className="flex justify-start">
+            <BackButton fallbackHref="/" />
+          </div>
           <p className="text-xs uppercase tracking-[0.18em] text-white/60">
             Public gift status · {ARC_TESTNET.chainName}
           </p>

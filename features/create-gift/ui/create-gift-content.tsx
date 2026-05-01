@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { FaLink } from "react-icons/fa";
 import GlassCard from "@/components/ui/glass-card";
+import BackButton from "@/components/ui/back-button";
 import { ARC_TESTNET } from "@/utils";
 import { useCreateGift } from "../model/use-create-gift";
 
@@ -36,6 +37,9 @@ export function CreateGiftContent() {
       <div className="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,_rgba(139,92,246,0.2)_0%,_rgba(59,130,246,0.12)_35%,_transparent_70%)] blur-3xl" />
 
       <GlassCard className="relative max-w-[420px] space-y-7 p-8 text-center">
+        <div className="flex justify-start">
+          <BackButton fallbackHref="/" />
+        </div>
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}

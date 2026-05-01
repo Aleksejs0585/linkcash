@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import GlassCard from "../../components/ui/glass-card";
+import BackButton from "../../components/ui/back-button";
 
 type ClaimRuntimeConfig = {
   rateLimitEnabled: boolean;
@@ -180,15 +181,18 @@ export default function AdminPage() {
                 Claim Control Panel
               </h1>
             </div>
-            {authenticated && (
-              <button
-                type="button"
-                onClick={onLogout}
-                className="rounded-xl border border-white/15 px-3 py-2 text-sm text-white/80 transition hover:bg-white/5"
-              >
-                Logout
-              </button>
-            )}
+            <div className="flex items-center gap-2">
+              <BackButton fallbackHref="/" />
+              {authenticated && (
+                <button
+                  type="button"
+                  onClick={onLogout}
+                  className="rounded-xl border border-white/15 px-3 py-2 text-sm text-white/80 transition hover:bg-white/5"
+                >
+                  Logout
+                </button>
+              )}
+            </div>
           </div>
 
           {!authenticated ? (

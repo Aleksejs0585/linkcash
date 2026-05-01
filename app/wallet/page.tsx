@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Contract, JsonRpcProvider, formatUnits, isAddress } from "ethers";
 import { useExportWallet, usePrivy, useWallets } from "@privy-io/react-auth";
 import GlassCard from "../../components/ui/glass-card";
+import BackButton from "../../components/ui/back-button";
 import {
   ARC_TESTNET,
   getArcExplorerAddressUrl,
@@ -22,6 +23,9 @@ export default function WalletPage() {
     return (
       <main className="relative flex min-h-screen items-center justify-center px-5 py-10 text-white">
         <GlassCard className="w-full max-w-[420px] space-y-3 p-8 text-center">
+          <div className="flex justify-start">
+            <BackButton fallbackHref="/" />
+          </div>
           <h1 className="text-3xl font-semibold tracking-tight">My Wallet</h1>
           <p className="soft-text text-sm">
             Set <code>NEXT_PUBLIC_PRIVY_APP_ID</code> to enable wallet access.
@@ -118,6 +122,9 @@ function WalletContent() {
       <div className="pointer-events-none absolute left-1/2 top-1/2 h-[450px] w-[450px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,_rgba(139,92,246,0.2)_0%,_rgba(59,130,246,0.14)_35%,_transparent_70%)] blur-3xl" />
 
       <GlassCard className="relative w-full max-w-[420px] space-y-6 p-8">
+        <div className="flex justify-start">
+          <BackButton fallbackHref="/" />
+        </div>
         <div className="text-center">
           <p className="mx-auto inline-flex rounded-full border border-white/15 px-3 py-1 text-xs text-white/75">
             {ARC_TESTNET.chainName}

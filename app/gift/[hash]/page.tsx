@@ -6,6 +6,7 @@ import { usePrivy, useWallets } from "@privy-io/react-auth";
 import confetti from "canvas-confetti";
 import { AnimatePresence, motion } from "framer-motion";
 import GlassCard from "../../../components/ui/glass-card";
+import BackButton from "../../../components/ui/back-button";
 import { useGift } from "../../../hooks/useGift";
 import {
   ARC_TESTNET,
@@ -32,6 +33,9 @@ export default function GiftPage() {
     return (
       <main className="relative flex min-h-screen items-center justify-center px-5 py-10 text-white">
         <GlassCard className="max-w-[420px] p-8 text-center">
+          <div className="mb-4 flex justify-start">
+            <BackButton fallbackHref="/" />
+          </div>
           <h1 className="text-3xl font-semibold tracking-tight">
             You received a gift
           </h1>
@@ -188,8 +192,11 @@ function GiftClaimContent() {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: "easeOut" }}
-        className="w-full max-w-[420px]"
+        className="w-full max-w-[420px] space-y-3"
       >
+        <div className="flex justify-start">
+          <BackButton fallbackHref="/" />
+        </div>
         <GlassCard className="relative space-y-6 p-8 text-center">
           <div className="space-y-2">
             <p className="mx-auto inline-flex rounded-full border border-white/15 px-3 py-1 text-xs text-white/75">
