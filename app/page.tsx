@@ -248,37 +248,36 @@ export default async function HomePage() {
 
         <section>
           <GlassCard className="p-6">
-            <h2 className="text-xl font-semibold">FAQ: куда пришли деньги?</h2>
+            <h2 className="text-xl font-semibold">FAQ: where did the funds go?</h2>
             <div className="mt-4 space-y-3 text-sm text-white/85">
               <details className="rounded-xl border border-white/10 bg-black/20 p-3">
                 <summary className="cursor-pointer font-medium text-white">
-                  Я нажал Claim. Как проверить, что деньги реально дошли?
+                  I clicked Claim. How do I verify that funds arrived?
                 </summary>
                 <p className="soft-text mt-2">
-                  В экране claim показывается tx hash. Откройте его в explorer:
-                  там видно, что USDC отправлен на адрес вашего встроенного
-                  кошелька.
+                  The claim screen shows a tx hash. Open it in the explorer to
+                  verify USDC transfer to your embedded wallet address.
                 </p>
               </details>
 
               <details className="rounded-xl border border-white/10 bg-black/20 p-3">
                 <summary className="cursor-pointer font-medium text-white">
-                  Почему баланс не сразу обновился?
+                  Why did my balance not update immediately?
                 </summary>
                 <p className="soft-text mt-2">
-                  Иногда UI догоняет сеть с небольшой задержкой. Обновите
-                  страницу или откройте tx в explorer, там состояние финальное.
+                  The UI can lag behind network confirmation by a few seconds.
+                  Refresh the page or open the tx in explorer for final state.
                 </p>
               </details>
 
               <details className="rounded-xl border border-white/10 bg-black/20 p-3">
                 <summary className="cursor-pointer font-medium text-white">
-                  Деньги у вас или у LinkCash?
+                  Are the funds with me or with LinkCash?
                 </summary>
                 <p className="soft-text mt-2">
-                  После успешного claim средства находятся на адресе вашего
-                  кошелька. LinkCash только релеит транзакцию и не хранит ваши
-                  приватные ключи на лендинге.
+                  After successful claim, funds are held by your wallet address.
+                  LinkCash only relays the transaction and does not hold your
+                  wallet keys on the landing page.
                 </p>
               </details>
             </div>
