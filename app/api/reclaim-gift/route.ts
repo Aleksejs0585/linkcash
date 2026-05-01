@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { Contract, JsonRpcProvider, Wallet, isHexString } from "ethers";
-import { ARC_TESTNET } from "../../../utils";
+import { Contract, Wallet, isHexString } from "ethers";
+import { createArcProviderWithContractCheck } from "../../../lib/server/arc-chain";
+import { getArcRelayerEnv } from "../../../lib/server/env";
 import { senderGiftStore } from "../../../lib/server/sender-gift-store";
 
 type ReclaimGiftBody = {
@@ -33,36 +34,11 @@ export async function POST(request: Request) {
       );
     }
 
-    const rpcUrl = process.env.RPC_URL;
-    const privateKey = process.env.PRIVATE_KEY;
-    const contractAddress = process.env.CONTRACT_ADDRESS;
-
-    if (!rpcUrl || !privateKey || !contractAddress) {
-      return NextResponse.json(
-        { error: "Missing RPC_URL, PRIVATE_KEY or CONTRACT_ADDRESS." },
-        { status: 500 }
-      );
-    }
-
-    const provider = new JsonRpcProvider(rpcUrl);
-    const network = await provider.getNetwork();
-    if (Number(network.chainId) !== ARC_TESTNET.chainId) {
-      return NextResponse.json(
-        { error: `RPC_URL must point to Arc Testnet (${ARC_TESTNET.chainId}).` },
-        { status: 500 }
-      );
-    }
-
-    const contractCode = await provider.getCode(contractAddress);
-    if (!contractCode || contractCode === "0x") {
-      return NextResponse.json(
-        {
-          error:
-            "CONTRACT_ADDRESS is not a deployed contract on the configured network.",
-        },
-        { status: 500 }
-      );
-    }
+    const { rpcUrl, privateKey, contractAddress } = getArcRelayerEnv();
+    const provider = await createArcProviderWithContractCheck(
+      rpcUrl,
+      contractAddress
+    );
 
     const relayer = new Wallet(privateKey, provider);
     const gift = new Contract(contractAddress, GIFT_ABI, relayer);

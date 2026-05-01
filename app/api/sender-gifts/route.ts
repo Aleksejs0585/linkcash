@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { Contract, JsonRpcProvider, formatUnits, isAddress } from "ethers";
-import { ARC_TESTNET } from "../../../utils";
+import { Contract, formatUnits, isAddress } from "ethers";
+import { createArcProviderWithContractCheck } from "../../../lib/server/arc-chain";
+import { getArcReadEnv } from "../../../lib/server/env";
 import { senderGiftStore } from "../../../lib/server/sender-gift-store";
 
 const GIFT_ABI = [
@@ -34,14 +35,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const rpcUrl = process.env.RPC_URL;
-    const contractAddress = process.env.CONTRACT_ADDRESS;
-    if (!rpcUrl || !contractAddress) {
-      return NextResponse.json(
-        { ok: false, error: "Missing RPC_URL or CONTRACT_ADDRESS." },
-        { status: 500 }
-      );
-    }
+    const { rpcUrl, contractAddress } = getArcReadEnv();
 
     const normalizedSender = senderAddress.toLowerCase();
     const events = await senderGiftStore.readRecent(1000);
@@ -77,14 +71,10 @@ export async function GET(request: Request) {
       }
     }
 
-    const provider = new JsonRpcProvider(rpcUrl);
-    const network = await provider.getNetwork();
-    if (Number(network.chainId) !== ARC_TESTNET.chainId) {
-      return NextResponse.json(
-        { ok: false, error: `RPC_URL must point to Arc Testnet (${ARC_TESTNET.chainId}).` },
-        { status: 500 }
-      );
-    }
+    const provider = await createArcProviderWithContractCheck(
+      rpcUrl,
+      contractAddress
+    );
 
     const contract = new Contract(contractAddress, GIFT_ABI, provider);
     const gifts = await Promise.all(

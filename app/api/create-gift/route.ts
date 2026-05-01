@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import {
   Contract,
-  JsonRpcProvider,
   Wallet,
   isAddress,
   isHexString,
   parseUnits,
 } from "ethers";
-import { ARC_TESTNET } from "../../../utils";
+import { createArcProviderWithContractCheck } from "../../../lib/server/arc-chain";
+import { getArcRelayerEnv } from "../../../lib/server/env";
 import { senderGiftStore } from "../../../lib/server/sender-gift-store";
 
 type CreateGiftBody = {
@@ -75,38 +75,11 @@ export async function POST(request: Request) {
       );
     }
 
-    const rpcUrl = process.env.RPC_URL;
-    const privateKey = process.env.PRIVATE_KEY;
-    const contractAddress = process.env.CONTRACT_ADDRESS;
-    const usdcAddress =
-      process.env.USDC_CONTRACT_ADDRESS || ARC_TESTNET.usdcErc20Address;
-
-    if (!rpcUrl || !privateKey || !contractAddress) {
-      return NextResponse.json(
-        { error: "Missing RPC_URL, PRIVATE_KEY or CONTRACT_ADDRESS." },
-        { status: 500 }
-      );
-    }
-
-    const provider = new JsonRpcProvider(rpcUrl);
-    const network = await provider.getNetwork();
-    if (Number(network.chainId) !== ARC_TESTNET.chainId) {
-      return NextResponse.json(
-        { error: `RPC_URL must point to Arc Testnet (${ARC_TESTNET.chainId}).` },
-        { status: 500 }
-      );
-    }
-
-    const contractCode = await provider.getCode(contractAddress);
-    if (!contractCode || contractCode === "0x") {
-      return NextResponse.json(
-        {
-          error:
-            "CONTRACT_ADDRESS is not a deployed contract on the configured network.",
-        },
-        { status: 500 }
-      );
-    }
+    const { rpcUrl, privateKey, contractAddress, usdcAddress } = getArcRelayerEnv();
+    const provider = await createArcProviderWithContractCheck(
+      rpcUrl,
+      contractAddress
+    );
 
     const relayer = new Wallet(privateKey, provider);
     const usdc = new Contract(usdcAddress, ERC20_ABI, relayer);

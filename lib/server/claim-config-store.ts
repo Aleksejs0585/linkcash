@@ -1,13 +1,13 @@
+import { getClaimRateLimitPerMinute } from "./env";
+
 type ClaimRuntimeConfig = {
   rateLimitEnabled: boolean;
   rateLimitPerMinute: number;
 };
 
-const parsedLimit = Number(process.env.CLAIM_RATE_LIMIT_PER_MINUTE ?? "12");
 const defaultConfig: ClaimRuntimeConfig = {
   rateLimitEnabled: true,
-  rateLimitPerMinute:
-    Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : 12,
+  rateLimitPerMinute: getClaimRateLimitPerMinute(12),
 };
 
 const globalState = globalThis as typeof globalThis & {

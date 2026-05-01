@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import {
   Contract,
-  JsonRpcProvider,
   Wallet,
   isAddress,
   isHexString,
   keccak256,
 } from "ethers";
-import { ARC_TESTNET, buildClaimIdempotencyKey } from "../../../utils";
+import { buildClaimIdempotencyKey } from "../../../utils";
+import { createArcProviderWithContractCheck } from "../../../lib/server/arc-chain";
+import { getArcRelayerEnv } from "../../../lib/server/env";
 import { claimAuditStore } from "../../../lib/server/claim-audit-store";
 import { getClaimRuntimeConfig } from "../../../lib/server/claim-config-store";
 
@@ -224,18 +225,18 @@ export async function POST(request: Request) {
       );
     }
 
-    const rpcUrl = process.env.RPC_URL;
-    const privateKey = process.env.PRIVATE_KEY;
-    const contractAddress = process.env.CONTRACT_ADDRESS;
-    const usdcAddress =
-      process.env.USDC_CONTRACT_ADDRESS || ARC_TESTNET.usdcErc20Address;
-
-    if (!rpcUrl || !privateKey || !contractAddress) {
-      return jsonError(
-        "CONFIG_ERROR",
-        "Missing RPC_URL, PRIVATE_KEY or CONTRACT_ADDRESS.",
-        500
-      );
+    let rpcUrl: string;
+    let privateKey: string;
+    let contractAddress: string;
+    let usdcAddress: string;
+    try {
+      ({ rpcUrl, privateKey, contractAddress, usdcAddress } = getArcRelayerEnv());
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Claim relayer environment is not configured.";
+      return jsonError("CONFIG_ERROR", message, 500, false);
     }
 
     const explicitKey = request.headers.get("x-idempotency-key")?.trim();
@@ -292,26 +293,16 @@ export async function POST(request: Request) {
       expiresAt: Date.now() + IDEMPOTENCY_PROCESSING_TTL_MS,
     });
 
-    const provider = new JsonRpcProvider(rpcUrl);
-    const network = await provider.getNetwork();
-    if (Number(network.chainId) !== ARC_TESTNET.chainId) {
+    let provider: Awaited<ReturnType<typeof createArcProviderWithContractCheck>>;
+    try {
+      provider = await createArcProviderWithContractCheck(rpcUrl, contractAddress);
+    } catch (error) {
       idempotencyStore.delete(idempotencyKey);
-      return jsonError(
-        "CONFIG_ERROR",
-        `RPC_URL must point to Arc Testnet (${ARC_TESTNET.chainId}).`,
-        500
-      );
-    }
-
-    const contractCode = await provider.getCode(contractAddress);
-    if (!contractCode || contractCode === "0x") {
-      idempotencyStore.delete(idempotencyKey);
-      return jsonError(
-        "CONFIG_ERROR",
-        "CONTRACT_ADDRESS is not a deployed contract on the configured network.",
-        500,
-        false
-      );
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Invalid Arc network or contract configuration.";
+      return jsonError("CONFIG_ERROR", message, 500, false);
     }
 
     const relayer = new Wallet(privateKey, provider);

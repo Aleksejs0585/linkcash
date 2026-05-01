@@ -174,16 +174,12 @@ function CreateGiftContent() {
       icon: FaTelegramPlane,
       iconColor: "#229ED9",
     },
-    ...(messengerShareHref
-      ? [
-          {
-            label: "Messenger",
-            href: messengerShareHref,
-            icon: FaFacebookMessenger,
-            iconColor: "#1877F2",
-          },
-        ]
-      : []),
+    {
+      label: "Messenger",
+      href: messengerShareHref,
+      icon: FaFacebookMessenger,
+      iconColor: "#1877F2",
+    },
     {
       label: "Gmail",
       href: `mailto:?subject=${encodeURIComponent(
@@ -199,6 +195,22 @@ function CreateGiftContent() {
       iconColor: "#FFFC00",
     },
   ];
+
+  const onShareClick = (label: string, href: string | null) => {
+    if (!href) {
+      if (label === "Messenger") {
+        setStatus(
+          "Messenger share requires NEXT_PUBLIC_FACEBOOK_APP_ID. Add it in Vercel and redeploy."
+        );
+        return;
+      }
+
+      setStatus(`${label} share is temporarily unavailable.`);
+      return;
+    }
+
+    window.open(href, "_blank", "noopener,noreferrer");
+  };
 
   return (
     <main className="relative flex min-h-screen items-center justify-center px-5 py-10 text-white">
@@ -318,20 +330,23 @@ function CreateGiftContent() {
               </button>
               <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {shareLinks.map((item) => (
-                  <a
+                  <button
                     key={item.label}
-                    href={item.href}
-                    target="_blank"
-                    rel="noreferrer"
+                    type="button"
+                    onClick={() => onShareClick(item.label, item.href)}
                     aria-label={item.label}
-                    title={item.label}
+                    title={
+                      item.href
+                        ? item.label
+                        : `${item.label} (requires configuration)`
+                    }
                     className="inline-flex h-10 items-center justify-center rounded-xl border border-white/15 px-3 py-2 text-center text-xs font-medium text-white/90 transition hover:border-white/30 hover:bg-white/5"
                   >
                     <item.icon
                       className="h-5 w-5 shrink-0"
                       style={{ color: item.iconColor }}
                     />
-                  </a>
+                  </button>
                 ))}
               </div>
               <button
