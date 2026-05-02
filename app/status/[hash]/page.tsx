@@ -1,8 +1,11 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useParams } from "next/navigation";
 import GlassCard from "@/components/ui/glass-card";
 import BackButton from "@/components/ui/back-button";
-import { parseGiftHashInput } from "@/entities/gift/server/gift-validation";
-import { getPublicGiftStatus } from "@/entities/gift/server/gift-status-service";
 import { ARC_TESTNET, getArcExplorerTxUrl } from "@/utils";
+import { trackEvent } from "@/lib/client/analytics";
 
 const statusStyles = {
   active: "text-emerald-300 border-emerald-300/30 bg-emerald-400/10",
@@ -27,30 +30,101 @@ function statusLabel(status: keyof typeof statusStyles) {
   }
 }
 
-export default async function GiftStatusPage({
-  params,
-}: {
-  params: Promise<{ hash: string }>;
-}) {
-  const { hash } = await params;
+type PublicStatusResponse = {
+  ok: boolean;
+  paymentIdHash: string;
+  status: keyof typeof statusStyles;
+  whereFunds: string;
+  amountUsdc?: string;
+  expiresAt?: number;
+  error?: string;
+  tx: {
+    fundingTxHash?: string;
+    claimTxHash?: string;
+    reclaimTxHash?: string;
+  };
+  timeline: Array<{
+    id: string;
+    title: string;
+    description: string;
+    state: "completed" | "pending" | "unavailable";
+    timestamp?: string;
+    txHash?: string;
+    explorerUrl?: string;
+  }>;
+};
 
-  let normalizedHash: string | null = null;
-  try {
-    normalizedHash = parseGiftHashInput(hash).hash;
-  } catch {}
+export default function GiftStatusPage() {
+  const params = useParams<{ hash: string }>();
+  const hash = typeof params?.hash === "string" ? params.hash : "";
+  const statusOpenTrackedRef = useRef(false);
 
-  const result = normalizedHash
-    ? await getPublicGiftStatus(normalizedHash)
-    : {
-        ok: false,
-        paymentIdHash: hash,
-        status: "not_found" as const,
-        whereFunds: "Invalid gift hash format.",
-        tx: {},
-        timeline: [],
-        error: "Gift hash is not a valid bytes32 value.",
-      };
-  const visibleHash = normalizedHash ?? hash;
+  const [result, setResult] = useState<PublicStatusResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+
+  const isPollingStatus = useMemo(
+    () => result?.status === "active" || result?.status === "expired",
+    [result?.status]
+  );
+
+  const loadStatus = useCallback(async () => {
+    if (!hash) return;
+
+    try {
+      const response = await fetch(`/api/status/${hash}`, { method: "GET" });
+      const data = (await response.json()) as PublicStatusResponse;
+      if (!data) return;
+      setResult(data);
+      setLastUpdated(new Date().toISOString());
+
+      if (
+        !statusOpenTrackedRef.current &&
+        data.ok &&
+        (data.status === "active" || data.status === "expired" || data.status === "claimed" || data.status === "reclaimed")
+      ) {
+        statusOpenTrackedRef.current = true;
+        trackEvent({
+          event: "status_open",
+          path: `/status/${hash}`,
+          paymentIdHash: data.paymentIdHash,
+          status: data.status,
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [hash]);
+
+  useEffect(() => {
+    void loadStatus();
+  }, [loadStatus]);
+
+  useEffect(() => {
+    if (!isPollingStatus) return;
+    const intervalId = window.setInterval(() => {
+      void loadStatus();
+    }, 15_000);
+    return () => window.clearInterval(intervalId);
+  }, [isPollingStatus, loadStatus]);
+
+  const onCopyStatusLink = async () => {
+    if (!hash) return;
+    await navigator.clipboard.writeText(`${window.location.origin}/status/${hash}`);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1200);
+  };
+
+  const visibleHash = hash || "unknown";
+  const show = result ?? {
+    ok: false,
+    paymentIdHash: visibleHash,
+    status: "not_found" as const,
+    whereFunds: "Loading status...",
+    tx: {},
+    timeline: [],
+  };
 
   return (
     <main className="relative min-h-screen px-4 py-8 text-white sm:px-5 sm:py-10">
@@ -64,48 +138,68 @@ export default async function GiftStatusPage({
           <p className="text-xs uppercase tracking-[0.18em] text-white/60">
             Public gift status · {ARC_TESTNET.chainName}
           </p>
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Where did the funds go?</h1>
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            Where are the funds now?
+          </h1>
 
           <div className="flex flex-wrap items-center gap-3">
             <span
-              className={`rounded-full border px-3 py-1 text-xs font-medium uppercase tracking-[0.12em] ${statusStyles[result.status]}`}
+              className={`rounded-full border px-3 py-1 text-xs font-medium uppercase tracking-[0.12em] ${statusStyles[show.status]}`}
             >
-              {statusLabel(result.status)}
+              {statusLabel(show.status)}
             </span>
             <p className="text-xs text-white/60 break-all">hash: {visibleHash}</p>
           </div>
 
-          <p className="soft-text text-sm">{result.whereFunds}</p>
+          <p className="soft-text text-sm">{loading ? "Loading status..." : show.whereFunds}</p>
 
-          {result.ok && (
+          {show.ok && (
             <div className="grid gap-2 text-sm text-white/85 sm:grid-cols-2">
               <p>
                 <span className="text-white/60">Amount:</span>{" "}
-                {result.amountUsdc ? `${result.amountUsdc} USDC` : "n/a"}
+                {show.amountUsdc ? `${show.amountUsdc} USDC` : "n/a"}
               </p>
               <p>
                 <span className="text-white/60">Expires:</span>{" "}
-                {result.expiresAt
-                  ? new Date(result.expiresAt * 1000).toLocaleString()
+                {show.expiresAt
+                  ? new Date(show.expiresAt * 1000).toLocaleString()
                   : "n/a"}
               </p>
             </div>
           )}
 
-          {!result.ok && result.error && (
-            <p className="text-sm text-rose-300">{result.error}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={onCopyStatusLink}
+              className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-white/85 transition hover:bg-white/5"
+            >
+              {copied ? "Copied" : "Copy status link"}
+            </button>
+            {lastUpdated && (
+              <p className="text-xs text-white/55">
+                Last updated: {new Date(lastUpdated).toLocaleTimeString()}
+              </p>
+            )}
+            {isPollingStatus && (
+              <p className="text-xs text-white/45">Auto-refresh every 15 seconds.</p>
+            )}
+          </div>
+
+          {!show.ok && show.error && (
+            <p className="text-sm text-rose-300">{show.error}</p>
           )}
         </GlassCard>
 
         <GlassCard className="space-y-3 p-4 sm:p-6">
           <h2 className="text-lg font-semibold">Status timeline</h2>
-          {result.timeline.length === 0 ? (
+          {show.timeline.length === 0 ? (
             <p className="text-sm text-white/70">
               Timeline is unavailable for this hash.
             </p>
           ) : (
             <div className="space-y-2">
-              {result.timeline.map((step) => (
+              {show.timeline.map((step) => (
                 <div
                   key={step.id}
                   className="rounded-xl border border-white/10 bg-black/25 p-3"
@@ -141,9 +235,9 @@ export default async function GiftStatusPage({
         <GlassCard className="space-y-3 p-4 sm:p-6">
           <h2 className="text-lg font-semibold">Explorer links</h2>
           <div className="flex flex-wrap gap-2">
-            {result.tx.fundingTxHash && (
+            {show.tx.fundingTxHash && (
               <a
-                href={getArcExplorerTxUrl(result.tx.fundingTxHash)}
+                href={getArcExplorerTxUrl(show.tx.fundingTxHash)}
                 target="_blank"
                 rel="noreferrer"
                 className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-blue-300 transition hover:bg-white/5"
@@ -151,9 +245,9 @@ export default async function GiftStatusPage({
                 Funding tx
               </a>
             )}
-            {result.tx.claimTxHash && (
+            {show.tx.claimTxHash && (
               <a
-                href={getArcExplorerTxUrl(result.tx.claimTxHash)}
+                href={getArcExplorerTxUrl(show.tx.claimTxHash)}
                 target="_blank"
                 rel="noreferrer"
                 className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-blue-300 transition hover:bg-white/5"
@@ -161,9 +255,9 @@ export default async function GiftStatusPage({
                 Claim tx
               </a>
             )}
-            {result.tx.reclaimTxHash && (
+            {show.tx.reclaimTxHash && (
               <a
-                href={getArcExplorerTxUrl(result.tx.reclaimTxHash)}
+                href={getArcExplorerTxUrl(show.tx.reclaimTxHash)}
                 target="_blank"
                 rel="noreferrer"
                 className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-violet-300 transition hover:bg-white/5"
@@ -171,9 +265,9 @@ export default async function GiftStatusPage({
                 Reclaim tx
               </a>
             )}
-            {!result.tx.fundingTxHash &&
-              !result.tx.claimTxHash &&
-              !result.tx.reclaimTxHash && (
+            {!show.tx.fundingTxHash &&
+              !show.tx.claimTxHash &&
+              !show.tx.reclaimTxHash && (
                 <p className="text-sm text-white/65">
                   No transaction links available yet.
                 </p>

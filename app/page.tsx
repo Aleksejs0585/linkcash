@@ -90,7 +90,7 @@ export default async function HomePage() {
               href="/create"
               className="accent-gradient inline-flex rounded-2xl px-6 py-3 text-base font-semibold shadow-[0_14px_36px_rgba(76,85,255,0.4)] transition hover:scale-[1.02]"
             >
-              Create a gift
+              Create gift
             </Link>
             <Link
               href="/wallet"
@@ -102,7 +102,7 @@ export default async function HomePage() {
               href="/gifts"
               className="inline-flex rounded-2xl border border-white/15 px-6 py-3 text-base font-medium text-white/85 transition hover:bg-white/5"
             >
-              Sender dashboard
+              View sender dashboard
             </Link>
           </div>
         </section>
@@ -179,7 +179,7 @@ export default async function HomePage() {
                 href="/create"
                 className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-white/85 transition hover:bg-white/5"
               >
-                Try create flow
+                Open create flow
               </Link>
               <Link
                 href="/gifts"

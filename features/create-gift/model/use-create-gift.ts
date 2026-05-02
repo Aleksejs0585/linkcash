@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import {
   generateHash,
@@ -9,6 +9,7 @@ import {
   generateStatusLink,
 } from "@/utils";
 import { buildShareLinks } from "./share-links";
+import { trackEvent } from "@/lib/client/analytics";
 
 type CreateGiftSuccess = {
   ok: true;
@@ -53,6 +54,10 @@ export function useCreateGift() {
     () => (paymentIdHash ? generateStatusLink(paymentIdHash) : ""),
     [paymentIdHash]
   );
+
+  useEffect(() => {
+    trackEvent({ event: "create_open", path: "/create" });
+  }, []);
 
   const onCreate = async () => {
     if (!ready) return;
@@ -99,6 +104,12 @@ export function useCreateGift() {
           data.expiresAt * 1000
         ).toLocaleString()}. Tx: ${data.txHash}`
       );
+      trackEvent({
+        event: "gift_funded",
+        path: "/create",
+        paymentIdHash: hash,
+        txHash: data.txHash,
+      });
     } catch (error) {
       setStatus(
         error instanceof Error ? error.message : "Failed to create and fund gift."

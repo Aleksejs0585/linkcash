@@ -8,6 +8,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import GlassCard from "../../../components/ui/glass-card";
 import BackButton from "../../../components/ui/back-button";
 import { useGift } from "../../../hooks/useGift";
+import { trackEvent } from "../../../lib/client/analytics";
 import {
   ARC_TESTNET,
   getPaymentIdHashFromPath,
@@ -159,6 +160,12 @@ function GiftClaimContent() {
 
     const hash = await claimGift(receiverAddress);
     if (hash) {
+      trackEvent({
+        event: "claim_success",
+        path: window.location.pathname,
+        paymentIdHash: paymentIdHash ?? undefined,
+        txHash: hash,
+      });
       setSuccessTxHash(hash);
       setStatus("Success! Finalizing onchain receipt...");
 
@@ -209,7 +216,7 @@ function GiftClaimContent() {
               {giftLoading ? "Loading..." : amountLabel}
             </h1>
             <p className="soft-text text-sm">
-              Someone sent you your first crypto
+              Someone sent you crypto
             </p>
             {authenticated && (
               <p className="mt-2 break-all text-xs text-white/60">
@@ -319,7 +326,7 @@ function GiftClaimContent() {
                   href="/create"
                   className="inline-flex w-full items-center justify-center rounded-2xl border border-white/15 px-6 py-3 text-sm font-medium text-white/85 transition hover:bg-white/5"
                 >
-                  Send your first gift
+                  Create gift
                 </Link>
               </div>
             </motion.div>

@@ -42,7 +42,7 @@ export default function SenderDashboardPage() {
           </div>
           <h1 className="text-3xl font-semibold tracking-tight">Sender Dashboard</h1>
           <p className="soft-text text-sm">
-            Set <code>NEXT_PUBLIC_PRIVY_APP_ID</code> to view sender gifts.
+            Set <code>NEXT_PUBLIC_PRIVY_APP_ID</code> to view sender dashboard.
           </p>
         </GlassCard>
       </main>
@@ -154,7 +154,7 @@ function SenderDashboardContent() {
                 Sender Dashboard
               </h1>
               <p className="soft-text mt-2 text-sm">
-                Track all funded gifts and reclaim expired ones.
+                Track funded gifts and reclaim expired gifts.
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -203,7 +203,7 @@ function SenderDashboardContent() {
             <p className="text-sm text-white/65">Loading gifts...</p>
           ) : gifts.length === 0 ? (
             <p className="text-sm text-white/60">
-              No gifts yet. Create your first one from the create page.
+              No gifts yet. Create your first gift from the create page.
             </p>
           ) : (
             <div className="space-y-2">

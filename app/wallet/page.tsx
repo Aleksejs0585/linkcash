@@ -25,7 +25,7 @@ export default function WalletPage() {
           <div className="flex justify-start">
             <BackButton fallbackHref="/" />
           </div>
-          <h1 className="text-3xl font-semibold tracking-tight">My Wallet</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">My wallet</h1>
           <p className="soft-text text-sm">
             Set <code>NEXT_PUBLIC_PRIVY_APP_ID</code> to enable wallet access.
           </p>
@@ -129,7 +129,7 @@ function WalletContent() {
             {ARC_TESTNET.chainName}
           </p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight">
-            My Wallet
+            My wallet
           </h1>
           <p className="soft-text mt-2 text-sm">
             View your address, USDC balance, and manage access.
