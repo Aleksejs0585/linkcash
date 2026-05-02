@@ -4,7 +4,8 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { FaLink } from "react-icons/fa";
 import GlassCard from "@/components/ui/glass-card";
-import BackButton from "@/components/ui/back-button";
+import MainMenu from "@/components/ui/main-menu";
+import OAuthNavHint from "@/components/ui/oauth-nav-hint";
 import { ARC_TESTNET } from "@/utils";
 import { useCreateGift } from "../model/use-create-gift";
 
@@ -39,7 +40,7 @@ export function CreateGiftContent() {
 
       <GlassCard className="relative max-w-[460px] space-y-6 p-5 text-center sm:p-8">
         <div className="flex justify-start">
-          <BackButton fallbackHref="/" />
+          <MainMenu />
         </div>
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -62,15 +63,18 @@ export function CreateGiftContent() {
         {!ready ? (
           <p className="text-sm text-white/70">Loading wallet...</p>
         ) : !authenticated ? (
-          <motion.button
-            type="button"
-            onClick={login}
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.98 }}
-            className="accent-gradient w-full rounded-2xl px-5 py-3.5 text-base font-semibold shadow-[0_14px_36px_rgba(76,85,255,0.38)] transition sm:px-6 sm:py-4 sm:text-lg"
-          >
-            Sign in to create gift
-          </motion.button>
+          <div className="space-y-2">
+            <motion.button
+              type="button"
+              onClick={login}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.98 }}
+              className="accent-gradient w-full rounded-2xl px-5 py-3.5 text-base font-semibold shadow-[0_14px_36px_rgba(76,85,255,0.38)] transition sm:px-6 sm:py-4 sm:text-lg"
+            >
+              Sign in to create gift
+            </motion.button>
+            <OAuthNavHint />
+          </div>
         ) : (
           <motion.button
             type="button"

@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 import GlassCard from "../../components/ui/glass-card";
-import BackButton from "../../components/ui/back-button";
+import MainMenu from "../../components/ui/main-menu";
 
 type ClaimRuntimeConfig = {
   rateLimitEnabled: boolean;
@@ -227,7 +227,7 @@ export default function AdminPage() {
               </h1>
             </div>
             <div className="flex items-center gap-2">
-              <BackButton fallbackHref="/" />
+              <MainMenu />
               {authenticated && (
                 <button
                   type="button"

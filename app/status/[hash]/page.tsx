@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import GlassCard from "@/components/ui/glass-card";
-import BackButton from "@/components/ui/back-button";
+import MainMenu from "@/components/ui/main-menu";
 import { ARC_TESTNET, getArcExplorerTxUrl } from "@/utils";
 import { trackEvent } from "@/lib/client/analytics";
 
@@ -140,7 +140,7 @@ export default function GiftStatusPage() {
       <div className="relative mx-auto w-full max-w-3xl space-y-4 sm:space-y-5">
         <GlassCard className="space-y-4 p-4 sm:p-6">
           <div className="flex justify-start">
-            <BackButton fallbackHref="/" />
+            <MainMenu />
           </div>
           <p className="text-xs uppercase tracking-[0.18em] text-white/60">
             Public gift status · {ARC_TESTNET.chainName}

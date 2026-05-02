@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { PrivyProvider } from "@privy-io/react-auth";
+import { PrivyOAuthLocationPatch } from "@/lib/client/privy-oauth-location-patch";
 
 type ProvidersProps = {
   children: ReactNode;
@@ -27,6 +28,7 @@ export default function Providers({ children }: ProvidersProps) {
         },
       }}
     >
+      <PrivyOAuthLocationPatch />
       {children}
     </PrivyProvider>
   );

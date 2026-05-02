@@ -1,7 +1,7 @@
 "use client";
 
 import GlassCard from "@/components/ui/glass-card";
-import BackButton from "@/components/ui/back-button";
+import MainMenu from "@/components/ui/main-menu";
 import { CreateGiftContent } from "./create-gift-content";
 
 export function CreateGiftScreen() {
@@ -11,7 +11,7 @@ export function CreateGiftScreen() {
       <main className="relative flex min-h-screen items-center justify-center px-5 py-10 text-white">
         <GlassCard className="w-full max-w-[420px] space-y-3 p-8 text-center">
           <div className="flex justify-start">
-            <BackButton fallbackHref="/" />
+            <MainMenu />
           </div>
           <h1 className="text-3xl font-semibold tracking-tight">Create Gift</h1>
           <p className="soft-text text-sm">

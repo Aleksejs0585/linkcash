@@ -6,7 +6,8 @@ import { usePrivy, useWallets } from "@privy-io/react-auth";
 import confetti from "canvas-confetti";
 import { AnimatePresence, motion } from "framer-motion";
 import GlassCard from "../../../components/ui/glass-card";
-import BackButton from "../../../components/ui/back-button";
+import MainMenu from "../../../components/ui/main-menu";
+import OAuthNavHint from "../../../components/ui/oauth-nav-hint";
 import { useGift } from "../../../hooks/useGift";
 import { trackEvent } from "../../../lib/client/analytics";
 import { getOrAssignVariant } from "../../../lib/client/experiments";
@@ -36,7 +37,7 @@ export default function GiftPage() {
       <main className="relative flex min-h-screen items-center justify-center px-4 py-8 text-white sm:px-5 sm:py-10">
         <GlassCard className="max-w-[420px] p-6 text-center sm:p-8">
           <div className="mb-4 flex justify-start">
-            <BackButton fallbackHref="/" />
+            <MainMenu />
           </div>
           <h1 className="text-3xl font-semibold tracking-tight">
             You received a gift
@@ -221,7 +222,7 @@ function GiftClaimContent() {
         className="w-full max-w-[420px] space-y-3"
       >
         <div className="flex justify-start">
-          <BackButton fallbackHref="/" />
+          <MainMenu />
         </div>
         <GlassCard className="relative space-y-5 p-6 text-center sm:space-y-6 sm:p-8">
           <div className="space-y-2">
@@ -268,6 +269,7 @@ function GiftClaimContent() {
                     ? "Claim to my wallet"
                     : "Unwrap your gift"}
               </motion.button>
+              {!authenticated && <OAuthNavHint />}
 
               {authenticated && (
                 <button

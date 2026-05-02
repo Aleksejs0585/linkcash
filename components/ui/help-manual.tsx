@@ -86,6 +86,18 @@ export default function HelpManual() {
                   open <code>/wallet</code> to see your embedded wallet address,
                   USDC balance, explorer link, and wallet export option.
                 </p>
+                <p>
+                  <span className="font-semibold text-white">
+                    7) X (Twitter) sign-in and navigation:
+                  </span>{" "}
+                  when the browser navigates to <code>twitter.com</code> for
+                  OAuth, the system Back button only moves within X&apos;s
+                  history. LinkCash cannot override that. Use{" "}
+                  <span className="font-medium text-white/90">Cancel</span> on
+                  X, switch back to your LinkCash tab, or complete sign-in. Use
+                  the in-app <span className="font-medium text-white/90">Menu</span>{" "}
+                  for Home or the product site link.
+                </p>
               </div>
             </motion.aside>
           </>

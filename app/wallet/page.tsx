@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Contract, JsonRpcProvider, formatUnits, isAddress } from "ethers";
 import { useExportWallet, usePrivy, useWallets } from "@privy-io/react-auth";
 import GlassCard from "../../components/ui/glass-card";
-import BackButton from "../../components/ui/back-button";
+import MainMenu from "../../components/ui/main-menu";
+import OAuthNavHint from "../../components/ui/oauth-nav-hint";
 import { trackEvent } from "../../lib/client/analytics";
 import {
   ARC_TESTNET,
@@ -24,7 +25,7 @@ export default function WalletPage() {
       <main className="relative flex min-h-screen items-center justify-center px-5 py-10 text-white">
         <GlassCard className="w-full max-w-[420px] space-y-3 p-8 text-center">
           <div className="flex justify-start">
-            <BackButton fallbackHref="/" />
+            <MainMenu />
           </div>
           <h1 className="text-3xl font-semibold tracking-tight">My wallet</h1>
           <p className="soft-text text-sm">
@@ -127,7 +128,7 @@ function WalletContent() {
 
       <GlassCard className="relative w-full max-w-[420px] space-y-6 p-8">
         <div className="flex justify-start">
-          <BackButton fallbackHref="/" />
+          <MainMenu />
         </div>
         <div className="text-center">
           <p className="mx-auto inline-flex rounded-full border border-white/15 px-3 py-1 text-xs text-white/75">
@@ -144,13 +145,16 @@ function WalletContent() {
         {!ready ? (
           <p className="text-center text-sm text-white/70">Loading wallet...</p>
         ) : !authenticated ? (
-          <button
-            type="button"
-            onClick={login}
-            className="accent-gradient w-full rounded-2xl px-6 py-3.5 text-base font-semibold"
-          >
-            Sign in to view wallet
-          </button>
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={login}
+              className="accent-gradient w-full rounded-2xl px-6 py-3.5 text-base font-semibold"
+            >
+              Sign in to view wallet
+            </button>
+            <OAuthNavHint />
+          </div>
         ) : !walletAddress ? (
           <p className="rounded-xl border border-white/10 bg-black/30 p-3 text-sm text-amber-300">
             No embedded wallet found yet. Sign out and sign in again to trigger

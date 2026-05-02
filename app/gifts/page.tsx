@@ -5,7 +5,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { isAddress } from "ethers";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import GlassCard from "../../components/ui/glass-card";
-import BackButton from "../../components/ui/back-button";
+import MainMenu from "../../components/ui/main-menu";
+import OAuthNavHint from "../../components/ui/oauth-nav-hint";
 import { ARC_TESTNET, getArcExplorerTxUrl } from "../../utils";
 
 type SenderGiftStatus = "active" | "expired" | "claimed" | "reclaimed";
@@ -38,7 +39,7 @@ export default function SenderDashboardPage() {
       <main className="relative flex min-h-screen items-center justify-center px-5 py-10 text-white">
         <GlassCard className="w-full max-w-[520px] space-y-3 p-8 text-center">
           <div className="flex justify-start">
-            <BackButton fallbackHref="/" />
+            <MainMenu />
           </div>
           <h1 className="text-3xl font-semibold tracking-tight">Sender Dashboard</h1>
           <p className="soft-text text-sm">
@@ -158,7 +159,7 @@ function SenderDashboardContent() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <BackButton fallbackHref="/" />
+              <MainMenu />
               <button
                 type="button"
                 onClick={() => loadGifts().catch(() => undefined)}
@@ -172,13 +173,16 @@ function SenderDashboardContent() {
           {!ready ? (
             <p className="text-sm text-white/70">Loading wallet...</p>
           ) : !authenticated ? (
-            <button
-              type="button"
-              onClick={login}
-              className="accent-gradient w-full rounded-xl px-4 py-3 text-sm font-semibold"
-            >
-              Sign in to view sender dashboard
-            </button>
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={login}
+                className="accent-gradient w-full rounded-xl px-4 py-3 text-sm font-semibold"
+              >
+                Sign in to view sender dashboard
+              </button>
+              <OAuthNavHint className="text-left text-xs leading-relaxed text-white/55" />
+            </div>
           ) : !senderWalletAddress ? (
             <p className="rounded-xl border border-white/10 bg-black/30 p-3 text-sm text-amber-300">
               No embedded wallet found for this account.
