@@ -11,6 +11,9 @@ const analyticsSchema = z
     paymentIdHash: z.string().trim().optional(),
     status: z.string().trim().optional(),
     txHash: z.string().trim().optional(),
+    source: z.string().trim().optional(),
+    campaign: z.string().trim().optional(),
+    referrer: z.string().trim().optional(),
   })
   .strict();
 

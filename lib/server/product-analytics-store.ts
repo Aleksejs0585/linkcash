@@ -1,4 +1,4 @@
-import { appendFile, mkdir } from "node:fs/promises";
+import { appendFile, mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 
 export type ProductAnalyticsEvent = {
@@ -12,6 +12,9 @@ export type ProductAnalyticsEvent = {
   paymentIdHash?: string;
   status?: string;
   txHash?: string;
+  source?: string;
+  campaign?: string;
+  referrer?: string;
 };
 
 function resolveProductAnalyticsLogPath() {
@@ -40,6 +43,32 @@ class ProductAnalyticsStore {
       await appendFile(this.logPath, JSON.stringify(event) + "\n", "utf8");
     } catch {
       // Analytics should never break product flows.
+    }
+  }
+
+  async readRecent(limit = 1000): Promise<ProductAnalyticsEvent[]> {
+    try {
+      const content = await readFile(this.logPath, "utf8");
+      if (!content.trim()) return [];
+
+      const lines = content.trim().split("\n");
+      const recent = lines.slice(Math.max(0, lines.length - Math.max(1, limit)));
+
+      return recent
+        .map((line) => {
+          try {
+            return JSON.parse(line) as ProductAnalyticsEvent;
+          } catch {
+            return null;
+          }
+        })
+        .filter((entry): entry is ProductAnalyticsEvent => entry !== null);
+    } catch (error) {
+      const nodeError = error as NodeJS.ErrnoException;
+      if (nodeError.code === "ENOENT") {
+        return [];
+      }
+      throw error;
     }
   }
 }

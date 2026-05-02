@@ -32,6 +32,34 @@ type ClaimsResponse = {
   ok: boolean;
   config?: ClaimRuntimeConfig;
   events?: ClaimAuditEvent[];
+  funnel?: {
+    last24h: {
+      createOpen: number;
+      giftFunded: number;
+      statusOpen: number;
+      claimSuccess: number;
+      fundedRate: number;
+      statusRate: number;
+      claimRate: number;
+    };
+    last7d: {
+      createOpen: number;
+      giftFunded: number;
+      statusOpen: number;
+      claimSuccess: number;
+      fundedRate: number;
+      statusRate: number;
+      claimRate: number;
+    };
+    bySource24h: Array<{
+      source: string;
+      createOpen: number;
+      giftFunded: number;
+      claimSuccess: number;
+      claimRate: number;
+    }>;
+    alerts: string[];
+  };
   error?: string;
 };
 
@@ -43,6 +71,7 @@ export default function AdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [events, setEvents] = useState<ClaimAuditEvent[]>([]);
   const [config, setConfig] = useState<ClaimRuntimeConfig | null>(null);
+  const [funnel, setFunnel] = useState<ClaimsResponse["funnel"] | null>(null);
 
   const eventCountLabel = useMemo(
     () => `${events.length} recent events`,
@@ -66,6 +95,7 @@ export default function AdminPage() {
     setAuthenticated(true);
     setConfig(data.config);
     setEvents(data.events ?? []);
+    setFunnel(data.funnel ?? null);
   }, []);
 
   useEffect(() => {
@@ -110,6 +140,7 @@ export default function AdminPage() {
     setAuthenticated(false);
     setConfig(null);
     setEvents([]);
+    setFunnel(null);
   };
 
   const onToggleRateLimit = async () => {
@@ -274,6 +305,91 @@ export default function AdminPage() {
 
           {error && <p className="text-sm text-rose-400">{error}</p>}
         </GlassCard>
+
+        {authenticated && (
+          <GlassCard className="space-y-4 p-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Funnel (24h / 7d)</h2>
+              <p className="text-xs text-white/60">create → fund → status → claim</p>
+            </div>
+
+            {funnel?.alerts && funnel.alerts.length > 0 && (
+              <div className="space-y-2">
+                {funnel.alerts.map((alert) => (
+                  <p
+                    key={alert}
+                    className="rounded-xl border border-amber-300/30 bg-amber-400/10 px-3 py-2 text-sm text-amber-200"
+                  >
+                    {alert}
+                  </p>
+                ))}
+              </div>
+            )}
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-white/10 bg-black/25 p-4">
+                <p className="text-xs uppercase tracking-[0.15em] text-white/60">Last 24h</p>
+                <div className="mt-2 space-y-1 text-sm text-white/85">
+                  <p>Open: {funnel?.last24h.createOpen ?? 0}</p>
+                  <p>Funded: {funnel?.last24h.giftFunded ?? 0}</p>
+                  <p>Status viewed: {funnel?.last24h.statusOpen ?? 0}</p>
+                  <p>Claimed: {funnel?.last24h.claimSuccess ?? 0}</p>
+                </div>
+                <div className="mt-2 text-xs text-white/60">
+                  <p>
+                    Fund rate: {Math.round((funnel?.last24h.fundedRate ?? 0) * 100)}%
+                  </p>
+                  <p>
+                    Claim rate: {Math.round((funnel?.last24h.claimRate ?? 0) * 100)}%
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-white/10 bg-black/25 p-4">
+                <p className="text-xs uppercase tracking-[0.15em] text-white/60">Last 7d</p>
+                <div className="mt-2 space-y-1 text-sm text-white/85">
+                  <p>Open: {funnel?.last7d.createOpen ?? 0}</p>
+                  <p>Funded: {funnel?.last7d.giftFunded ?? 0}</p>
+                  <p>Status viewed: {funnel?.last7d.statusOpen ?? 0}</p>
+                  <p>Claimed: {funnel?.last7d.claimSuccess ?? 0}</p>
+                </div>
+                <div className="mt-2 text-xs text-white/60">
+                  <p>
+                    Fund rate: {Math.round((funnel?.last7d.fundedRate ?? 0) * 100)}%
+                  </p>
+                  <p>
+                    Claim rate: {Math.round((funnel?.last7d.claimRate ?? 0) * 100)}%
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-white/10 bg-black/25 p-4">
+              <p className="text-xs uppercase tracking-[0.15em] text-white/60">
+                Top sources (24h)
+              </p>
+              {funnel?.bySource24h?.length ? (
+                <div className="mt-2 space-y-2 text-xs text-white/80">
+                  {funnel.bySource24h.map((sourceItem) => (
+                    <div
+                      key={sourceItem.source}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/10 px-2.5 py-2"
+                    >
+                      <p className="font-medium text-white/90">{sourceItem.source}</p>
+                      <p>
+                        open {sourceItem.createOpen} · funded {sourceItem.giftFunded} ·
+                        claimed {sourceItem.claimSuccess} · CR{" "}
+                        {Math.round(sourceItem.claimRate * 100)}%
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-2 text-sm text-white/60">No source data in the last 24h.</p>
+              )}
+            </div>
+          </GlassCard>
+        )}
 
         {authenticated && (
           <GlassCard className="space-y-3 p-6">

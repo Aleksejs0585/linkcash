@@ -68,6 +68,13 @@ export default function GiftStatusPage() {
     () => result?.status === "active" || result?.status === "expired",
     [result?.status]
   );
+  const isFinalStatus = useMemo(
+    () =>
+      result?.status === "claimed" ||
+      result?.status === "reclaimed" ||
+      result?.status === "not_found",
+    [result?.status]
+  );
 
   const loadStatus = useCallback(async () => {
     if (!hash) return;
@@ -148,6 +155,11 @@ export default function GiftStatusPage() {
             >
               {statusLabel(show.status)}
             </span>
+            {isFinalStatus && (
+              <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-white/70">
+                Final state
+              </span>
+            )}
             <p className="text-xs text-white/60 break-all">hash: {visibleHash}</p>
           </div>
 
@@ -183,6 +195,11 @@ export default function GiftStatusPage() {
             )}
             {isPollingStatus && (
               <p className="text-xs text-white/45">Auto-refresh every 15 seconds.</p>
+            )}
+            {isFinalStatus && (
+              <p className="text-xs text-white/45">
+                Auto-refresh stopped for this final state.
+              </p>
             )}
           </div>
 

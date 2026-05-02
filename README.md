@@ -48,6 +48,7 @@ docker compose up -d redis
 - `CLAIM_AUDIT_LOG_PATH`: Path for claim audit log file.
 - `SENDER_GIFT_LOG_PATH`: Path for sender gifts audit log file.
 - `ADMIN_AUDIT_LOG_PATH`: Path for admin auth audit log file.
+- `PRODUCT_ANALYTICS_LOG_PATH`: Path for funnel analytics events log file.
 - `ADMIN_SESSION_SECRET`: Overrides admin session signing secret.
 - `UPSTASH_REDIS_REST_URL`: Enables persistent claim rate-limit/idempotency storage.
 - `UPSTASH_REDIS_REST_TOKEN`: Auth token for Upstash REST API.
@@ -66,10 +67,37 @@ docker compose up -d redis
 - Expected HTTP `200` in healthy state, `503` when RPC/env checks fail.
 - If Upstash env vars are missing, app still works with in-memory fallback but health response marks redis check as degraded.
 
+## Funnel telemetry
+
+- Events are ingested through `POST /api/analytics`.
+- Stored in JSONL format at `PRODUCT_ANALYTICS_LOG_PATH` (default `.logs/product-analytics.log`).
+- Tracked events:
+  - `create_open`
+  - `gift_funded`
+  - `status_open`
+  - `claim_success`
+- Enrichment fields:
+  - `source` (from `utm_source`)
+  - `campaign` (from `utm_campaign`)
+  - `referrer` (from browser referrer)
+
+## Funnel runbook
+
+- Open `/admin` and review:
+  - `Funnel (24h / 7d)`
+  - `Top sources (24h)`
+  - `Alerts` section for drop-off warnings.
+- Suggested thresholds:
+  - Investigate if `fund rate < 25%` with at least 20 opens/day.
+  - Investigate if `claim rate < 35%` with at least 15 funded/day.
+- Log retention:
+  - Rotate `.logs/product-analytics.log` periodically (daily/weekly) based on traffic.
+  - Archive rotated logs before cleanup if long-term trend analysis is needed.
+
 ## Deploy runbook
 
 - Verify env values are set in target environment.
 - Call `GET /api/health` before opening traffic.
-- Confirm claim logs in `.logs/claim-audit.log` and admin logs in `.logs/admin-audit.log`.
+- Confirm claim logs in `.logs/claim-audit.log`, admin logs in `.logs/admin-audit.log`, and funnel logs in `.logs/product-analytics.log`.
 - For production scale, use Upstash Redis to persist claim idempotency and rate limit state across restarts.
 
