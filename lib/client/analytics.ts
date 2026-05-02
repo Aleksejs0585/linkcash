@@ -1,6 +1,13 @@
 "use client";
 
-type ProductEvent = "create_open" | "gift_funded" | "status_open" | "claim_success";
+type ProductEvent =
+  | "create_open"
+  | "gift_funded"
+  | "status_open"
+  | "claim_success"
+  | "wallet_open"
+  | "claim_error"
+  | "reclaim_click";
 
 type TrackPayload = {
   event: ProductEvent;
@@ -11,6 +18,8 @@ type TrackPayload = {
   source?: string;
   campaign?: string;
   referrer?: string;
+  variant?: string;
+  detail?: string;
 };
 
 export function trackEvent(payload: TrackPayload) {

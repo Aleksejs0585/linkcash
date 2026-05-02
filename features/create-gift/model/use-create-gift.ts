@@ -10,6 +10,7 @@ import {
 } from "@/utils";
 import { buildShareLinks } from "./share-links";
 import { trackEvent } from "@/lib/client/analytics";
+import { getOrAssignVariant } from "@/lib/client/experiments";
 
 type CreateGiftSuccess = {
   ok: true;
@@ -37,6 +38,9 @@ export function useCreateGift() {
   const [creating, setCreating] = useState(false);
   const [reclaiming, setReclaiming] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const [createCopyVariant] = useState(() =>
+    getOrAssignVariant("create_primary_copy_v1", ["a", "b"])
+  );
 
   const senderWalletAddress =
     wallets.find(
@@ -56,8 +60,12 @@ export function useCreateGift() {
   );
 
   useEffect(() => {
-    trackEvent({ event: "create_open", path: "/create" });
-  }, []);
+    trackEvent({
+      event: "create_open",
+      path: "/create",
+      variant: `create_primary_copy_v1:${createCopyVariant}`,
+    });
+  }, [createCopyVariant]);
 
   const onCreate = async () => {
     if (!ready) return;
@@ -109,6 +117,7 @@ export function useCreateGift() {
         path: "/create",
         paymentIdHash: hash,
         txHash: data.txHash,
+        variant: `create_primary_copy_v1:${createCopyVariant}`,
       });
     } catch (error) {
       setStatus(
@@ -123,6 +132,12 @@ export function useCreateGift() {
     if (!paymentIdHash) return;
     setReclaiming(true);
     setStatus(null);
+    trackEvent({
+      event: "reclaim_click",
+      path: "/create",
+      paymentIdHash,
+      variant: `create_primary_copy_v1:${createCopyVariant}`,
+    });
 
     try {
       const response = await fetch("/api/reclaim-gift", {
@@ -182,6 +197,7 @@ export function useCreateGift() {
     creating,
     reclaiming,
     status,
+    createCopyVariant,
     shareLinks,
     setAmount,
     setExpiresInHours,

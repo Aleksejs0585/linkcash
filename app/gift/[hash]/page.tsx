@@ -9,6 +9,7 @@ import GlassCard from "../../../components/ui/glass-card";
 import BackButton from "../../../components/ui/back-button";
 import { useGift } from "../../../hooks/useGift";
 import { trackEvent } from "../../../lib/client/analytics";
+import { getOrAssignVariant } from "../../../lib/client/experiments";
 import {
   ARC_TESTNET,
   getPaymentIdHashFromPath,
@@ -64,6 +65,10 @@ function GiftClaimContent() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [successTxHash, setSuccessTxHash] = useState<string | null>(null);
   const successOverlayTimerRef = useRef<number | null>(null);
+  const lastTrackedErrorRef = useRef<string | null>(null);
+  const [claimCopyVariant] = useState(() =>
+    getOrAssignVariant("claim_cta_v1", ["a", "b"])
+  );
 
   const receiverAddress = useMemo(() => {
     const embeddedWallet = wallets.find(
@@ -138,6 +143,19 @@ function GiftClaimContent() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!error) return;
+    if (lastTrackedErrorRef.current === error) return;
+    lastTrackedErrorRef.current = error;
+    trackEvent({
+      event: "claim_error",
+      path: window.location.pathname,
+      paymentIdHash: paymentIdHash ?? undefined,
+      detail: error.slice(0, 240),
+      variant: `claim_cta_v1:${claimCopyVariant}`,
+    });
+  }, [claimCopyVariant, error, paymentIdHash]);
+
   const onUnwrap = async () => {
     if (!ready) {
       return;
@@ -165,6 +183,7 @@ function GiftClaimContent() {
         path: window.location.pathname,
         paymentIdHash: paymentIdHash ?? undefined,
         txHash: hash,
+        variant: `claim_cta_v1:${claimCopyVariant}`,
       });
       setSuccessTxHash(hash);
       setStatus("Success! Finalizing onchain receipt...");
@@ -243,7 +262,11 @@ function GiftClaimContent() {
                 whileTap={{ scale: 0.98 }}
                 className="accent-gradient w-full rounded-2xl px-5 py-3.5 text-base font-semibold shadow-[0_16px_40px_rgba(76,85,255,0.42)] transition hover:shadow-[0_18px_46px_rgba(99,102,241,0.5)] disabled:cursor-not-allowed disabled:opacity-65 sm:px-6 sm:py-4 sm:text-lg"
               >
-                {loading ? "Opening your gift..." : "Unwrap your gift"}
+                {loading
+                  ? "Opening your gift..."
+                  : claimCopyVariant === "b"
+                    ? "Claim to my wallet"
+                    : "Unwrap your gift"}
               </motion.button>
 
               {authenticated && (

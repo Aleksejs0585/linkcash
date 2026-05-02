@@ -49,6 +49,8 @@ docker compose up -d redis
 - `SENDER_GIFT_LOG_PATH`: Path for sender gifts audit log file.
 - `ADMIN_AUDIT_LOG_PATH`: Path for admin auth audit log file.
 - `PRODUCT_ANALYTICS_LOG_PATH`: Path for funnel analytics events log file.
+- `ALERT_WEBHOOK_URL`: Optional Slack/Telegram-compatible webhook for funnel alerts.
+- `ALERT_WEBHOOK_COOLDOWN_MINUTES`: Alert repeat cooldown (default `30`).
 - `ADMIN_SESSION_SECRET`: Overrides admin session signing secret.
 - `UPSTASH_REDIS_REST_URL`: Enables persistent claim rate-limit/idempotency storage.
 - `UPSTASH_REDIS_REST_TOKEN`: Auth token for Upstash REST API.
@@ -60,6 +62,7 @@ docker compose up -d redis
 - `npm run start`: start production server.
 - `npm run lint`: run ESLint with zero warnings policy.
 - `npm run test`: run integration tests for critical gift and claim flows.
+- `npm run logs:rotate`: archive and rotate local audit/telemetry logs.
 
 ## Operational checks
 
@@ -80,12 +83,19 @@ docker compose up -d redis
   - `source` (from `utm_source`)
   - `campaign` (from `utm_campaign`)
   - `referrer` (from browser referrer)
+  - `variant` (A/B experiment variant)
+- Additional quality/retention events:
+  - `wallet_open`
+  - `claim_error`
+  - `reclaim_click`
 
 ## Funnel runbook
 
 - Open `/admin` and review:
   - `Funnel (24h / 7d)`
   - `Top sources (24h)`
+  - `Cohorts by source + campaign + day (7d)`
+  - `Quality signals (24h)`
   - `Alerts` section for drop-off warnings.
 - Suggested thresholds:
   - Investigate if `fund rate < 25%` with at least 20 opens/day.
@@ -93,6 +103,10 @@ docker compose up -d redis
 - Log retention:
   - Rotate `.logs/product-analytics.log` periodically (daily/weekly) based on traffic.
   - Archive rotated logs before cleanup if long-term trend analysis is needed.
+  - Use `npm run logs:rotate` for local/manual rotation.
+- Optional outbound alerts:
+  - Set `ALERT_WEBHOOK_URL` to send funnel drop alerts externally.
+  - `ALERT_WEBHOOK_COOLDOWN_MINUTES` prevents duplicate spam.
 
 ## Deploy runbook
 

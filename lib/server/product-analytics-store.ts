@@ -6,7 +6,10 @@ export type ProductAnalyticsEvent = {
     | "create_open"
     | "gift_funded"
     | "status_open"
-    | "claim_success";
+    | "claim_success"
+    | "wallet_open"
+    | "claim_error"
+    | "reclaim_click";
   timestamp: string;
   path?: string;
   paymentIdHash?: string;
@@ -15,6 +18,8 @@ export type ProductAnalyticsEvent = {
   source?: string;
   campaign?: string;
   referrer?: string;
+  variant?: string;
+  detail?: string;
 };
 
 function resolveProductAnalyticsLogPath() {

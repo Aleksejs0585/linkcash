@@ -23,6 +23,7 @@ export function CreateGiftContent() {
     creating,
     reclaiming,
     status,
+    createCopyVariant,
     shareLinks,
     setAmount,
     setExpiresInHours,
@@ -51,7 +52,11 @@ export function CreateGiftContent() {
           <h1 className="text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
             Send crypto like a message
           </h1>
-          <p className="soft-text mt-3 text-base">No wallet setup needed. Just a link.</p>
+          <p className="soft-text mt-3 text-base">
+            {createCopyVariant === "b"
+              ? "Sign in, fund, and share in seconds."
+              : "No wallet setup needed. Just a link."}
+          </p>
         </motion.div>
 
         {!ready ? (
@@ -75,7 +80,11 @@ export function CreateGiftContent() {
             whileTap={{ scale: 0.98 }}
             className="accent-gradient w-full rounded-2xl px-5 py-3.5 text-base font-semibold shadow-[0_14px_36px_rgba(76,85,255,0.38)] transition disabled:opacity-65 sm:px-6 sm:py-4 sm:text-lg"
           >
-            {creating ? "Funding gift..." : "Create gift"}
+            {creating
+              ? "Funding gift..."
+              : createCopyVariant === "b"
+                ? "Fund gift link"
+                : "Create gift"}
           </motion.button>
         )}
 

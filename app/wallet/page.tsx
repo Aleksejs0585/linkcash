@@ -5,6 +5,7 @@ import { Contract, JsonRpcProvider, formatUnits, isAddress } from "ethers";
 import { useExportWallet, usePrivy, useWallets } from "@privy-io/react-auth";
 import GlassCard from "../../components/ui/glass-card";
 import BackButton from "../../components/ui/back-button";
+import { trackEvent } from "../../lib/client/analytics";
 import {
   ARC_TESTNET,
   getArcExplorerAddressUrl,
@@ -59,6 +60,10 @@ function WalletContent() {
   );
 
   const walletAddress = embeddedWallet?.address ?? null;
+
+  useEffect(() => {
+    trackEvent({ event: "wallet_open", path: "/wallet" });
+  }, []);
 
   const loadBalance = useCallback(async () => {
     if (!walletAddress || !isAddress(walletAddress)) {

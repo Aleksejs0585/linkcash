@@ -10,12 +10,11 @@ type AdminAuditEvent = {
 
 function resolvePath() {
   const configured = process.env.ADMIN_AUDIT_LOG_PATH?.trim();
+  const cwd = /* turbopackIgnore: true */ process.cwd();
   if (configured) {
-    return path.isAbsolute(configured)
-      ? configured
-      : path.join(process.cwd(), configured);
+    return path.isAbsolute(configured) ? configured : path.join(cwd, configured);
   }
-  return path.join(process.cwd(), ".logs", "admin-audit.log");
+  return path.join(cwd, ".logs", "admin-audit.log");
 }
 
 class AdminAuditStore {

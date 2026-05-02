@@ -58,6 +58,20 @@ type ClaimsResponse = {
       claimSuccess: number;
       claimRate: number;
     }>;
+    cohorts7d: Array<{
+      day: string;
+      source: string;
+      campaign: string;
+      createOpen: number;
+      giftFunded: number;
+      claimSuccess: number;
+      claimRate: number;
+    }>;
+    quality24h: {
+      walletOpen: number;
+      claimError: number;
+      reclaimClick: number;
+    };
     alerts: string[];
   };
   error?: string;
@@ -386,6 +400,45 @@ export default function AdminPage() {
                 </div>
               ) : (
                 <p className="mt-2 text-sm text-white/60">No source data in the last 24h.</p>
+              )}
+            </div>
+
+            <div className="rounded-xl border border-white/10 bg-black/25 p-4">
+              <p className="text-xs uppercase tracking-[0.15em] text-white/60">
+                Quality signals (24h)
+              </p>
+              <div className="mt-2 flex flex-wrap gap-3 text-xs text-white/80">
+                <p>wallet_open: {funnel?.quality24h.walletOpen ?? 0}</p>
+                <p>claim_error: {funnel?.quality24h.claimError ?? 0}</p>
+                <p>reclaim_click: {funnel?.quality24h.reclaimClick ?? 0}</p>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-white/10 bg-black/25 p-4">
+              <p className="text-xs uppercase tracking-[0.15em] text-white/60">
+                Cohorts by source + campaign + day (7d)
+              </p>
+              {funnel?.cohorts7d?.length ? (
+                <div className="mt-2 space-y-2 text-xs text-white/80">
+                  {funnel.cohorts7d.map((row) => (
+                    <div
+                      key={`${row.day}-${row.source}-${row.campaign}`}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/10 px-2.5 py-2"
+                    >
+                      <p className="font-medium text-white/90">
+                        {row.day} · {row.source} · {row.campaign}
+                      </p>
+                      <p>
+                        open {row.createOpen} · funded {row.giftFunded} · claimed{" "}
+                        {row.claimSuccess} · CR {Math.round(row.claimRate * 100)}%
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-2 text-sm text-white/60">
+                  No cohort data in the last 7 days.
+                </p>
               )}
             </div>
           </GlassCard>
