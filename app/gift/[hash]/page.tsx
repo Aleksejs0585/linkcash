@@ -31,8 +31,8 @@ export default function GiftPage() {
 
   if (!hasPrivyAppId) {
     return (
-      <main className="relative flex min-h-screen items-center justify-center px-5 py-10 text-white">
-        <GlassCard className="max-w-[420px] p-8 text-center">
+      <main className="relative flex min-h-screen items-center justify-center px-4 py-8 text-white sm:px-5 sm:py-10">
+        <GlassCard className="max-w-[420px] p-6 text-center sm:p-8">
           <div className="mb-4 flex justify-start">
             <BackButton fallbackHref="/" />
           </div>
@@ -185,7 +185,7 @@ function GiftClaimContent() {
   const amountLabel = giftAmountUsdc ? `${giftAmountUsdc} USDC` : "Gift";
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center px-5 py-10 text-white">
+    <main className="relative flex min-h-screen items-center justify-center px-4 py-8 text-white sm:px-5 sm:py-10">
       <div className="pointer-events-none absolute left-1/2 top-1/2 h-[450px] w-[450px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,_rgba(139,92,246,0.2)_0%,_rgba(59,130,246,0.14)_35%,_transparent_70%)] blur-3xl" />
 
       <motion.div
@@ -197,7 +197,7 @@ function GiftClaimContent() {
         <div className="flex justify-start">
           <BackButton fallbackHref="/" />
         </div>
-        <GlassCard className="relative space-y-6 p-8 text-center">
+        <GlassCard className="relative space-y-5 p-6 text-center sm:space-y-6 sm:p-8">
           <div className="space-y-2">
             <p className="mx-auto inline-flex rounded-full border border-white/15 px-3 py-1 text-xs text-white/75">
               {ARC_TESTNET.chainName} · {ARC_TESTNET.chainId}
@@ -205,7 +205,7 @@ function GiftClaimContent() {
             <p className="text-sm tracking-[0.06em] text-white/75">
               🎁 You received a gift
             </p>
-            <h1 className="text-5xl font-semibold tracking-tight">
+            <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
               {giftLoading ? "Loading..." : amountLabel}
             </h1>
             <p className="soft-text text-sm">
@@ -234,7 +234,7 @@ function GiftClaimContent() {
                 disabled={loading || !ready || remainingSeconds === 0}
                 whileHover={{ scale: loading ? 1 : 1.03 }}
                 whileTap={{ scale: 0.98 }}
-                className="accent-gradient w-full rounded-2xl px-6 py-4 text-lg font-semibold shadow-[0_16px_40px_rgba(76,85,255,0.42)] transition hover:shadow-[0_18px_46px_rgba(99,102,241,0.5)] disabled:cursor-not-allowed disabled:opacity-65"
+                className="accent-gradient w-full rounded-2xl px-5 py-3.5 text-base font-semibold shadow-[0_16px_40px_rgba(76,85,255,0.42)] transition hover:shadow-[0_18px_46px_rgba(99,102,241,0.5)] disabled:cursor-not-allowed disabled:opacity-65 sm:px-6 sm:py-4 sm:text-lg"
               >
                 {loading ? "Opening your gift..." : "Unwrap your gift"}
               </motion.button>
@@ -288,7 +288,7 @@ function GiftClaimContent() {
               initial={{ opacity: 0, y: 14, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.4, ease: "easeOut" }}
-              className="w-full max-w-[420px] space-y-5 rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl"
+              className="w-full max-w-[420px] space-y-5 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl sm:p-8"
             >
               <h2 className="text-4xl font-semibold tracking-tight">
                 You&apos;re now on-chain

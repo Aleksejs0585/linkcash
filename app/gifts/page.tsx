@@ -141,16 +141,16 @@ function SenderDashboardContent() {
   };
 
   return (
-    <main className="relative min-h-screen px-5 py-10 text-white">
+    <main className="relative min-h-screen px-4 py-8 text-white sm:px-5 sm:py-10">
       <div className="pointer-events-none absolute left-1/2 top-0 h-[560px] w-[560px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,_rgba(139,92,246,0.2)_0%,_rgba(59,130,246,0.12)_40%,_transparent_75%)] blur-3xl" />
-      <div className="relative mx-auto w-full max-w-4xl space-y-5">
-        <GlassCard className="space-y-4 p-6">
+      <div className="relative mx-auto w-full max-w-4xl space-y-4 sm:space-y-5">
+        <GlassCard className="space-y-4 p-4 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-white/60">
                 {ARC_TESTNET.chainName}
               </p>
-              <h1 className="mt-1 text-3xl font-semibold tracking-tight">
+              <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
                 Sender Dashboard
               </h1>
               <p className="soft-text mt-2 text-sm">
@@ -193,7 +193,7 @@ function SenderDashboardContent() {
           {error && <p className="text-sm text-rose-400">{error}</p>}
         </GlassCard>
 
-        <GlassCard className="space-y-3 p-6">
+        <GlassCard className="space-y-3 p-4 sm:p-6">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">Created gifts</h2>
             <p className="text-xs text-white/60">{gifts.length} total</p>
@@ -210,7 +210,7 @@ function SenderDashboardContent() {
               {gifts.map((gift) => (
                 <div
                   key={gift.paymentIdHash}
-                  className="rounded-xl border border-white/10 bg-black/25 p-4"
+                  className="rounded-xl border border-white/10 bg-black/25 p-3 sm:p-4"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-base font-semibold">{gift.amountUsdc} USDC</p>

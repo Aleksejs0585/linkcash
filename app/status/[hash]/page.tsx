@@ -53,18 +53,18 @@ export default async function GiftStatusPage({
   const visibleHash = normalizedHash ?? hash;
 
   return (
-    <main className="relative min-h-screen px-5 py-10 text-white">
+    <main className="relative min-h-screen px-4 py-8 text-white sm:px-5 sm:py-10">
       <div className="pointer-events-none absolute left-1/2 top-0 h-[560px] w-[560px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,_rgba(139,92,246,0.2)_0%,_rgba(59,130,246,0.12)_40%,_transparent_75%)] blur-3xl" />
 
-      <div className="relative mx-auto w-full max-w-3xl space-y-5">
-        <GlassCard className="space-y-4 p-6">
+      <div className="relative mx-auto w-full max-w-3xl space-y-4 sm:space-y-5">
+        <GlassCard className="space-y-4 p-4 sm:p-6">
           <div className="flex justify-start">
             <BackButton fallbackHref="/" />
           </div>
           <p className="text-xs uppercase tracking-[0.18em] text-white/60">
             Public gift status · {ARC_TESTNET.chainName}
           </p>
-          <h1 className="text-3xl font-semibold tracking-tight">Where did the funds go?</h1>
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Where did the funds go?</h1>
 
           <div className="flex flex-wrap items-center gap-3">
             <span
@@ -97,7 +97,7 @@ export default async function GiftStatusPage({
           )}
         </GlassCard>
 
-        <GlassCard className="space-y-3 p-6">
+        <GlassCard className="space-y-3 p-4 sm:p-6">
           <h2 className="text-lg font-semibold">Status timeline</h2>
           {result.timeline.length === 0 ? (
             <p className="text-sm text-white/70">
@@ -138,7 +138,7 @@ export default async function GiftStatusPage({
           )}
         </GlassCard>
 
-        <GlassCard className="space-y-3 p-6">
+        <GlassCard className="space-y-3 p-4 sm:p-6">
           <h2 className="text-lg font-semibold">Explorer links</h2>
           <div className="flex flex-wrap gap-2">
             {result.tx.fundingTxHash && (

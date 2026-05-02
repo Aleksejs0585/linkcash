@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { unstable_cache } from "next/cache";
 import GlassCard from "../components/ui/glass-card";
 import { claimAuditStore } from "@/lib/server/claim-audit-store";
 import { senderGiftStore } from "@/lib/server/sender-gift-store";
@@ -56,8 +57,14 @@ async function loadLiveTxExamples(): Promise<TxExample[]> {
   return merged.slice(0, 6);
 }
 
+const getCachedLiveTxExamples = unstable_cache(
+  async () => loadLiveTxExamples(),
+  ["landing-live-tx-examples"],
+  { revalidate: 30 }
+);
+
 export default async function HomePage() {
-  const txExamples = await loadLiveTxExamples();
+  const txExamples = await getCachedLiveTxExamples();
 
   return (
     <main className="relative min-h-screen px-5 py-16 text-white">

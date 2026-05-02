@@ -33,10 +33,10 @@ export function CreateGiftContent() {
   } = useCreateGift();
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center px-5 py-10 text-white">
+    <main className="relative flex min-h-screen items-center justify-center px-4 py-8 text-white sm:px-5 sm:py-10">
       <div className="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,_rgba(139,92,246,0.2)_0%,_rgba(59,130,246,0.12)_35%,_transparent_70%)] blur-3xl" />
 
-      <GlassCard className="relative max-w-[420px] space-y-7 p-8 text-center">
+      <GlassCard className="relative max-w-[460px] space-y-6 p-5 text-center sm:p-8">
         <div className="flex justify-start">
           <BackButton fallbackHref="/" />
         </div>
@@ -48,7 +48,7 @@ export function CreateGiftContent() {
           <p className="mx-auto mb-3 inline-flex rounded-full border border-white/15 px-3 py-1 text-xs text-white/75">
             {ARC_TESTNET.chainName}
           </p>
-          <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
+          <h1 className="text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
             Send crypto like a message
           </h1>
           <p className="soft-text mt-3 text-base">No wallet needed. Just a link.</p>
@@ -62,7 +62,7 @@ export function CreateGiftContent() {
             onClick={login}
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.98 }}
-            className="accent-gradient w-full rounded-2xl px-6 py-4 text-lg font-semibold shadow-[0_14px_36px_rgba(76,85,255,0.38)] transition"
+            className="accent-gradient w-full rounded-2xl px-5 py-3.5 text-base font-semibold shadow-[0_14px_36px_rgba(76,85,255,0.38)] transition sm:px-6 sm:py-4 sm:text-lg"
           >
             Sign in to create gift
           </motion.button>
@@ -73,7 +73,7 @@ export function CreateGiftContent() {
             disabled={creating || !senderWalletAddress}
             whileHover={{ scale: creating ? 1 : 1.03 }}
             whileTap={{ scale: 0.98 }}
-            className="accent-gradient w-full rounded-2xl px-6 py-4 text-lg font-semibold shadow-[0_14px_36px_rgba(76,85,255,0.38)] transition disabled:opacity-65"
+            className="accent-gradient w-full rounded-2xl px-5 py-3.5 text-base font-semibold shadow-[0_14px_36px_rgba(76,85,255,0.38)] transition disabled:opacity-65 sm:px-6 sm:py-4 sm:text-lg"
           >
             {creating ? "Funding gift..." : "Create Gift"}
           </motion.button>
