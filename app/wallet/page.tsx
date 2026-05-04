@@ -6,6 +6,7 @@ import { useExportWallet, usePrivy, useWallets } from "@privy-io/react-auth";
 import GlassCard from "../../components/ui/glass-card";
 import MainMenu from "../../components/ui/main-menu";
 import OAuthNavHint from "../../components/ui/oauth-nav-hint";
+import { WalletBackupWarning } from "../../components/ui/wallet-backup-warning";
 import { trackEvent } from "../../lib/client/analytics";
 import {
   ARC_TESTNET,
@@ -162,6 +163,7 @@ function WalletContent() {
           </p>
         ) : (
           <div className="space-y-4">
+            <WalletBackupWarning variant="inlineExportHint" />
             <div className="rounded-xl border border-white/10 bg-black/25 p-4">
               <p className="text-xs uppercase tracking-[0.15em] text-white/60">
                 Wallet address

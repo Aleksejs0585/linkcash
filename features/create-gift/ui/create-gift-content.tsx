@@ -6,6 +6,7 @@ import { FaLink } from "react-icons/fa";
 import GlassCard from "@/components/ui/glass-card";
 import MainMenu from "@/components/ui/main-menu";
 import OAuthNavHint from "@/components/ui/oauth-nav-hint";
+import { WalletBackupWarning } from "@/components/ui/wallet-backup-warning";
 import { ARC_TESTNET } from "@/utils";
 import { useCreateGift } from "../model/use-create-gift";
 
@@ -76,6 +77,8 @@ export function CreateGiftContent() {
             <OAuthNavHint />
           </div>
         ) : (
+          <div className="space-y-3">
+            <WalletBackupWarning />
           <motion.button
             type="button"
             onClick={onCreate}
@@ -90,6 +93,7 @@ export function CreateGiftContent() {
                 ? "Fund gift link"
                 : "Create gift"}
           </motion.button>
+          </div>
         )}
 
         <div className="rounded-2xl border border-white/10 bg-black/20 p-4 text-left">
