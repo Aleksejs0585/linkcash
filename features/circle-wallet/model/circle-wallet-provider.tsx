@@ -387,7 +387,59 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
 
     void (async () => {
       try {
+        const existingDt = (getCookie("deviceToken") as string) || "";
+        const existingDek =
+          (getCookie("deviceEncryptionKey") as string) || "";
+        const cookieApp = (getCookie("appId") as string) || "";
+        const cookieGoogle = (getCookie("google.clientId") as string) || "";
+
+        const stampedCookiesMatch =
+          existingDt &&
+          existingDek &&
+          cookieApp === appId &&
+          (cookieGoogle || "") === googleClientId;
+
+        if (stampedCookiesMatch) {
+          setDeviceToken(existingDt);
+          setDeviceEncryptionKey(existingDek);
+          const sdk = sdkRef.current;
+          if (sdk && typeof window !== "undefined") {
+            sdk.updateConfigs({
+              appSettings: { appId },
+              loginConfigs: {
+                deviceToken: existingDt,
+                deviceEncryptionKey: existingDek,
+                google: {
+                  clientId: googleClientId,
+                  redirectUri: window.location.origin,
+                  selectAccountPrompt: true,
+                },
+              },
+            });
+          }
+          return;
+        }
+
         await createDeviceToken(deviceId);
+        const sdk = sdkRef.current;
+        if (sdk && typeof window !== "undefined") {
+          const dt = (getCookie("deviceToken") as string) || "";
+          const dek = (getCookie("deviceEncryptionKey") as string) || "";
+          if (dt && dek) {
+            sdk.updateConfigs({
+              appSettings: { appId },
+              loginConfigs: {
+                deviceToken: dt,
+                deviceEncryptionKey: dek,
+                google: {
+                  clientId: googleClientId,
+                  redirectUri: window.location.origin,
+                  selectAccountPrompt: true,
+                },
+              },
+            });
+          }
+        }
       } catch (e) {
         setBootstrapError(
           e instanceof Error ? e.message : "Failed to create device token."
