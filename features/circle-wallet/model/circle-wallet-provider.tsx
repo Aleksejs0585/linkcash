@@ -10,7 +10,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { getCookie, setCookie } from "cookies-next/client";
+import { deleteCookie, getCookie, setCookie } from "cookies-next/client";
 import type { W3SSdk } from "@circle-fin/w3s-pw-web-sdk";
 import { SocialLoginProvider } from "@circle-fin/w3s-pw-web-sdk/dist/src/types";
 import type { Authentication } from "@circle-fin/w3s-pw-web-sdk/dist/src/types";
@@ -108,6 +108,34 @@ function executeChallengePromise(
 
 const appId = process.env.NEXT_PUBLIC_CIRCLE_APP_ID ?? "";
 const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "";
+
+/** Drop device cookies if they belong to another Circle app or Google client. */
+function purgeStaleCircleDeviceCookies() {
+  if (typeof window === "undefined") return;
+  if (!appId || !googleClientId) return;
+
+  const cookieApp = (getCookie("appId") as string) || "";
+  const cookieGoogle = (getCookie("google.clientId") as string) || "";
+  const hasDevice = Boolean(getCookie("deviceToken"));
+  if (!hasDevice) return;
+
+  const appStale = cookieApp !== appId;
+  const googleStale = (cookieGoogle || "") !== googleClientId;
+
+  if (appStale || googleStale) {
+    deleteCookie("deviceToken");
+    deleteCookie("deviceEncryptionKey");
+    deleteCookie("appId");
+    deleteCookie("google.clientId");
+  }
+}
+
+function clearCircleDeviceBindingCookies() {
+  deleteCookie("deviceToken");
+  deleteCookie("deviceEncryptionKey");
+  deleteCookie("appId");
+  deleteCookie("google.clientId");
+}
 
 function CircleWalletInner({ children }: { children: ReactNode }) {
   const sdkRef = useRef<W3SSdk | null>(null);
@@ -217,6 +245,8 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
     setDeviceEncryptionKey(data.deviceEncryptionKey);
     setCookie("deviceToken", data.deviceToken);
     setCookie("deviceEncryptionKey", data.deviceEncryptionKey);
+    setCookie("appId", appId);
+    setCookie("google.clientId", googleClientId);
   }, []);
 
   useEffect(() => {
@@ -225,6 +255,8 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
     const initSdk = async () => {
       try {
         const { W3SSdk } = await import("@circle-fin/w3s-pw-web-sdk");
+
+        purgeStaleCircleDeviceCookies();
 
         const onLoginComplete = (
           error: unknown,
@@ -240,7 +272,13 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
 
           if (error) {
             const err = error as { message?: string };
-            setAuthError(err.message ?? "Sign-in failed.");
+            const msg = err.message ?? "Sign-in failed.";
+            if (/device token is invalid/i.test(msg)) {
+              clearCircleDeviceBindingCookies();
+              setDeviceToken("");
+              setDeviceEncryptionKey("");
+            }
+            setAuthError(msg);
             setUserToken(null);
             setEncryptionKey(null);
             return;
@@ -441,16 +479,25 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
 
       await sdk.performLogin(SocialLoginProvider.GOOGLE);
     } catch (e) {
-      setAuthError(e instanceof Error ? e.message : "Sign-in failed to start.");
+      const msg = e instanceof Error ? e.message : "Sign-in failed to start.";
+      if (/device token is invalid/i.test(msg)) {
+        clearCircleDeviceBindingCookies();
+        setDeviceToken("");
+        setDeviceEncryptionKey("");
+      }
+      setAuthError(msg);
     }
   }, [deviceEncryptionKey, deviceId, deviceToken]);
 
   const logout = useCallback(() => {
     clearCircleSession();
+    clearCircleDeviceBindingCookies();
     setUserToken(null);
     setEncryptionKey(null);
     setWallets([]);
     setAuthError(null);
+    setDeviceToken("");
+    setDeviceEncryptionKey("");
   }, []);
 
   const value = useMemo<CircleWalletContextValue>(
