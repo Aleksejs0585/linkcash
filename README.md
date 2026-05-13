@@ -2,6 +2,12 @@
 
 Next.js app for funding, sharing, claiming, and reclaiming time-limited USDC gifts on Arc Testnet.
 
+## Auth and wallets (Circle)
+
+This app uses **Circle user-controlled wallets** with **Google** sign-in (Programmable Wallets Web SDK). Configure Circle Console (User Controlled → Configurator) with your Google OAuth Web client id, and add env vars below.
+
+**Privy has been removed.** Users who signed in with Privy before must **sign in again with Google** after deploy; wallet addresses from Privy are **not** migrated.
+
 ## Setup
 
 1. Install dependencies:
@@ -34,7 +40,9 @@ docker compose up -d redis
 
 ### Required in most environments
 
-- `NEXT_PUBLIC_PRIVY_APP_ID`: Privy application id for wallet auth.
+- `NEXT_PUBLIC_CIRCLE_APP_ID`: Circle User Controlled **App ID** (Configurator).
+- `NEXT_PUBLIC_GOOGLE_CLIENT_ID`: Google OAuth **Web** client id (authorized redirect URIs must include your app origin, e.g. `http://localhost:3000`).
+- `CIRCLE_API_KEY`: Circle **Standard** API key (server only; used by `/api/circle`).
 - `RPC_URL`: Arc RPC endpoint.
 - `PRIVATE_KEY`: Relayer private key used by server API routes.
 - `CONTRACT_ADDRESS`: Deployed gift contract address.
@@ -42,6 +50,7 @@ docker compose up -d redis
 
 ### Optional
 
+- `NEXT_PUBLIC_CIRCLE_BASE_URL`: Override Circle API base (default `https://api.circle.com`).
 - `NEXT_PUBLIC_FACEBOOK_APP_ID`: Enables Messenger share link.
 - `USDC_CONTRACT_ADDRESS`: Defaults to Arc testnet USDC address.
 - `CLAIM_RATE_LIMIT_PER_MINUTE`: Claim API rate limit (default `12`).

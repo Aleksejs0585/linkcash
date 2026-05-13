@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { usePrivy, useWallets } from "@privy-io/react-auth";
 import confetti from "canvas-confetti";
 import { AnimatePresence, motion } from "framer-motion";
 import GlassCard from "../../../components/ui/glass-card";
 import MainMenu from "../../../components/ui/main-menu";
 import OAuthNavHint from "../../../components/ui/oauth-nav-hint";
+import { isCircleWalletConfigured } from "../../../features/circle-wallet/config/circle-env";
+import { useCircleWallet } from "../../../features/circle-wallet/model/circle-wallet-provider";
 import { useGift } from "../../../hooks/useGift";
 import { trackEvent } from "../../../lib/client/analytics";
 import { getOrAssignVariant } from "../../../lib/client/experiments";
@@ -30,9 +31,7 @@ type GiftDetailsResponse =
     };
 
 export default function GiftPage() {
-  const hasPrivyAppId = Boolean(process.env.NEXT_PUBLIC_PRIVY_APP_ID);
-
-  if (!hasPrivyAppId) {
+  if (!isCircleWalletConfigured()) {
     return (
       <main className="relative flex min-h-screen items-center justify-center px-4 py-8 text-white sm:px-5 sm:py-10">
         <GlassCard className="max-w-[420px] p-6 text-center sm:p-8">
@@ -43,8 +42,9 @@ export default function GiftPage() {
             You received a gift
           </h1>
           <p className="soft-text mt-4 text-sm">
-            Set <code>NEXT_PUBLIC_PRIVY_APP_ID</code> in your environment to
-            enable social login and claim.
+            Set <code>NEXT_PUBLIC_CIRCLE_APP_ID</code>,{" "}
+            <code>NEXT_PUBLIC_GOOGLE_CLIENT_ID</code>, and server{" "}
+            <code>CIRCLE_API_KEY</code> to enable Google sign-in and claiming.
           </p>
         </GlassCard>
       </main>
@@ -55,8 +55,16 @@ export default function GiftPage() {
 }
 
 function GiftClaimContent() {
-  const { ready, authenticated, login, logout } = usePrivy();
-  const { wallets } = useWallets();
+  const {
+    ready,
+    authenticated,
+    login,
+    logout,
+    walletAddress,
+    authError,
+    bootstrapError,
+    walletSyncing,
+  } = useCircleWallet();
   const { claimGift, loading, txHash, error } = useGift();
   const [status, setStatus] = useState<string | null>(null);
   const [giftAmountUsdc, setGiftAmountUsdc] = useState<string | null>(null);
@@ -71,14 +79,10 @@ function GiftClaimContent() {
     getOrAssignVariant("claim_cta_v1", ["a", "b"])
   );
 
-  const receiverAddress = useMemo(() => {
-    const embeddedWallet = wallets.find(
-      (wallet) =>
-        wallet.walletClientType === "privy" ||
-        wallet.walletClientType === "privy-v2"
-    );
-    return embeddedWallet?.address ?? null;
-  }, [wallets]);
+  const receiverAddress = useMemo(
+    () => walletAddress ?? null,
+    [walletAddress]
+  );
   const paymentIdHash = useMemo(() => getPaymentIdHashFromPath(), []);
 
   useEffect(() => {
@@ -163,12 +167,16 @@ function GiftClaimContent() {
     }
 
     if (!authenticated) {
-      login();
+      void login();
       return;
     }
 
     if (!receiverAddress) {
-      setStatus("No embedded wallet found. Please sign in again.");
+      setStatus(
+        walletSyncing
+          ? "Preparing your Circle wallet..."
+          : "No wallet address yet. Sign in with Google again."
+      );
       return;
     }
 
@@ -225,6 +233,11 @@ function GiftClaimContent() {
           <MainMenu />
         </div>
         <GlassCard className="relative space-y-5 p-6 text-center sm:space-y-6 sm:p-8">
+          {bootstrapError && (
+            <p className="rounded-xl border border-rose-500/40 bg-rose-950/40 p-3 text-xs text-rose-200">
+              {bootstrapError}
+            </p>
+          )}
           <div className="space-y-2">
             <p className="mx-auto inline-flex rounded-full border border-white/15 px-3 py-1 text-xs text-white/75">
               {ARC_TESTNET.chainName} · {ARC_TESTNET.chainId}
@@ -258,18 +271,32 @@ function GiftClaimContent() {
               <motion.button
                 type="button"
                 onClick={onUnwrap}
-                disabled={loading || !ready || remainingSeconds === 0}
+                disabled={
+                  loading ||
+                  !ready ||
+                  remainingSeconds === 0 ||
+                  walletSyncing
+                }
                 whileHover={{ scale: loading ? 1 : 1.03 }}
                 whileTap={{ scale: 0.98 }}
                 className="accent-gradient w-full rounded-2xl px-5 py-3.5 text-base font-semibold shadow-[0_16px_40px_rgba(76,85,255,0.42)] transition hover:shadow-[0_18px_46px_rgba(99,102,241,0.5)] disabled:cursor-not-allowed disabled:opacity-65 sm:px-6 sm:py-4 sm:text-lg"
               >
-                {loading
+                {walletSyncing
+                  ? "Preparing wallet..."
+                  : loading
                   ? "Opening your gift..."
                   : claimCopyVariant === "b"
                     ? "Claim to my wallet"
                     : "Unwrap your gift"}
               </motion.button>
-              {!authenticated && <OAuthNavHint />}
+              {!authenticated && (
+                <>
+                  <OAuthNavHint />
+                  {authError && (
+                    <p className="text-xs text-rose-400">{authError}</p>
+                  )}
+                </>
+              )}
 
               {authenticated && (
                 <button

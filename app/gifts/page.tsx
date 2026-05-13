@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { isAddress } from "ethers";
-import { usePrivy, useWallets } from "@privy-io/react-auth";
 import GlassCard from "../../components/ui/glass-card";
 import MainMenu from "../../components/ui/main-menu";
 import OAuthNavHint from "../../components/ui/oauth-nav-hint";
+import { isCircleWalletConfigured } from "../../features/circle-wallet/config/circle-env";
+import { useCircleWallet } from "../../features/circle-wallet/model/circle-wallet-provider";
 import { ARC_TESTNET, getArcExplorerTxUrl } from "../../utils";
 
 type SenderGiftStatus = "active" | "expired" | "claimed" | "reclaimed";
@@ -33,8 +34,7 @@ type SenderGiftsResponse =
     };
 
 export default function SenderDashboardPage() {
-  const hasPrivyAppId = Boolean(process.env.NEXT_PUBLIC_PRIVY_APP_ID);
-  if (!hasPrivyAppId) {
+  if (!isCircleWalletConfigured()) {
     return (
       <main className="relative flex min-h-screen items-center justify-center px-5 py-10 text-white">
         <GlassCard className="w-full max-w-[520px] space-y-3 p-8 text-center">
@@ -43,7 +43,9 @@ export default function SenderDashboardPage() {
           </div>
           <h1 className="text-3xl font-semibold tracking-tight">Sender Dashboard</h1>
           <p className="soft-text text-sm">
-            Set <code>NEXT_PUBLIC_PRIVY_APP_ID</code> to view sender dashboard.
+            Set <code>NEXT_PUBLIC_CIRCLE_APP_ID</code>,{" "}
+            <code>NEXT_PUBLIC_GOOGLE_CLIENT_ID</code>, and server{" "}
+            <code>CIRCLE_API_KEY</code> to view the sender dashboard.
           </p>
         </GlassCard>
       </main>
@@ -54,23 +56,20 @@ export default function SenderDashboardPage() {
 }
 
 function SenderDashboardContent() {
-  const { ready, authenticated, login } = usePrivy();
-  const { wallets } = useWallets();
+  const {
+    ready,
+    authenticated,
+    login,
+    walletAddress: senderWalletAddress,
+    authError,
+    bootstrapError,
+    walletSyncing,
+  } = useCircleWallet();
   const [loading, setLoading] = useState(false);
   const [reclaimingHash, setReclaimingHash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [gifts, setGifts] = useState<SenderGiftItem[]>([]);
-
-  const senderWalletAddress = useMemo(
-    () =>
-      wallets.find(
-        (wallet) =>
-          wallet.walletClientType === "privy" ||
-          wallet.walletClientType === "privy-v2"
-      )?.address ?? null,
-    [wallets]
-  );
 
   const loadGifts = useCallback(async () => {
     if (!senderWalletAddress || !isAddress(senderWalletAddress)) {
@@ -170,22 +169,33 @@ function SenderDashboardContent() {
             </div>
           </div>
 
+          {bootstrapError && (
+            <p className="rounded-xl border border-rose-500/40 bg-rose-950/40 p-3 text-sm text-rose-200">
+              {bootstrapError}
+            </p>
+          )}
+
           {!ready ? (
             <p className="text-sm text-white/70">Loading wallet...</p>
           ) : !authenticated ? (
             <div className="space-y-2">
               <button
                 type="button"
-                onClick={login}
+                onClick={() => void login()}
                 className="accent-gradient w-full rounded-xl px-4 py-3 text-sm font-semibold"
               >
-                Sign in to view sender dashboard
+                Sign in with Google
               </button>
               <OAuthNavHint className="text-left text-xs leading-relaxed text-white/55" />
+              {authError && (
+                <p className="text-sm text-rose-400">{authError}</p>
+              )}
             </div>
           ) : !senderWalletAddress ? (
             <p className="rounded-xl border border-white/10 bg-black/30 p-3 text-sm text-amber-300">
-              No embedded wallet found for this account.
+              {walletSyncing
+                ? "Circle wallet is finishing setup..."
+                : "No wallet address for this session yet."}
             </p>
           ) : (
             <p className="break-all rounded-xl border border-white/10 bg-black/25 p-3 text-xs text-white/70">
@@ -193,7 +203,7 @@ function SenderDashboardContent() {
             </p>
           )}
 
-          {status && <p className="text-sm text-emerald-300 break-all">{status}</p>}
+          {status && <p className="break-all text-sm text-emerald-300">{status}</p>}
           {error && <p className="text-sm text-rose-400">{error}</p>}
         </GlassCard>
 
@@ -280,7 +290,6 @@ function SenderDashboardContent() {
             </div>
           )}
         </GlassCard>
-
       </div>
     </main>
   );

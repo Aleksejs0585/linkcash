@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { usePrivy, useWallets } from "@privy-io/react-auth";
+import { useCircleWallet } from "@/features/circle-wallet/model/circle-wallet-provider";
 import {
   generateHash,
   generateLink,
@@ -27,8 +27,15 @@ type ReclaimGiftSuccess = {
 type ApiError = { error: string };
 
 export function useCreateGift() {
-  const { ready, authenticated, login } = usePrivy();
-  const { wallets } = useWallets();
+  const {
+    ready,
+    authenticated,
+    login,
+    walletAddress: senderWalletAddress,
+    authError,
+    bootstrapError,
+    walletSyncing,
+  } = useCircleWallet();
 
   const [link, setLink] = useState("");
   const [paymentIdHash, setPaymentIdHash] = useState<string | null>(null);
@@ -41,13 +48,6 @@ export function useCreateGift() {
   const [createCopyVariant] = useState(() =>
     getOrAssignVariant("create_primary_copy_v1", ["a", "b"])
   );
-
-  const senderWalletAddress =
-    wallets.find(
-      (wallet) =>
-        wallet.walletClientType === "privy" ||
-        wallet.walletClientType === "privy-v2"
-    )?.address ?? null;
 
   const facebookAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID?.trim() ?? "";
   const shareLinks = useMemo(
@@ -70,12 +70,14 @@ export function useCreateGift() {
   const onCreate = async () => {
     if (!ready) return;
     if (!authenticated) {
-      login();
+      void login();
       return;
     }
     if (!senderWalletAddress) {
       setStatus(
-        "No embedded sender wallet found. Sign out and sign in again to create one."
+        walletSyncing
+          ? "Preparing your Circle wallet on Arc Testnet..."
+          : "No sender wallet yet. Finish Google sign-in and wallet setup, then try again."
       );
       return;
     }
@@ -188,6 +190,9 @@ export function useCreateGift() {
     authenticated,
     login,
     senderWalletAddress,
+    authError,
+    bootstrapError,
+    walletSyncing,
     link,
     paymentIdHash,
     statusLink,

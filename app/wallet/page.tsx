@@ -2,16 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Contract, JsonRpcProvider, formatUnits, isAddress } from "ethers";
-import { useExportWallet, usePrivy, useWallets } from "@privy-io/react-auth";
-import GlassCard from "../../components/ui/glass-card";
-import MainMenu from "../../components/ui/main-menu";
-import OAuthNavHint from "../../components/ui/oauth-nav-hint";
-import { WalletBackupWarning } from "../../components/ui/wallet-backup-warning";
-import { trackEvent } from "../../lib/client/analytics";
-import {
-  ARC_TESTNET,
-  getArcExplorerAddressUrl,
-} from "../../utils";
+import GlassCard from "@/components/ui/glass-card";
+import MainMenu from "@/components/ui/main-menu";
+import OAuthNavHint from "@/components/ui/oauth-nav-hint";
+import { WalletBackupWarning } from "@/components/ui/wallet-backup-warning";
+import { isCircleWalletConfigured } from "@/features/circle-wallet/config/circle-env";
+import { useCircleWallet } from "@/features/circle-wallet/model/circle-wallet-provider";
+import { trackEvent } from "@/lib/client/analytics";
+import { ARC_TESTNET, getArcExplorerAddressUrl } from "@/utils";
 
 const ERC20_ABI = [
   "function balanceOf(address account) view returns (uint256)",
@@ -19,9 +17,7 @@ const ERC20_ABI = [
 ];
 
 export default function WalletPage() {
-  const hasPrivyAppId = Boolean(process.env.NEXT_PUBLIC_PRIVY_APP_ID);
-
-  if (!hasPrivyAppId) {
+  if (!isCircleWalletConfigured()) {
     return (
       <main className="relative flex min-h-screen items-center justify-center px-5 py-10 text-white">
         <GlassCard className="w-full max-w-[420px] space-y-3 p-8 text-center">
@@ -30,7 +26,9 @@ export default function WalletPage() {
           </div>
           <h1 className="text-3xl font-semibold tracking-tight">My wallet</h1>
           <p className="soft-text text-sm">
-            Set <code>NEXT_PUBLIC_PRIVY_APP_ID</code> to enable wallet access.
+            Set <code>NEXT_PUBLIC_CIRCLE_APP_ID</code> and{" "}
+            <code>NEXT_PUBLIC_GOOGLE_CLIENT_ID</code> (plus server{" "}
+            <code>CIRCLE_API_KEY</code>) to enable Circle wallets.
           </p>
         </GlassCard>
       </main>
@@ -41,34 +39,33 @@ export default function WalletPage() {
 }
 
 function WalletContent() {
-  const { ready, authenticated, login } = usePrivy();
-  const { wallets } = useWallets();
-  const { exportWallet } = useExportWallet();
+  const {
+    ready,
+    authenticated,
+    login,
+    logout,
+    walletAddress,
+    authError,
+    bootstrapError,
+    walletSyncing,
+  } = useCircleWallet();
 
   const [balance, setBalance] = useState<string | null>(null);
   const [loadingBalance, setLoadingBalance] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [exporting, setExporting] = useState(false);
 
-  const embeddedWallet = useMemo(
-    () =>
-      wallets.find(
-        (wallet) =>
-          wallet.walletClientType === "privy" ||
-          wallet.walletClientType === "privy-v2"
-      ),
-    [wallets]
+  const walletAddressResolved = useMemo(
+    () => (walletAddress && isAddress(walletAddress) ? walletAddress : null),
+    [walletAddress]
   );
-
-  const walletAddress = embeddedWallet?.address ?? null;
 
   useEffect(() => {
     trackEvent({ event: "wallet_open", path: "/wallet" });
   }, []);
 
   const loadBalance = useCallback(async () => {
-    if (!walletAddress || !isAddress(walletAddress)) {
+    if (!walletAddressResolved) {
       setBalance(null);
       return;
     }
@@ -80,7 +77,7 @@ function WalletContent() {
       const provider = new JsonRpcProvider(ARC_TESTNET.rpcUrl);
       const usdc = new Contract(ARC_TESTNET.usdcErc20Address, ERC20_ABI, provider);
       const [rawBalance, decimals] = await Promise.all([
-        usdc.balanceOf(walletAddress) as Promise<bigint>,
+        usdc.balanceOf(walletAddressResolved) as Promise<bigint>,
         usdc.decimals() as Promise<number>,
       ]);
 
@@ -90,7 +87,7 @@ function WalletContent() {
     } finally {
       setLoadingBalance(false);
     }
-  }, [walletAddress]);
+  }, [walletAddressResolved]);
 
   useEffect(() => {
     const timerId = window.setTimeout(() => {
@@ -101,26 +98,10 @@ function WalletContent() {
   }, [loadBalance]);
 
   const onCopy = async () => {
-    if (!walletAddress) return;
-    await navigator.clipboard.writeText(walletAddress);
+    if (!walletAddressResolved) return;
+    await navigator.clipboard.writeText(walletAddressResolved);
     setCopied(true);
     setTimeout(() => setCopied(false), 1200);
-  };
-
-  const onExport = async () => {
-    if (!walletAddress) return;
-    setExporting(true);
-    setError(null);
-
-    try {
-      await exportWallet({ address: walletAddress });
-    } catch (e) {
-      setError(
-        e instanceof Error ? e.message : "Failed to open wallet export modal."
-      );
-    } finally {
-      setExporting(false);
-    }
   };
 
   return (
@@ -139,9 +120,15 @@ function WalletContent() {
             My wallet
           </h1>
           <p className="soft-text mt-2 text-sm">
-            View your address, USDC balance, and manage access.
+            Circle user-controlled wallet on Arc Testnet.
           </p>
         </div>
+
+        {bootstrapError && (
+          <p className="rounded-xl border border-rose-500/40 bg-rose-950/40 p-3 text-sm text-rose-200">
+            {bootstrapError}
+          </p>
+        )}
 
         {!ready ? (
           <p className="text-center text-sm text-white/70">Loading wallet...</p>
@@ -149,18 +136,31 @@ function WalletContent() {
           <div className="space-y-2">
             <button
               type="button"
-              onClick={login}
+              onClick={() => void login()}
               className="accent-gradient w-full rounded-2xl px-6 py-3.5 text-base font-semibold"
             >
-              Sign in to view wallet
+              Sign in with Google
             </button>
             <OAuthNavHint />
+            {authError && (
+              <p className="text-center text-sm text-rose-400">{authError}</p>
+            )}
           </div>
-        ) : !walletAddress ? (
-          <p className="rounded-xl border border-white/10 bg-black/30 p-3 text-sm text-amber-300">
-            No embedded wallet found yet. Sign out and sign in again to trigger
-            wallet creation.
-          </p>
+        ) : !walletAddressResolved ? (
+          <div className="space-y-3">
+            <p className="rounded-xl border border-white/10 bg-black/30 p-3 text-sm text-amber-300">
+              {walletSyncing
+                ? "Finishing Circle wallet setup..."
+                : "No Arc wallet yet. Sign out and sign in with Google again, or wait a few seconds and refresh."}
+            </p>
+            <button
+              type="button"
+              onClick={logout}
+              className="w-full rounded-xl border border-white/15 px-4 py-2.5 text-sm text-white/85 transition hover:bg-white/5"
+            >
+              Sign out
+            </button>
+          </div>
         ) : (
           <div className="space-y-4">
             <WalletBackupWarning variant="inlineExportHint" />
@@ -168,17 +168,19 @@ function WalletContent() {
               <p className="text-xs uppercase tracking-[0.15em] text-white/60">
                 Wallet address
               </p>
-              <p className="mt-2 break-all text-sm text-white/90">{walletAddress}</p>
+              <p className="mt-2 break-all text-sm text-white/90">
+                {walletAddressResolved}
+              </p>
               <div className="mt-3 flex gap-2">
                 <button
                   type="button"
-                  onClick={onCopy}
+                  onClick={() => void onCopy()}
                   className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-white/85 transition hover:bg-white/5"
                 >
                   {copied ? "Copied" : "Copy address"}
                 </button>
                 <a
-                  href={getArcExplorerAddressUrl(walletAddress)}
+                  href={getArcExplorerAddressUrl(walletAddressResolved)}
                   target="_blank"
                   rel="noreferrer"
                   className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-blue-300 transition hover:bg-white/5"
@@ -206,17 +208,15 @@ function WalletContent() {
 
             <button
               type="button"
-              onClick={onExport}
-              disabled={exporting}
-              className="w-full rounded-xl border border-white/15 px-4 py-2.5 text-sm text-white/85 transition hover:bg-white/5 disabled:opacity-60"
+              onClick={logout}
+              className="w-full rounded-xl border border-white/15 px-4 py-2.5 text-sm text-white/85 transition hover:bg-white/5"
             >
-              {exporting ? "Opening export..." : "Export wallet"}
+              Sign out
             </button>
           </div>
         )}
 
         {error && <p className="text-sm text-rose-400">{error}</p>}
-
       </GlassCard>
     </main>
   );

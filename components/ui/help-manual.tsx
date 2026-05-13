@@ -42,6 +42,13 @@ export default function HelpManual() {
               </h2>
 
               <div className="mt-3 space-y-3 text-white/80">
+                <p className="rounded-lg border border-amber-400/35 bg-amber-500/10 px-3 py-2 text-xs text-amber-50">
+                  <span className="font-semibold text-white">Auth change:</span>{" "}
+                  LinkCash no longer uses Privy. Sign in with the same Google
+                  account via Circle to get a new wallet; old Privy sessions and
+                  addresses are not carried over—sign in again after this
+                  release.
+                </p>
                 <p>
                   <span className="font-semibold text-white">
                     1) Where the funds come from:
@@ -61,8 +68,9 @@ export default function HelpManual() {
                   <span className="font-semibold text-white">
                     3) Where funds are received:
                   </span>{" "}
-                  after Privy login, the recipient uses an embedded wallet and
-                  USDC is sent to that wallet address.
+                  after Google sign-in with Circle, the recipient has a
+                  user-controlled wallet on Arc Testnet and USDC is sent to
+                  that address.
                 </p>
                 <p>
                   <span className="font-semibold text-white">
@@ -76,26 +84,27 @@ export default function HelpManual() {
                     5) How to verify:
                   </span>{" "}
                   after a successful claim, open the Arc Explorer link and
-                  compare the recipient address with the embedded wallet address
-                  shown by Privy.
+                  compare the recipient address with the wallet address shown
+                  in this app after sign-in.
                 </p>
                 <p>
                   <span className="font-semibold text-white">
                     6) Where to view your wallet:
                   </span>{" "}
-                  open <code>/wallet</code> to see your embedded wallet address,
-                  USDC balance, explorer link, and wallet export option.
+                  open <code>/wallet</code> to see your Arc Testnet address,
+                  USDC balance, and explorer link.
                 </p>
                 <p>
                   <span className="font-semibold text-white">
-                    7) X (Twitter) sign-in and navigation:
+                    7) Google sign-in and navigation:
                   </span>{" "}
-                  when the browser navigates to <code>twitter.com</code> for
-                  OAuth, the system Back button only moves within X&apos;s
-                  history. LinkCash cannot override that. Use{" "}
+                  when the browser navigates to Google for OAuth, the system
+                  Back button only moves within Google&apos;s history. LinkCash
+                  cannot override that. Use{" "}
                   <span className="font-medium text-white/90">Cancel</span> on
-                  X, switch back to your LinkCash tab, or complete sign-in. Use
-                  the in-app <span className="font-medium text-white/90">Menu</span>{" "}
+                  Google, switch back to your LinkCash tab, or complete
+                  sign-in. Use the in-app{" "}
+                  <span className="font-medium text-white/90">Menu</span>{" "}
                   for Home or the product site link.
                 </p>
               </div>

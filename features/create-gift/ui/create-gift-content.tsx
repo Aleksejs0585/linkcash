@@ -16,6 +16,9 @@ export function CreateGiftContent() {
     authenticated,
     login,
     senderWalletAddress,
+    authError,
+    bootstrapError,
+    walletSyncing,
     link,
     paymentIdHash,
     statusLink,
@@ -61,37 +64,48 @@ export function CreateGiftContent() {
           </p>
         </motion.div>
 
+        {bootstrapError && (
+          <p className="rounded-xl border border-rose-500/40 bg-rose-950/40 p-3 text-sm text-rose-200">
+            {bootstrapError}
+          </p>
+        )}
+
         {!ready ? (
           <p className="text-sm text-white/70">Loading wallet...</p>
         ) : !authenticated ? (
           <div className="space-y-2">
             <motion.button
               type="button"
-              onClick={login}
+              onClick={() => void login()}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.98 }}
               className="accent-gradient w-full rounded-2xl px-5 py-3.5 text-base font-semibold shadow-[0_14px_36px_rgba(76,85,255,0.38)] transition sm:px-6 sm:py-4 sm:text-lg"
             >
-              Sign in to create gift
+              Sign in with Google
             </motion.button>
             <OAuthNavHint />
+            {authError && (
+              <p className="text-center text-sm text-rose-400">{authError}</p>
+            )}
           </div>
         ) : (
           <div className="space-y-3">
             <WalletBackupWarning />
-          <motion.button
+            <motion.button
             type="button"
             onClick={onCreate}
-            disabled={creating || !senderWalletAddress}
+            disabled={creating || !senderWalletAddress || walletSyncing}
             whileHover={{ scale: creating ? 1 : 1.03 }}
             whileTap={{ scale: 0.98 }}
             className="accent-gradient w-full rounded-2xl px-5 py-3.5 text-base font-semibold shadow-[0_14px_36px_rgba(76,85,255,0.38)] transition disabled:opacity-65 sm:px-6 sm:py-4 sm:text-lg"
           >
             {creating
               ? "Funding gift..."
-              : createCopyVariant === "b"
-                ? "Fund gift link"
-                : "Create gift"}
+              : walletSyncing
+                ? "Preparing wallet..."
+                : createCopyVariant === "b"
+                  ? "Fund gift link"
+                  : "Create gift"}
           </motion.button>
           </div>
         )}
@@ -136,7 +150,9 @@ export function CreateGiftContent() {
             </p>
           ) : (
             <p className="mt-2 text-xs text-amber-300">
-              Embedded sender wallet not found yet.
+              {walletSyncing
+                ? "Circle wallet is finishing setup on Arc Testnet..."
+                : "Sender wallet not ready yet. Wait for setup or sign in again."}
             </p>
           )}
         </div>
@@ -211,6 +227,9 @@ export function CreateGiftContent() {
         </AnimatePresence>
 
         {status && <p className="break-all text-sm text-white/75">{status}</p>}
+        {authenticated && authError && (
+          <p className="text-center text-sm text-rose-400">{authError}</p>
+        )}
 
         <div className="text-center">
           <Link
