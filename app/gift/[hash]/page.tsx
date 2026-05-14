@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import confetti from "canvas-confetti";
 import { AnimatePresence, motion } from "framer-motion";
 import GlassCard from "../../../components/ui/glass-card";
@@ -17,6 +17,8 @@ import {
   getPaymentIdHashFromPath,
   getArcExplorerTxUrl,
 } from "../../../utils";
+
+const AUTO_CLAIM_GIFT_PATH_KEY = "linkcash:autoClaimGiftPath";
 
 type GiftDetailsResponse =
   | {
@@ -84,6 +86,12 @@ function GiftClaimContent() {
     [walletAddress]
   );
   const paymentIdHash = useMemo(() => getPaymentIdHashFromPath(), []);
+
+  useEffect(() => {
+    if (authError) {
+      sessionStorage.removeItem(AUTO_CLAIM_GIFT_PATH_KEY);
+    }
+  }, [authError]);
 
   useEffect(() => {
     if (!paymentIdHash) {
@@ -161,32 +169,8 @@ function GiftClaimContent() {
     });
   }, [claimCopyVariant, error, paymentIdHash]);
 
-  const onUnwrap = async () => {
-    if (!ready) {
-      return;
-    }
-
-    if (!authenticated) {
-      void login();
-      return;
-    }
-
-    if (!receiverAddress) {
-      setStatus(
-        walletSyncing
-          ? "Preparing your Circle wallet..."
-          : "No wallet address yet. Sign in with Google again."
-      );
-      return;
-    }
-
-    if (remainingSeconds !== null && remainingSeconds <= 0) {
-      setStatus("This gift has expired.");
-      return;
-    }
-
-    const hash = await claimGift(receiverAddress);
-    if (hash) {
+  const completeClaimSuccess = useCallback(
+    (hash: string) => {
       trackEvent({
         event: "claim_success",
         path: window.location.pathname,
@@ -204,7 +188,74 @@ function GiftClaimContent() {
       successOverlayTimerRef.current = window.setTimeout(() => {
         setIsSuccess(true);
       }, 2200);
+    },
+    [claimCopyVariant, paymentIdHash]
+  );
+
+  const runClaim = useCallback(async () => {
+    if (!receiverAddress) {
+      setStatus(
+        walletSyncing
+          ? "Preparing your Circle wallet..."
+          : "No wallet address yet. Sign in with Google again."
+      );
+      return;
     }
+
+    if (remainingSeconds !== null && remainingSeconds <= 0) {
+      setStatus("This gift has expired.");
+      return;
+    }
+
+    const hash = await claimGift(receiverAddress);
+    if (hash) {
+      completeClaimSuccess(hash);
+    }
+  }, [
+    claimGift,
+    completeClaimSuccess,
+    receiverAddress,
+    remainingSeconds,
+    walletSyncing,
+  ]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const path = window.location.pathname;
+    if (sessionStorage.getItem(AUTO_CLAIM_GIFT_PATH_KEY) !== path) return;
+    if (!authenticated || !ready || walletSyncing) return;
+    if (!receiverAddress) return;
+    if (remainingSeconds !== null && remainingSeconds <= 0) {
+      sessionStorage.removeItem(AUTO_CLAIM_GIFT_PATH_KEY);
+      return;
+    }
+
+    sessionStorage.removeItem(AUTO_CLAIM_GIFT_PATH_KEY);
+    void (async () => {
+      await Promise.resolve();
+      await runClaim();
+    })();
+  }, [
+    authenticated,
+    ready,
+    walletSyncing,
+    receiverAddress,
+    remainingSeconds,
+    runClaim,
+  ]);
+
+  const onUnwrap = async () => {
+    if (!ready) {
+      return;
+    }
+
+    if (!authenticated) {
+      sessionStorage.setItem(AUTO_CLAIM_GIFT_PATH_KEY, window.location.pathname);
+      void login();
+      return;
+    }
+
+    await runClaim();
   };
 
   const minutes =
@@ -270,7 +321,7 @@ function GiftClaimContent() {
             <div className="space-y-3">
               <motion.button
                 type="button"
-                onClick={onUnwrap}
+                onClick={() => void onUnwrap()}
                 disabled={
                   loading ||
                   !ready ||
@@ -284,10 +335,12 @@ function GiftClaimContent() {
                 {walletSyncing
                   ? "Preparing wallet..."
                   : loading
-                  ? "Opening your gift..."
-                  : claimCopyVariant === "b"
-                    ? "Claim to my wallet"
-                    : "Unwrap your gift"}
+                    ? "Opening your gift..."
+                    : !authenticated
+                      ? "Sign in & unwrap"
+                      : claimCopyVariant === "b"
+                        ? "Claim to my wallet"
+                        : "Unwrap your gift"}
               </motion.button>
               {!authenticated && (
                 <>

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createGift } from "@/entities/gift/server/gift-service";
+import { createGift, syncClientFundedGift } from "@/entities/gift/server/gift-service";
 import { parseCreateGiftInput } from "@/entities/gift/server/gift-validation";
 import { HttpError, errorMessage } from "@/lib/server/http-errors";
 
@@ -13,8 +13,12 @@ export async function POST(request: Request) {
     } catch {
       throw new HttpError(400, "Invalid JSON body.");
     }
-    const input = parseCreateGiftInput(rawBody);
-    const result = await createGift(input);
+    const parsed = parseCreateGiftInput(rawBody);
+    const { syncClientFunding, ...relayInput } = parsed;
+    const result =
+      syncClientFunding === true
+        ? await syncClientFundedGift(relayInput)
+        : await createGift(relayInput);
     return NextResponse.json(result);
   } catch (error) {
     if (error instanceof HttpError) {

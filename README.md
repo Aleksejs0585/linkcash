@@ -46,7 +46,10 @@ docker compose up -d redis
 - `RPC_URL`: Arc RPC endpoint.
 - `PRIVATE_KEY`: Relayer private key used by server API routes.
 - `CONTRACT_ADDRESS`: Deployed gift contract address.
+- `NEXT_PUBLIC_CONTRACT_ADDRESS`: **Same** gift contract address as `CONTRACT_ADDRESS`, exposed to the browser so the sender can **approve USDC** for that contract before creating a gift.
 - `ADMIN_DASHBOARD_PASSWORD`: Password for admin dashboard login.
+
+**Gift funding model:** USDC is pulled **from the sender’s Circle wallet** (`transferFrom` on the gift contract). The relayer (`PRIVATE_KEY`) **only pays gas** for `fundGift` / reclaim / claim relayed calls. You must **redeploy** the gift contract from the updated `VibeLinkGift.sol` so on-chain logic matches this model.
 
 ### Optional
 

@@ -1,4 +1,4 @@
-import { isAddress, isHexString } from "ethers";
+import { getAddress, isAddress, isHexString } from "ethers";
 import { z } from "zod";
 import { HttpError } from "@/lib/server/http-errors";
 
@@ -7,6 +7,11 @@ export type CreateGiftInput = {
   amountUsdc: string;
   refundAddress: string;
   expiresInHours: number;
+};
+
+/** Parsed POST /api/create-gift body (optional on-chain sync path). */
+export type CreateGiftParsed = CreateGiftInput & {
+  syncClientFunding?: true;
 };
 
 export type ReclaimGiftInput = {
@@ -27,6 +32,7 @@ const createGiftSchema = z
     amountUsdc: z.string().trim(),
     refundAddress: z.string().trim(),
     expiresInHours: z.coerce.number().default(24),
+    syncClientFunding: z.literal(true).optional(),
   })
   .strict();
 
@@ -36,12 +42,18 @@ const reclaimGiftSchema = z
   })
   .strict();
 
-export function parseCreateGiftInput(body: unknown): CreateGiftInput {
+export function parseCreateGiftInput(body: unknown): CreateGiftParsed {
   const parsed = createGiftSchema.safeParse(body);
   if (!parsed.success) {
     throw new HttpError(400, "Invalid create gift payload.");
   }
-  const { paymentIdHash, amountUsdc, refundAddress, expiresInHours } = parsed.data;
+  const {
+    paymentIdHash,
+    amountUsdc,
+    refundAddress,
+    expiresInHours,
+    syncClientFunding,
+  } = parsed.data;
 
   if (!isHexString(paymentIdHash, 32)) {
     throw new HttpError(400, "paymentIdHash must be a bytes32 hex string.");
@@ -61,7 +73,16 @@ export function parseCreateGiftInput(body: unknown): CreateGiftInput {
     throw new HttpError(400, "expiresInHours must be between 1 and 720.");
   }
 
-  return { paymentIdHash, amountUsdc, refundAddress, expiresInHours };
+  const base: CreateGiftInput = {
+    paymentIdHash,
+    amountUsdc,
+    refundAddress: getAddress(refundAddress),
+    expiresInHours,
+  };
+  if (syncClientFunding === true) {
+    return { ...base, syncClientFunding: true };
+  }
+  return base;
 }
 
 export function parseReclaimGiftInput(body: unknown): ReclaimGiftInput {

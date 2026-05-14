@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
   buildClaimIdempotencyKey,
   getPaymentIdHashFromPath,
@@ -27,7 +27,7 @@ export function useGift() {
   const [txHash, setTxHash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const claimGift = async (receiverAddress: string) => {
+  const claimGift = useCallback(async (receiverAddress: string) => {
     const secret = getSecretFromHash();
     const paymentIdHash = getPaymentIdHashFromPath();
 
@@ -80,7 +80,7 @@ export function useGift() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   return {
     claimGift,

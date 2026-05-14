@@ -1,6 +1,7 @@
-import { Contract, Wallet, formatUnits, parseUnits } from "ethers";
+import { Contract, Wallet, formatUnits, getAddress, parseUnits } from "ethers";
 import { createArcProviderWithContractCheck } from "@/lib/server/arc-chain";
 import { getArcReadEnv, getArcRelayerEnv } from "@/lib/server/env";
+import { HttpError } from "@/lib/server/http-errors";
 import { senderGiftStore } from "@/lib/server/sender-gift-store";
 import type {
   CreateGiftInput,
@@ -16,7 +17,6 @@ const GIFT_ABI = [
 ];
 const ERC20_ABI = [
   "function allowance(address owner,address spender) view returns (uint256)",
-  "function approve(address spender,uint256 amount) returns (bool)",
 ];
 
 type SenderGiftStatus = "active" | "expired" | "claimed" | "reclaimed";
@@ -44,12 +44,14 @@ export async function createGift(input: CreateGiftInput) {
     Math.floor(Date.now() / 1000) + Math.floor(input.expiresInHours * 60 * 60)
   );
   const allowance = (await usdc.allowance(
-    relayer.address,
+    input.refundAddress,
     contractAddress
   )) as bigint;
   if (allowance < amountRaw) {
-    const approveTx = await usdc.approve(contractAddress, amountRaw);
-    await approveTx.wait();
+    throw new HttpError(
+      400,
+      "Insufficient USDC allowance for the gift contract. Approve USDC in your wallet, then try again."
+    );
   }
 
   const tx = await gift.fundGift(
@@ -76,6 +78,114 @@ export async function createGift(input: CreateGiftInput) {
     txHash,
     refundAddress: input.refundAddress,
     expiresAt: Number(expiresAt),
+  };
+}
+
+const GIFT_EVENTS_ABI = [
+  ...GIFT_ABI,
+  "event GiftFunded(bytes32 indexed paymentIdHash,address indexed funder,address indexed refundAddress,uint256 amount,uint64 expiresAt)",
+] as const;
+
+async function findFundGiftTxHash(
+  gift: Contract,
+  paymentIdHash: string,
+  latestBlock: number
+): Promise<string | null> {
+  try {
+    const filter = gift.filters.GiftFunded(paymentIdHash);
+    const window = 80_000;
+    let to = latestBlock;
+    for (let wave = 0; wave < 8; wave++) {
+      const from = Math.max(0, to - window);
+      const logs = await gift.queryFilter(filter, from, to);
+      if (logs.length > 0) {
+        const last = logs[logs.length - 1];
+        return last.transactionHash;
+      }
+      if (from === 0) break;
+      to = from - 1;
+    }
+  } catch {
+    /* ignore explorer/RPC limitations */
+  }
+  return null;
+}
+
+export async function syncClientFundedGift(input: CreateGiftInput) {
+  const { rpcUrl, contractAddress } = getArcReadEnv();
+  const provider = await createArcProviderWithContractCheck(rpcUrl, contractAddress);
+  const gift = new Contract(contractAddress, GIFT_EVENTS_ABI, provider);
+
+  const existingEvents = await senderGiftStore.readRecent(2500);
+  const already = existingEvents.find(
+    (entry) =>
+      entry.event === "gift_funded" &&
+      entry.paymentIdHash.toLowerCase() === input.paymentIdHash.toLowerCase()
+  );
+  if (already) {
+    const state = (await gift.gifts(input.paymentIdHash)) as {
+      expiresAt: bigint;
+    };
+    return {
+      ok: true as const,
+      txHash: already.txHash,
+      refundAddress: input.refundAddress,
+      expiresAt: Number(state.expiresAt),
+      cached: true as const,
+    };
+  }
+
+  const expectedRaw = parseUnits(input.amountUsdc, 6);
+  const state = (await gift.gifts(input.paymentIdHash)) as {
+    amount: bigint;
+    refundAddress: string;
+    expiresAt: bigint;
+    claimed: boolean;
+  };
+
+  if (state.amount <= BigInt(0)) {
+    throw new HttpError(
+      400,
+      "Gift is not visible onchain yet. Confirm the wallet transaction, then try again."
+    );
+  }
+  if (state.amount !== expectedRaw) {
+    throw new HttpError(400, "Onchain gift amount does not match this request.");
+  }
+  if (state.claimed) {
+    throw new HttpError(400, "This gift is already finalized onchain.");
+  }
+  if (getAddress(state.refundAddress) !== getAddress(input.refundAddress)) {
+    throw new HttpError(400, "Onchain refund wallet does not match.");
+  }
+
+  const expiresAtNum = Number(state.expiresAt);
+  const nowSec = Math.floor(Date.now() / 1000);
+  if (expiresAtNum <= nowSec) {
+    throw new HttpError(400, "This gift is already expired onchain.");
+  }
+
+  const latestBlock = await provider.getBlockNumber();
+  let txHash = await findFundGiftTxHash(gift, input.paymentIdHash, latestBlock);
+  if (!txHash) {
+    txHash = `client-funded:${input.paymentIdHash.slice(2, 18)}`;
+  }
+
+  await senderGiftStore.write({
+    event: "gift_funded",
+    timestamp: new Date().toISOString(),
+    paymentIdHash: input.paymentIdHash,
+    refundAddress: input.refundAddress.toLowerCase(),
+    amountRaw: expectedRaw.toString(),
+    expiresAt: expiresAtNum,
+    txHash,
+  });
+
+  return {
+    ok: true as const,
+    txHash,
+    refundAddress: input.refundAddress,
+    expiresAt: expiresAtNum,
   };
 }
 

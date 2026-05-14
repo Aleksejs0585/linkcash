@@ -33,8 +33,12 @@ type CircleWalletContextValue = {
   ready: boolean;
   authenticated: boolean;
   walletAddress: string | null;
+  primaryWalletId: string | null;
+  userToken: string | null;
+  encryptionKey: string | null;
   login: () => Promise<void>;
   logout: () => void;
+  executeChallenge: (challengeId: string) => Promise<void>;
   authError: string | null;
   bootstrapError: string | null;
   walletSyncing: boolean;
@@ -44,10 +48,16 @@ const unconfiguredValue: CircleWalletContextValue = {
   ready: true,
   authenticated: false,
   walletAddress: null,
+  primaryWalletId: null,
+  userToken: null,
+  encryptionKey: null,
   login: async () => {
     /* no-op when Circle env is missing */
   },
   logout: () => {
+    /* no-op */
+  },
+  executeChallenge: async () => {
     /* no-op */
   },
   authError: null,
@@ -152,6 +162,11 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
 
   const walletAddress = useMemo(
     () => pickArcWallet(wallets)?.address ?? null,
+    [wallets]
+  );
+
+  const primaryWalletId = useMemo(
+    () => pickArcWallet(wallets)?.id ?? null,
     [wallets]
   );
 
@@ -552,13 +567,34 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
     setDeviceEncryptionKey("");
   }, []);
 
+  const executeChallenge = useCallback(
+    async (challengeId: string) => {
+      const sdk = sdkRef.current;
+      if (!sdk) {
+        throw new Error("Wallet SDK is not ready.");
+      }
+      if (!userToken || !encryptionKey) {
+        throw new Error("You must be signed in.");
+      }
+      await executeChallengePromise(sdk, challengeId, {
+        userToken,
+        encryptionKey,
+      });
+    },
+    [userToken, encryptionKey]
+  );
+
   const value = useMemo<CircleWalletContextValue>(
     () => ({
       ready,
       authenticated,
       walletAddress,
+      primaryWalletId,
+      userToken,
+      encryptionKey,
       login,
       logout,
+      executeChallenge,
       authError,
       bootstrapError,
       walletSyncing,
@@ -567,9 +603,13 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
       authError,
       authenticated,
       bootstrapError,
+      encryptionKey,
+      executeChallenge,
       login,
       logout,
+      primaryWalletId,
       ready,
+      userToken,
       walletAddress,
       walletSyncing,
     ]

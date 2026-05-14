@@ -1,8 +1,64 @@
 import { NextResponse } from "next/server";
+import { getAddress, Interface, isAddress, isHexString, parseUnits } from "ethers";
+import { getArcReadEnv } from "@/lib/server/env";
 
 const CIRCLE_BASE_URL =
   process.env.NEXT_PUBLIC_CIRCLE_BASE_URL ?? "https://api.circle.com";
 const CIRCLE_API_KEY = process.env.CIRCLE_API_KEY;
+
+type CircleWalletRow = {
+  id?: string;
+  walletId?: string;
+  address?: string;
+  walletAddress?: string;
+  blockchain?: string;
+};
+
+function parseCircleWalletRow(row: unknown): {
+  id: string;
+  address: string;
+  blockchain: string;
+} | null {
+  if (!row || typeof row !== "object") return null;
+  const w = row as CircleWalletRow;
+  const id =
+    typeof w.id === "string"
+      ? w.id
+      : typeof w.walletId === "string"
+        ? w.walletId
+        : "";
+  const rawAddress =
+    typeof w.address === "string"
+      ? w.address
+      : typeof w.walletAddress === "string"
+        ? w.walletAddress
+        : "";
+  const blockchain = typeof w.blockchain === "string" ? w.blockchain : "";
+  if (!id || !rawAddress || !isAddress(rawAddress)) return null;
+  return { id, address: getAddress(rawAddress), blockchain };
+}
+
+async function fetchCircleWallets(userToken: string): Promise<unknown[]> {
+  const response = await fetch(`${CIRCLE_BASE_URL}/v1/w3s/wallets`, {
+    method: "GET",
+    headers: {
+      accept: "application/json",
+      "content-type": "application/json",
+      Authorization: `Bearer ${CIRCLE_API_KEY}`,
+      "X-User-Token": userToken,
+    },
+  });
+  const data = (await response.json()) as Record<string, unknown>;
+  if (!response.ok) {
+    throw new Error(
+      typeof data.message === "string"
+        ? data.message
+        : `Circle wallets error (${response.status})`
+    );
+  }
+  const inner = data.data as { wallets?: unknown[] } | undefined;
+  return inner?.wallets ?? [];
+}
 
 export async function POST(request: Request) {
   if (!CIRCLE_API_KEY) {
@@ -122,6 +178,270 @@ export async function POST(request: Request) {
         }
 
         const inner = data.data as { wallets: unknown[] };
+        return NextResponse.json(inner, { status: 200 });
+      }
+
+      case "contractExecutionChallenge": {
+        const userToken = params.userToken as string | undefined;
+        const walletId = params.walletId as string | undefined;
+        const contractAddress = (params.contractAddress as string | undefined)?.trim();
+        const abiFunctionSignature = (
+          params.abiFunctionSignature as string | undefined
+        )?.trim();
+        const abiParameters = params.abiParameters as unknown[] | undefined;
+
+        if (!userToken || !walletId) {
+          return NextResponse.json(
+            { error: "Missing userToken or walletId" },
+            { status: 400 }
+          );
+        }
+
+        let arc: { usdcAddress: string; contractAddress: string };
+        try {
+          arc = getArcReadEnv();
+        } catch {
+          return NextResponse.json(
+            { error: "Arc contract env is not configured on the server." },
+            { status: 503 }
+          );
+        }
+
+        if (!contractAddress || !isAddress(contractAddress)) {
+          return NextResponse.json(
+            { error: "Invalid contractAddress" },
+            { status: 400 }
+          );
+        }
+
+        if (
+          contractAddress.toLowerCase() !== arc.usdcAddress.toLowerCase()
+        ) {
+          return NextResponse.json(
+            { error: "Contract execution is only allowed for USDC." },
+            { status: 400 }
+          );
+        }
+
+        if (abiFunctionSignature !== "approve(address,uint256)") {
+          return NextResponse.json(
+            { error: "Unsupported contract call." },
+            { status: 400 }
+          );
+        }
+
+        if (!Array.isArray(abiParameters) || abiParameters.length !== 2) {
+          return NextResponse.json(
+            { error: "approve requires two ABI parameters." },
+            { status: 400 }
+          );
+        }
+
+        const spenderRaw = String(abiParameters[0]).trim();
+        const amountRaw = String(abiParameters[1]).trim();
+        if (!isAddress(spenderRaw)) {
+          return NextResponse.json(
+            { error: "Invalid approve spender address." },
+            { status: 400 }
+          );
+        }
+        if (!/^\d+$/.test(amountRaw)) {
+          return NextResponse.json(
+            { error: "Invalid approve amount." },
+            { status: 400 }
+          );
+        }
+
+        if (
+          getAddress(spenderRaw).toLowerCase() !==
+          getAddress(arc.contractAddress).toLowerCase()
+        ) {
+          return NextResponse.json(
+            { error: "Approve spender must be the gift contract address." },
+            { status: 400 }
+          );
+        }
+
+        const response = await fetch(
+          `${CIRCLE_BASE_URL}/v1/w3s/user/transactions/contractExecution`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${CIRCLE_API_KEY}`,
+              "X-User-Token": userToken,
+              "X-Request-Id": crypto.randomUUID(),
+            },
+            body: JSON.stringify({
+              idempotencyKey: crypto.randomUUID(),
+              walletId,
+              contractAddress: arc.usdcAddress,
+              abiFunctionSignature: "approve(address,uint256)",
+              abiParameters: [getAddress(spenderRaw), amountRaw],
+              feeLevel: "MEDIUM",
+            }),
+          }
+        );
+
+        const data = (await response.json()) as Record<string, unknown>;
+
+        if (!response.ok) {
+          return NextResponse.json(data, { status: response.status });
+        }
+
+        const inner = data.data as { challengeId: string };
+        return NextResponse.json(inner, { status: 200 });
+      }
+
+      case "giftFundingBatchChallenge": {
+        const userToken = params.userToken as string | undefined;
+        const walletId = params.walletId as string | undefined;
+        const paymentIdHash = (params.paymentIdHash as string | undefined)?.trim();
+        const amountUsdc = (params.amountUsdc as string | undefined)?.trim();
+        const expiresInHoursRaw = params.expiresInHours;
+
+        if (!userToken || !walletId || !paymentIdHash || !amountUsdc) {
+          return NextResponse.json(
+            {
+              error:
+                "Missing userToken, walletId, paymentIdHash, or amountUsdc.",
+            },
+            { status: 400 }
+          );
+        }
+
+        if (!isHexString(paymentIdHash, 32)) {
+          return NextResponse.json(
+            { error: "paymentIdHash must be a bytes32 hex string." },
+            { status: 400 }
+          );
+        }
+
+        const expiresInHours = Number(expiresInHoursRaw);
+        if (
+          !Number.isFinite(expiresInHours) ||
+          expiresInHours <= 0 ||
+          expiresInHours > 720
+        ) {
+          return NextResponse.json(
+            { error: "expiresInHours must be between 1 and 720." },
+            { status: 400 }
+          );
+        }
+
+        const amountNum = Number(amountUsdc);
+        if (!Number.isFinite(amountNum) || amountNum <= 0) {
+          return NextResponse.json(
+            { error: "amountUsdc must be a positive number." },
+            { status: 400 }
+          );
+        }
+
+        let arc: { contractAddress: string; usdcAddress: string };
+        try {
+          arc = getArcReadEnv();
+        } catch {
+          return NextResponse.json(
+            { error: "Arc contract env is not configured on the server." },
+            { status: 503 }
+          );
+        }
+
+        let walletsRaw: unknown[];
+        try {
+          walletsRaw = await fetchCircleWallets(userToken);
+        } catch (error) {
+          const msg =
+            error instanceof Error ? error.message : "Failed to list wallets.";
+          return NextResponse.json({ error: msg }, { status: 502 });
+        }
+
+        let scaAddress: string | null = null;
+        for (const row of walletsRaw) {
+          const w = parseCircleWalletRow(row);
+          if (w && w.id === walletId && w.blockchain === "ARC-TESTNET") {
+            scaAddress = w.address;
+            break;
+          }
+        }
+
+        if (!scaAddress) {
+          return NextResponse.json(
+            {
+              error:
+                "ARC-TESTNET wallet not found for this walletId. Ensure the user was initialized as SCA.",
+            },
+            { status: 400 }
+          );
+        }
+
+        let amountRaw: bigint;
+        try {
+          amountRaw = parseUnits(amountUsdc, 6);
+        } catch {
+          return NextResponse.json(
+            { error: "Invalid USDC amount format." },
+            { status: 400 }
+          );
+        }
+
+        const expiresAt = BigInt(
+          Math.floor(Date.now() / 1000) + Math.floor(expiresInHours * 3600)
+        );
+
+        const approveIface = new Interface(["function approve(address,uint256)"]);
+        const approveData = approveIface.encodeFunctionData("approve", [
+          getAddress(arc.contractAddress),
+          amountRaw,
+        ]);
+
+        const giftIface = new Interface([
+          "function fundGift(bytes32,uint256,address,uint64)",
+        ]);
+        const fundData = giftIface.encodeFunctionData("fundGift", [
+          paymentIdHash,
+          amountRaw,
+          getAddress(scaAddress),
+          expiresAt,
+        ]);
+
+        const usdcAddr = getAddress(arc.usdcAddress);
+        const giftAddr = getAddress(arc.contractAddress);
+
+        const batchParameter: [string, string, string][] = [
+          [usdcAddr, "0", approveData],
+          [giftAddr, "0", fundData],
+        ];
+
+        const response = await fetch(
+          `${CIRCLE_BASE_URL}/v1/w3s/user/transactions/contractExecution`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${CIRCLE_API_KEY}`,
+              "X-User-Token": userToken,
+              "X-Request-Id": crypto.randomUUID(),
+            },
+            body: JSON.stringify({
+              idempotencyKey: crypto.randomUUID(),
+              walletId,
+              contractAddress: getAddress(scaAddress),
+              abiFunctionSignature:
+                "executeBatch((address, uint256, bytes)[])",
+              abiParameters: [batchParameter],
+              feeLevel: "MEDIUM",
+            }),
+          }
+        );
+
+        const data = (await response.json()) as Record<string, unknown>;
+
+        if (!response.ok) {
+          return NextResponse.json(data, { status: response.status });
+        }
+
+        const inner = data.data as { challengeId: string };
         return NextResponse.json(inner, { status: 200 });
       }
 

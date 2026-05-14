@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useCircleWallet } from "@/features/circle-wallet/model/circle-wallet-provider";
+import { getPublicGiftContractAddress } from "@/features/create-gift/lib/gift-usdc";
+import { waitForClientFundedGift } from "@/features/create-gift/lib/read-gift-on-chain";
 import {
   generateHash,
   generateLink,
@@ -17,6 +19,7 @@ type CreateGiftSuccess = {
   txHash: string;
   refundAddress: string;
   expiresAt: number;
+  cached?: boolean;
 };
 
 type ReclaimGiftSuccess = {
@@ -26,12 +29,41 @@ type ReclaimGiftSuccess = {
 
 type ApiError = { error: string };
 
+type ContractChallengeResponse = { challengeId: string };
+
+async function postCircleChallenge(
+  body: Record<string, unknown>
+): Promise<ContractChallengeResponse> {
+  const response = await fetch("/api/circle", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = (await response.json()) as ContractChallengeResponse & {
+    error?: string;
+    message?: string;
+  };
+  if (!response.ok || !data.challengeId) {
+    const msg =
+      typeof data.error === "string"
+        ? data.error
+        : typeof data.message === "string"
+          ? data.message
+          : `Circle API error (${response.status})`;
+    throw new Error(msg);
+  }
+  return { challengeId: data.challengeId };
+}
+
 export function useCreateGift() {
   const {
     ready,
     authenticated,
     login,
     walletAddress: senderWalletAddress,
+    primaryWalletId,
+    userToken,
+    executeChallenge,
     authError,
     bootstrapError,
     walletSyncing,
@@ -48,6 +80,9 @@ export function useCreateGift() {
   const [createCopyVariant] = useState(() =>
     getOrAssignVariant("create_primary_copy_v1", ["a", "b"])
   );
+
+  const giftContractAddress = useMemo(() => getPublicGiftContractAddress(), []);
+  const hasGiftContractConfig = Boolean(giftContractAddress);
 
   const facebookAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID?.trim() ?? "";
   const shareLinks = useMemo(
@@ -81,6 +116,22 @@ export function useCreateGift() {
       );
       return;
     }
+    if (!giftContractAddress) {
+      setStatus(
+        "Set NEXT_PUBLIC_CONTRACT_ADDRESS to the deployed gift contract (same as CONTRACT_ADDRESS)."
+      );
+      return;
+    }
+    if (!primaryWalletId || !userToken) {
+      setStatus("Wallet is not ready for signing. Try again in a moment.");
+      return;
+    }
+
+    const hoursNum = Number(expiresInHours);
+    if (!Number.isFinite(hoursNum) || hoursNum <= 0 || hoursNum > 720) {
+      setStatus("Expiry must be between 1 and 720 hours.");
+      return;
+    }
 
     setCreating(true);
     setStatus(null);
@@ -89,6 +140,25 @@ export function useCreateGift() {
     const hash = generateHash(secret);
 
     try {
+      const { challengeId } = await postCircleChallenge({
+        action: "giftFundingBatchChallenge",
+        userToken,
+        walletId: primaryWalletId,
+        paymentIdHash: hash,
+        amountUsdc: amount,
+        expiresInHours: hoursNum,
+      });
+
+      setStatus("Confirm in Circle: approve USDC and fund the gift in one step…");
+      await executeChallenge(challengeId);
+
+      setStatus("Waiting for Arc confirmation…");
+      await waitForClientFundedGift({
+        paymentIdHash: hash,
+        amountUsdc: amount,
+        refundAddress: senderWalletAddress,
+      });
+
       const response = await fetch("/api/create-gift", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -96,13 +166,14 @@ export function useCreateGift() {
           paymentIdHash: hash,
           amountUsdc: amount,
           refundAddress: senderWalletAddress,
-          expiresInHours: Number(expiresInHours),
+          expiresInHours: hoursNum,
+          syncClientFunding: true,
         }),
       });
 
       const data = (await response.json()) as CreateGiftSuccess | ApiError;
       if (!response.ok || !("txHash" in data)) {
-        throw new Error("error" in data ? data.error : "Failed to fund gift.");
+        throw new Error("error" in data ? data.error : "Failed to record gift.");
       }
 
       const giftLink = generateLink(hash, secret);
@@ -193,6 +264,7 @@ export function useCreateGift() {
     authError,
     bootstrapError,
     walletSyncing,
+    hasGiftContractConfig,
     link,
     paymentIdHash,
     statusLink,
@@ -212,4 +284,3 @@ export function useCreateGift() {
     onShareClick,
   };
 }
-

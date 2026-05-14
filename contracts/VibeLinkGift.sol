@@ -42,7 +42,8 @@ contract VibeLinkGift {
         Gift storage gift = gifts[paymentIdHash];
         require(gift.amount == 0, "gift exists");
 
-        bool ok = usdc.transferFrom(msg.sender, address(this), amount);
+        // Pull USDC from the sender (refundAddress). `msg.sender` only pays gas (relayer).
+        bool ok = usdc.transferFrom(refundAddress, address(this), amount);
         require(ok, "transferFrom failed");
 
         gifts[paymentIdHash] = Gift({
@@ -52,7 +53,7 @@ contract VibeLinkGift {
             claimed: false
         });
 
-        emit GiftFunded(paymentIdHash, msg.sender, refundAddress, amount, expiresAt);
+        emit GiftFunded(paymentIdHash, refundAddress, refundAddress, amount, expiresAt);
     }
 
     function claim(bytes32 paymentIdHash, address recipient) external {

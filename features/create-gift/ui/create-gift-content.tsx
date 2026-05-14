@@ -19,6 +19,7 @@ export function CreateGiftContent() {
     authError,
     bootstrapError,
     walletSyncing,
+    hasGiftContractConfig,
     link,
     paymentIdHash,
     statusLink,
@@ -91,14 +92,32 @@ export function CreateGiftContent() {
         ) : (
           <div className="space-y-3">
             <WalletBackupWarning />
+            {!hasGiftContractConfig && (
+              <p className="rounded-xl border border-amber-500/40 bg-amber-950/35 p-3 text-left text-xs text-amber-100">
+                Set <code className="text-amber-50">NEXT_PUBLIC_CONTRACT_ADDRESS</code>{" "}
+                (same value as <code className="text-amber-50">CONTRACT_ADDRESS</code>) so
+                the app can build the onchain gift funding batch.
+              </p>
+            )}
+            {hasGiftContractConfig && (
+              <p className="rounded-xl border border-white/10 bg-black/25 p-3 text-left text-xs text-white/75">
+                One Circle confirmation approves USDC for the gift contract and
+                funds the gift on Arc in a single batch (SCA wallet).
+              </p>
+            )}
             <motion.button
-            type="button"
-            onClick={onCreate}
-            disabled={creating || !senderWalletAddress || walletSyncing}
-            whileHover={{ scale: creating ? 1 : 1.03 }}
-            whileTap={{ scale: 0.98 }}
-            className="accent-gradient w-full rounded-2xl px-5 py-3.5 text-base font-semibold shadow-[0_14px_36px_rgba(76,85,255,0.38)] transition disabled:opacity-65 sm:px-6 sm:py-4 sm:text-lg"
-          >
+              type="button"
+              onClick={() => void onCreate()}
+              disabled={
+                creating ||
+                !senderWalletAddress ||
+                walletSyncing ||
+                !hasGiftContractConfig
+              }
+              whileHover={{ scale: creating ? 1 : 1.03 }}
+              whileTap={{ scale: 0.98 }}
+              className="accent-gradient w-full rounded-2xl px-5 py-3.5 text-base font-semibold shadow-[0_14px_36px_rgba(76,85,255,0.38)] transition disabled:opacity-65 sm:px-6 sm:py-4 sm:text-lg"
+            >
             {creating
               ? "Funding gift..."
               : walletSyncing

@@ -53,8 +53,10 @@ export default function HelpManual() {
                   <span className="font-semibold text-white">
                     1) Where the funds come from:
                   </span>{" "}
-                  USDC is funded into each gift when it is created. In this MVP,
-                  the app relayer wallet funds the gift transaction onchain.
+                  When you create a gift, one Circle confirmation runs a batch:
+                  approve USDC for the gift contract and fund the gift in the
+                  same onchain step. USDC comes from your Circle wallet; the
+                  network fee for that batch is paid from that wallet.
                 </p>
                 <p>
                   <span className="font-semibold text-white">
@@ -68,16 +70,19 @@ export default function HelpManual() {
                   <span className="font-semibold text-white">
                     3) Where funds are received:
                   </span>{" "}
-                  after Google sign-in with Circle, the recipient has a
-                  user-controlled wallet on Arc Testnet and USDC is sent to
-                  that address.
+                  Open the gift link and tap unwrap once: if you are not signed
+                  in, Google sign-in runs first, then the claim completes in the
+                  same flow. After sign-in, the recipient has a user-controlled
+                  wallet on Arc Testnet and USDC is sent to that address.
                 </p>
                 <p>
                   <span className="font-semibold text-white">
                     4) Who pays gas:
                   </span>{" "}
-                  gas is paid by the backend relayer, so the recipient does not
-                  need initial balance for the first transaction.
+                  the sender pays the network fee for the create-gift batch from
+                  their Circle wallet. Claiming uses the backend relayer for
+                  gas, so the recipient does not need initial balance for that
+                  transaction.
                 </p>
                 <p>
                   <span className="font-semibold text-white">
