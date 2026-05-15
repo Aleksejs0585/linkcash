@@ -1,5 +1,6 @@
 import { mkdir, appendFile, readFile } from "node:fs/promises";
 import path from "node:path";
+import { liveActivityStore } from "./live-activity-store";
 
 export type ClaimAuditEvent = {
   requestId: string;
@@ -47,6 +48,14 @@ class ClaimAuditStore {
 
   async write(event: ClaimAuditEvent) {
     const record = JSON.stringify(event) + "\n";
+
+    if (event.event === "claim_success" && event.txHash) {
+      void liveActivityStore.append({
+        kind: "claim_success",
+        timestamp: event.timestamp,
+        txHash: event.txHash,
+      });
+    }
 
     try {
       await this.ensureDirectory();

@@ -5,15 +5,12 @@ import {
   LANDING_USE_CASES,
 } from "../model/content";
 import { shortTxHash, txRowIcon, txStatusLabel } from "../lib/tx-display";
+import type { LandingTxExample } from "@/lib/server/load-live-tx-examples";
 import { getArcExplorerTxUrl } from "@/utils";
 import LandingFaq from "./landing-faq";
 import LinkCopyDemo from "./link-copy-demo";
 
-export type LandingTxExample = {
-  txHash: string;
-  label: string;
-  timestamp: string;
-};
+export type { LandingTxExample };
 
 type LandingPageProps = {
   txExamples: LandingTxExample[];
@@ -236,8 +233,8 @@ export default function LandingPage({ txExamples }: LandingPageProps) {
           <div className="landing-tx-panel">
             {txExamples.length === 0 ? (
               <p className="landing-tx-empty">
-                No live transactions yet. Once gifts are funded or claimed,
-                hashes will appear here automatically.
+                No recent onchain activity yet. New gifts and claims appear here
+                within about a minute after they confirm on Arc.
               </p>
             ) : (
               txExamples.map((item) => (

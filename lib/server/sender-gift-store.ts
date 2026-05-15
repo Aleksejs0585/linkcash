@@ -1,5 +1,6 @@
 import { appendFile, mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
+import { liveActivityStore } from "./live-activity-store";
 
 export type SenderGiftEvent = {
   event: "gift_funded" | "gift_reclaimed";
@@ -38,6 +39,12 @@ class SenderGiftStore {
 
   async write(event: SenderGiftEvent) {
     const record = JSON.stringify(event) + "\n";
+
+    void liveActivityStore.append({
+      kind: event.event,
+      timestamp: event.timestamp,
+      txHash: event.txHash,
+    });
 
     try {
       await this.ensureDirectory();
