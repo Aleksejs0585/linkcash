@@ -47,21 +47,14 @@
 }
 
 .landing-nav-logo {
-  font-family: var(--lp-font-display);
-  font-size: 20px;
-  font-weight: 700;
   text-decoration: none;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
 }
 
-.landing-nav-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--lp-accent);
-  animation: lp-pulse 2s infinite;
+.landing-nav-logo .linkcash-logo {
+  font-size: 20px;
+  font-weight: 600;
 }
 
 .landing-nav-badge {
@@ -973,10 +966,12 @@
 }
 
 .landing-footer-logo {
-  font-family: var(--lp-font-display);
-  font-size: 16px;
-  font-weight: 700;
   text-decoration: none;
+}
+
+.landing-footer-logo .linkcash-logo {
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .landing-footer-copy {

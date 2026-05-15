@@ -1,8 +1,8 @@
 import {
   GIFT_MESSAGE_MAX,
   SENDER_DISPLAY_NAME_MAX,
-} from "../gift-metadata-limits.ts";
-import { HttpError } from "./http-errors.ts";
+} from "../gift-metadata-limits";
+import { HttpError } from "./http-errors";
 
 export { GIFT_MESSAGE_MAX, SENDER_DISPLAY_NAME_MAX };
 

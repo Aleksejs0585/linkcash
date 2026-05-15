@@ -7,6 +7,7 @@ import {
 import { shortTxHash, txRowIcon, txStatusLabel } from "../lib/tx-display";
 import type { LandingTxExample } from "@/lib/server/load-live-tx-examples";
 import { getArcExplorerTxUrl } from "@/utils";
+import LinkCashLogo from "@/components/ui/linkcash-logo";
 import LandingFaq from "./landing-faq";
 import LinkCopyDemo from "./link-copy-demo";
 
@@ -21,8 +22,7 @@ export default function LandingPage({ txExamples }: LandingPageProps) {
     <div className="landing-page">
       <nav className="landing-nav">
         <Link href="/" className="landing-nav-logo">
-          <span className="landing-nav-dot" aria-hidden />
-          LinkCash
+          <LinkCashLogo />
         </Link>
         <span className="landing-nav-badge">Arc Testnet</span>
         <div className="landing-nav-actions">
@@ -302,7 +302,7 @@ export default function LandingPage({ txExamples }: LandingPageProps) {
       <footer className="landing-footer">
         <div className="landing-footer-left">
           <Link href="/" className="landing-footer-logo">
-            LinkCash
+            <LinkCashLogo />
           </Link>
           <span className="landing-footer-copy">
             Built on Arc · Powered by Circle
