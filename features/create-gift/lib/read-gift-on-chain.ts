@@ -17,6 +17,14 @@ type OkGiftApi = {
 
 const FETCH_TIMEOUT_MS = 12_000;
 
+/** When chain confirms quickly, short early intervals feel like "a few seconds" again. */
+function pauseBeforeNextPoll(attempt: number, overrideMs?: number): Promise<void> {
+  const ms =
+    overrideMs ??
+    (attempt <= 24 ? 500 : attempt <= 48 ? 1000 : 2000);
+  return new Promise((r) => setTimeout(r, ms));
+}
+
 /**
  * Poll the server `/api/gift` route instead of calling RPC from the browser.
  * Direct JsonRpcProvider to public Arc URLs often fails (CORS) or hangs without a timeout.
@@ -30,12 +38,12 @@ export async function waitForClientFundedGift(params: {
   amountUsdc: string;
   refundAddress: string;
   maxAttempts?: number;
+  /** Fixed delay between polls (ms). Omit for adaptive pacing (500ms → 1s → 2s). */
   delayMs?: number;
   /** Called each attempt so the UI does not look frozen */
   onProgress?: (attempt: number, max: number, detail: string) => void;
 }): Promise<OnChainGiftRow> {
   const max = params.maxAttempts ?? 90;
-  const delayMs = params.delayMs ?? 2000;
   const hashSegment = encodeURIComponent(params.paymentIdHash);
   const started = Date.now();
 
@@ -60,7 +68,7 @@ export async function waitForClientFundedGift(params: {
             max,
             "Invalid amount from API, retrying…"
           );
-          await new Promise((r) => setTimeout(r, delayMs));
+          await pauseBeforeNextPoll(attempt, params.delayMs);
           continue;
         }
 
@@ -81,7 +89,7 @@ export async function waitForClientFundedGift(params: {
       if (res.status === 404 || (!res.ok && "ok" in data && data.ok === false)) {
         const sec = Math.floor((Date.now() - started) / 1000);
         const hint =
-          attempt > 12
+          attempt > 28
             ? "Still waiting—tx may be slow, or CONTRACT_ADDRESS / NEXT_PUBLIC_CONTRACT_ADDRESS mismatch on the server."
             : "Waiting for your transaction to appear onchain…";
         params.onProgress?.(attempt, max, `${hint} (${sec}s)`);
@@ -102,7 +110,7 @@ export async function waitForClientFundedGift(params: {
       window.clearTimeout(timeoutId);
     }
 
-    await new Promise((r) => setTimeout(r, delayMs));
+    await pauseBeforeNextPoll(attempt, params.delayMs);
   }
 
   throw new Error(
