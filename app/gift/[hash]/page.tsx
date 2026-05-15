@@ -14,12 +14,17 @@ import { useGift } from "../../../hooks/useGift";
 import { trackEvent } from "../../../lib/client/analytics";
 import { getOrAssignVariant } from "../../../lib/client/experiments";
 import {
+  AUTO_CLAIM_AFTER_AUTH_KEY,
+  consumeAutoClaimAfterAuth,
+  clearOAuthFlowState,
+  markAutoClaimAfterAuth,
+} from "@/lib/client/oauth-return";
+import {
   ARC_TESTNET,
   getPaymentIdHashFromPath,
   getArcExplorerTxUrl,
+  getSecretFromHash,
 } from "../../../utils";
-
-const AUTO_CLAIM_GIFT_PATH_KEY = "linkcash:autoClaimGiftPath";
 
 type GiftDetailsResponse =
   | {
@@ -90,7 +95,7 @@ function GiftClaimContent() {
 
   useEffect(() => {
     if (authError) {
-      sessionStorage.removeItem(AUTO_CLAIM_GIFT_PATH_KEY);
+      clearOAuthFlowState();
     }
   }, [authError]);
 
@@ -222,16 +227,16 @@ function GiftClaimContent() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const path = window.location.pathname;
-    if (sessionStorage.getItem(AUTO_CLAIM_GIFT_PATH_KEY) !== path) return;
+    if (sessionStorage.getItem(AUTO_CLAIM_AFTER_AUTH_KEY) !== "1") return;
     if (!authenticated || !ready || walletSyncing) return;
     if (!receiverAddress) return;
+    if (!getSecretFromHash()) return;
     if (remainingSeconds !== null && remainingSeconds <= 0) {
-      sessionStorage.removeItem(AUTO_CLAIM_GIFT_PATH_KEY);
+      clearOAuthFlowState();
       return;
     }
 
-    sessionStorage.removeItem(AUTO_CLAIM_GIFT_PATH_KEY);
+    consumeAutoClaimAfterAuth();
     void (async () => {
       await Promise.resolve();
       await runClaim();
@@ -251,7 +256,7 @@ function GiftClaimContent() {
     }
 
     if (!authenticated) {
-      sessionStorage.setItem(AUTO_CLAIM_GIFT_PATH_KEY, window.location.pathname);
+      markAutoClaimAfterAuth();
       void login();
       return;
     }

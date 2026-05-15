@@ -20,6 +20,11 @@ import {
   shouldResetCircleDeviceBinding,
 } from "../lib/auth-errors";
 import {
+  clearOAuthFlowState,
+  resumeOAuthReturnTarget,
+  saveOAuthReturnTarget,
+} from "@/lib/client/oauth-return";
+import {
   clearCircleSession,
   readCircleSession,
   writeCircleSession,
@@ -297,6 +302,7 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
               setDeviceToken("");
               setDeviceEncryptionKey("");
             }
+            clearOAuthFlowState();
             setAuthError(formatCircleAuthError(raw));
             setUserToken(null);
             setEncryptionKey(null);
@@ -320,7 +326,9 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
           void (async () => {
             try {
               await ensureWalletReady(result.userToken, result.encryptionKey);
+              resumeOAuthReturnTarget();
             } catch (e) {
+              clearOAuthFlowState();
               setAuthError(
                 formatCircleAuthError(
                   e instanceof Error
@@ -560,11 +568,13 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
         setDeviceToken("");
         setDeviceEncryptionKey("");
       }
+      clearOAuthFlowState();
       setAuthError(formatCircleAuthError(raw));
     }
   }, [deviceEncryptionKey, deviceId, deviceToken]);
 
   const logout = useCallback(() => {
+    clearOAuthFlowState();
     clearCircleSession();
     clearCircleDeviceBindingCookies();
     setUserToken(null);
