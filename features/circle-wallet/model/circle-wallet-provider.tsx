@@ -17,6 +17,7 @@ import type { Authentication } from "@circle-fin/w3s-pw-web-sdk/dist/src/types";
 import { isCircleWalletConfigured } from "../config/circle-env";
 import {
   formatCircleAuthError,
+  isStaleCircleDeviceIdError,
   shouldResetCircleDeviceBinding,
 } from "../lib/auth-errors";
 import {
@@ -166,8 +167,10 @@ function clearCircleDeviceBindingCookies() {
 
 function CircleWalletInner({ children }: { children: ReactNode }) {
   const sdkRef = useRef<W3SSdk | null>(null);
+  const deviceBootstrapRecoveryAttempted = useRef(false);
   const [sdkReady, setSdkReady] = useState(false);
   const [deviceId, setDeviceId] = useState("");
+  const [deviceIdResetKey, setDeviceIdResetKey] = useState(0);
   const [deviceToken, setDeviceToken] = useState("");
   const [deviceEncryptionKey, setDeviceEncryptionKey] = useState("");
   const [userToken, setUserToken] = useState<string | null>(null);
@@ -317,6 +320,11 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
               clearCircleDeviceBindingCookies();
               setDeviceToken("");
               setDeviceEncryptionKey("");
+              if (typeof window !== "undefined") {
+                window.localStorage.removeItem("deviceId");
+              }
+              setDeviceId("");
+              setDeviceIdResetKey((k) => k + 1);
             }
             clearOAuthFlowState();
             setAuthError(formatCircleAuthError(raw));
@@ -430,7 +438,7 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
     };
 
     void run();
-  }, [sdkReady]);
+  }, [sdkReady, deviceIdResetKey]);
 
   useEffect(() => {
     if (!sdkReady || !deviceId || deviceToken) return;
@@ -491,9 +499,24 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
           }
         }
       } catch (e) {
-        setBootstrapError(
-          e instanceof Error ? e.message : "Failed to create device token."
-        );
+        const raw =
+          e instanceof Error ? e.message : "Failed to create device token.";
+        if (
+          !deviceBootstrapRecoveryAttempted.current &&
+          isStaleCircleDeviceIdError(raw)
+        ) {
+          deviceBootstrapRecoveryAttempted.current = true;
+          if (typeof window !== "undefined") {
+            window.localStorage.removeItem("deviceId");
+          }
+          clearCircleDeviceBindingCookies();
+          setDeviceToken("");
+          setDeviceEncryptionKey("");
+          setDeviceId("");
+          setDeviceIdResetKey((k) => k + 1);
+          return;
+        }
+        setBootstrapError(formatCircleAuthError(raw));
       }
     })();
   }, [sdkReady, deviceId, deviceToken, createDeviceToken]);
@@ -588,6 +611,11 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
         clearCircleDeviceBindingCookies();
         setDeviceToken("");
         setDeviceEncryptionKey("");
+        if (typeof window !== "undefined") {
+          window.localStorage.removeItem("deviceId");
+        }
+        setDeviceId("");
+        setDeviceIdResetKey((k) => k + 1);
       }
       clearOAuthFlowState();
       setAuthError(formatCircleAuthError(raw));

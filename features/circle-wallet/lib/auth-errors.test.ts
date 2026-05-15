@@ -29,4 +29,13 @@ describe("shouldResetCircleDeviceBinding", () => {
       true
     );
   });
+
+  it("returns true when Circle does not recognize device id", () => {
+    assert.equal(
+      shouldResetCircleDeviceBinding(
+        "Provided device ID is not found in the system."
+      ),
+      true
+    );
+  });
 });

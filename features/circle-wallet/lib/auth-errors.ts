@@ -1,7 +1,15 @@
 export function shouldResetCircleDeviceBinding(message: string): boolean {
   return (
     /device token is invalid/i.test(message) ||
-    /invalid credentials?/i.test(message)
+    /invalid credentials?/i.test(message) ||
+    isStaleCircleDeviceIdError(message)
+  );
+}
+
+export function isStaleCircleDeviceIdError(message: string): boolean {
+  return (
+    /device id is not found/i.test(message) ||
+    /provided device id is not found/i.test(message)
   );
 }
 
@@ -17,6 +25,13 @@ export function formatCircleAuthError(message: string): string {
 
   if (/device token is invalid/i.test(message)) {
     return "Wallet session expired. Click Sign in with Google again.";
+  }
+
+  if (isStaleCircleDeviceIdError(message)) {
+    return (
+      "Device binding was reset. Refresh this page and click Sign in with Google again. " +
+      "If it repeats, clear site data for this domain (cookies + local storage)."
+    );
   }
 
   if (/popup closed|user closed|cancel/i.test(message)) {
