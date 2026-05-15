@@ -10,6 +10,7 @@ import {
   generateSecret,
   generateStatusLink,
 } from "@/utils";
+import { formatGiftTxError } from "../lib/gift-errors";
 import { buildShareLinks } from "./share-links";
 import { trackEvent } from "@/lib/client/analytics";
 import { getOrAssignVariant } from "@/lib/client/experiments";
@@ -71,6 +72,8 @@ export function useCreateGift() {
 
   const [link, setLink] = useState("");
   const [paymentIdHash, setPaymentIdHash] = useState<string | null>(null);
+  const [giftExpiresAt, setGiftExpiresAt] = useState<number | null>(null);
+  const [reclaimTick, setReclaimTick] = useState(() => Date.now());
   const [copied, setCopied] = useState(false);
   const [amount, setAmount] = useState("10");
   const [expiresInHours, setExpiresInHours] = useState("24");
@@ -101,6 +104,27 @@ export function useCreateGift() {
       variant: `create_primary_copy_v1:${createCopyVariant}`,
     });
   }, [createCopyVariant]);
+
+  useEffect(() => {
+    if (!giftExpiresAt) return;
+    const id = window.setInterval(() => setReclaimTick(Date.now()), 30_000);
+    return () => window.clearInterval(id);
+  }, [giftExpiresAt]);
+
+  const reclaimAvailable = useMemo(() => {
+    if (!giftExpiresAt) return false;
+    return Math.floor(reclaimTick / 1000) >= giftExpiresAt;
+  }, [giftExpiresAt, reclaimTick]);
+
+  const reclaimCountdownLabel = useMemo(() => {
+    if (!giftExpiresAt || reclaimAvailable) return null;
+    const remainingSec = giftExpiresAt - Math.floor(reclaimTick / 1000);
+    if (remainingSec <= 0) return null;
+    const hours = Math.floor(remainingSec / 3600);
+    const minutes = Math.floor((remainingSec % 3600) / 60);
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
+  }, [giftExpiresAt, reclaimAvailable, reclaimTick]);
 
   const onCreate = async () => {
     if (!ready) return;
@@ -178,6 +202,7 @@ export function useCreateGift() {
 
       const giftLink = generateLink(hash, secret);
       setPaymentIdHash(hash);
+      setGiftExpiresAt(data.expiresAt);
       setLink(giftLink);
       setCopied(false);
       setStatus(
@@ -193,9 +218,9 @@ export function useCreateGift() {
         variant: `create_primary_copy_v1:${createCopyVariant}`,
       });
     } catch (error) {
-      setStatus(
-        error instanceof Error ? error.message : "Failed to create and fund gift."
-      );
+      const raw =
+        error instanceof Error ? error.message : "Failed to create and fund gift.";
+      setStatus(formatGiftTxError(raw));
     } finally {
       setCreating(false);
     }
@@ -225,9 +250,9 @@ export function useCreateGift() {
 
       setStatus(`Reclaim submitted successfully. Tx: ${data.txHash}`);
     } catch (error) {
-      setStatus(
-        error instanceof Error ? error.message : "Failed to reclaim expired gift."
-      );
+      const raw =
+        error instanceof Error ? error.message : "Failed to reclaim expired gift.";
+      setStatus(formatGiftTxError(raw));
     } finally {
       setReclaiming(false);
     }
@@ -267,6 +292,9 @@ export function useCreateGift() {
     hasGiftContractConfig,
     link,
     paymentIdHash,
+    giftExpiresAt,
+    reclaimAvailable,
+    reclaimCountdownLabel,
     statusLink,
     copied,
     amount,

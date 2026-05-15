@@ -23,6 +23,8 @@ export function CreateGiftContent() {
     hasGiftContractConfig,
     link,
     paymentIdHash,
+    reclaimAvailable,
+    reclaimCountdownLabel,
     statusLink,
     copied,
     amount,
@@ -128,6 +130,8 @@ export function CreateGiftContent() {
           </div>
         )}
 
+        {authenticated ? (
+          <>
         <div className="app-panel app-field p-4 text-left">
           <label
             htmlFor="amount"
@@ -170,13 +174,19 @@ export function CreateGiftContent() {
             <p className="mt-2 text-xs text-amber-300">
               {walletSyncing
                 ? "Circle wallet is finishing setup on Arc Testnet..."
-                : "Sender wallet not ready yet. Wait for setup or sign in again."}
+                : "Wallet address is not ready yet. Wait a few seconds or sign out and sign in again."}
             </p>
           )}
         </div>
+          </>
+        ) : (
+          <p className="soft-text text-sm">
+            Sign in with Google to set amount and create a gift link.
+          </p>
+        )}
 
         <AnimatePresence>
-          {link && (
+          {authenticated && link && (
             <motion.div
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
@@ -232,14 +242,22 @@ export function CreateGiftContent() {
                   </button>
                 ))}
               </div>
-              <button
-                type="button"
-                onClick={onReclaim}
-                disabled={reclaiming}
-                className="app-btn-secondary mt-2 px-4 py-2 text-sm font-medium disabled:opacity-65"
-              >
-                {reclaiming ? "Reclaiming..." : "Reclaim expired gift"}
-              </button>
+              {reclaimAvailable ? (
+                <button
+                  type="button"
+                  onClick={onReclaim}
+                  disabled={reclaiming}
+                  className="app-btn-secondary mt-2 px-4 py-2 text-sm font-medium disabled:opacity-65"
+                >
+                  {reclaiming ? "Reclaiming..." : "Reclaim expired gift"}
+                </button>
+              ) : (
+                <p className="mt-2 text-xs text-[var(--muted)]">
+                  {reclaimCountdownLabel
+                    ? `Reclaim opens in ${reclaimCountdownLabel} (after expiry).`
+                    : "Reclaim is available only after the gift expires."}
+                </p>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

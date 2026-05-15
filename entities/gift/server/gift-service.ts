@@ -201,6 +201,20 @@ export async function reclaimGift(input: ReclaimGiftInput) {
     claimed: boolean;
   };
 
+  if (giftState.amount === 0n) {
+    throw new HttpError(404, "No gift found for this payment id.");
+  }
+  if (giftState.claimed) {
+    throw new HttpError(400, "This gift was already claimed or reclaimed.");
+  }
+  const nowSec = Math.floor(Date.now() / 1000);
+  if (nowSec < Number(giftState.expiresAt)) {
+    throw new HttpError(
+      400,
+      "Gift is still active. Reclaim is available only after the expiry time."
+    );
+  }
+
   const tx = await gift.reclaimExpiredGift(input.paymentIdHash);
   const receipt = await tx.wait();
   const txHash = receipt?.hash ?? tx.hash;

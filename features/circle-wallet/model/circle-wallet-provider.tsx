@@ -16,6 +16,10 @@ import { SocialLoginProvider } from "@circle-fin/w3s-pw-web-sdk/dist/src/types";
 import type { Authentication } from "@circle-fin/w3s-pw-web-sdk/dist/src/types";
 import { isCircleWalletConfigured } from "../config/circle-env";
 import {
+  formatCircleAuthError,
+  shouldResetCircleDeviceBinding,
+} from "../lib/auth-errors";
+import {
   clearCircleSession,
   readCircleSession,
   writeCircleSession,
@@ -287,13 +291,13 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
 
           if (error) {
             const err = error as { message?: string };
-            const msg = err.message ?? "Sign-in failed.";
-            if (/device token is invalid/i.test(msg)) {
+            const raw = err.message ?? "Sign-in failed.";
+            if (shouldResetCircleDeviceBinding(raw)) {
               clearCircleDeviceBindingCookies();
               setDeviceToken("");
               setDeviceEncryptionKey("");
             }
-            setAuthError(msg);
+            setAuthError(formatCircleAuthError(raw));
             setUserToken(null);
             setEncryptionKey(null);
             return;
@@ -318,9 +322,11 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
               await ensureWalletReady(result.userToken, result.encryptionKey);
             } catch (e) {
               setAuthError(
-                e instanceof Error
-                  ? e.message
-                  : "Wallet setup failed after login."
+                formatCircleAuthError(
+                  e instanceof Error
+                    ? e.message
+                    : "Wallet setup failed after login."
+                )
               );
             }
           })();
@@ -480,9 +486,11 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
         setEncryptionKey(null);
         setWallets([]);
         setAuthError(
-          e instanceof Error
-            ? e.message
-            : "Session expired. Please sign in again with Google."
+          formatCircleAuthError(
+            e instanceof Error
+              ? e.message
+              : "Session expired. Please sign in again with Google."
+          )
         );
       }
     })();
@@ -546,13 +554,13 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
 
       await sdk.performLogin(SocialLoginProvider.GOOGLE);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Sign-in failed to start.";
-      if (/device token is invalid/i.test(msg)) {
+      const raw = e instanceof Error ? e.message : "Sign-in failed to start.";
+      if (shouldResetCircleDeviceBinding(raw)) {
         clearCircleDeviceBindingCookies();
         setDeviceToken("");
         setDeviceEncryptionKey("");
       }
-      setAuthError(msg);
+      setAuthError(formatCircleAuthError(raw));
     }
   }, [deviceEncryptionKey, deviceId, deviceToken]);
 
