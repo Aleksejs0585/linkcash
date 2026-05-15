@@ -14,7 +14,7 @@ export const revalidate = 30;
 
 const getCachedLiveTxExamples = unstable_cache(
   async () => loadLiveTxExamples(),
-  ["landing-live-tx-examples-v2"],
+  ["landing-live-tx-examples-v3"],
   { revalidate: 30 }
 );
 

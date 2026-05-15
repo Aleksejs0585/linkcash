@@ -6,6 +6,9 @@ import {
 import { loadLiveTxExamplesFromChain } from "./live-tx-from-chain";
 import { senderGiftStore } from "./sender-gift-store";
 
+/** Rows shown on the landing “Recent claims” block (deduped, newest first). */
+const LANDING_LIVE_TX_LIMIT = 10;
+
 export type LandingTxExample = {
   txHash: string;
   label: string;
@@ -25,7 +28,7 @@ function mergeTxExamples(items: LandingTxExample[]): LandingTxExample[] {
       seen.add(key);
       return true;
     })
-    .slice(0, 6);
+    .slice(0, LANDING_LIVE_TX_LIMIT);
 }
 
 async function loadFromLogFiles(): Promise<LandingTxExample[]> {

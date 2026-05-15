@@ -263,7 +263,8 @@ export default function LandingPage({ txExamples }: LandingPageProps) {
           </div>
           {txExamples.length > 0 ? (
             <p className="landing-tx-note">
-              Updated every 30 seconds from live gift and claim activity.
+              Last 10 onchain events (gifts, claims, reclaims), newest first.
+              Refreshes every 30 seconds.
             </p>
           ) : null}
         </div>
