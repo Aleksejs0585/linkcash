@@ -110,10 +110,10 @@ function GiftClaimContent() {
   const paymentIdHash = useMemo(() => getPaymentIdHashFromPath(), []);
 
   useEffect(() => {
-    if (authError) {
+    if (authError && !authenticated) {
       clearOAuthFlowState();
     }
-  }, [authError]);
+  }, [authError, authenticated]);
 
   useEffect(() => {
     if (!paymentIdHash) {

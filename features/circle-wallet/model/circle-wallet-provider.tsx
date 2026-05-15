@@ -21,6 +21,7 @@ import {
   shouldResetCircleDeviceBinding,
 } from "../lib/auth-errors";
 import {
+  clearAutoClaimAfterAuth,
   clearOAuthFlowState,
   resumeOAuthReturnTarget,
   saveOAuthReturnTarget,
@@ -357,7 +358,8 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
               await ensureWalletReady(result.userToken, result.encryptionKey);
               resumeOAuthReturnTarget();
             } catch (e) {
-              clearOAuthFlowState();
+              // Keep oauth return target so post-OAuth resume can still redirect to /create or /gift.
+              clearAutoClaimAfterAuth();
               setAuthError(
                 formatCircleAuthError(
                   e instanceof Error
