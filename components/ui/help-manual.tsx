@@ -42,13 +42,6 @@ export default function HelpManual() {
               </h2>
 
               <div className="mt-3 space-y-3 text-white/80">
-                <p className="rounded-lg border border-amber-400/35 bg-amber-500/10 px-3 py-2 text-xs text-amber-50">
-                  <span className="font-semibold text-white">Auth change:</span>{" "}
-                  LinkCash no longer uses Privy. Sign in with the same Google
-                  account via Circle to get a new wallet; old Privy sessions and
-                  addresses are not carried over—sign in again after this
-                  release.
-                </p>
                 <p>
                   <span className="font-semibold text-white">
                     1) Where the funds come from:

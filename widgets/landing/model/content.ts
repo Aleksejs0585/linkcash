@@ -9,13 +9,13 @@ export const LANDING_STEPS = [
     num: "02",
     icon: "🔗",
     title: "Share the link",
-    text: "A unique claim link is generated — send it via Telegram, WhatsApp, email, or X.",
+    text: "A unique claim link is generated — send it via Telegram, WhatsApp, email, or any messenger.",
   },
   {
     num: "03",
     icon: "👤",
     title: "Recipient logs in",
-    text: "One click with Google or X. An embedded wallet is created automatically — no seed phrases.",
+    text: "One click with Google. A Circle embedded wallet is created automatically — no seed phrases.",
   },
   {
     num: "04",
@@ -35,7 +35,7 @@ export const LANDING_USE_CASES = [
   {
     icon: "🚀",
     title: "Growth Campaigns",
-    text: "Reward referrals, activate new users, or run Twitter giveaways — distribute USDC at scale via links.",
+    text: "Reward referrals, activate new users, or run social campaigns — distribute USDC at scale via links.",
     tag: "Marketing",
   },
   {
@@ -72,7 +72,7 @@ export const LANDING_FAQ = [
   },
   {
     q: "How does the recipient get a wallet without setup?",
-    a: "LinkCash uses Circle's User-Controlled Wallets. When a recipient signs in with Google or X for the first time, a non-custodial wallet is created silently in the background — no seed phrase, no browser extension required.",
+    a: "LinkCash uses Circle User-Controlled Wallets. When a recipient signs in with Google for the first time, a non-custodial wallet is created silently in the background — no seed phrase, no browser extension required.",
   },
   {
     q: "Who pays the gas fee for the claim?",

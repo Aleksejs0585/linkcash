@@ -7,7 +7,7 @@ import LandingPage from "@/widgets/landing/ui/landing-page";
 export const metadata: Metadata = {
   title: "LinkCash — Send USDC like a message",
   description:
-    "Share a link. Recipient signs in with Google or X, gets a wallet, and claims USDC gaslessly on Arc.",
+    "Share a link. Recipient signs in with Google, gets a Circle wallet, and claims USDC gaslessly on Arc.",
 };
 
 export const revalidate = 30;

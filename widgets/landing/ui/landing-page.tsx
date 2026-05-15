@@ -53,8 +53,8 @@ export default function LandingPage({ txExamples }: LandingPageProps) {
         </h1>
 
         <p className="landing-hero-sub">
-          Share a link. Recipient signs in with <strong>Google or X</strong>,
-          gets a wallet, claims USDC — <strong>under 60 seconds</strong>, zero
+          Share a link. Recipient signs in with <strong>Google</strong>, gets a
+          Circle wallet, claims USDC — <strong>under 60 seconds</strong>, zero
           gas, zero setup.
         </p>
 

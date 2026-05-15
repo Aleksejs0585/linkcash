@@ -6,8 +6,6 @@ Next.js app for funding, sharing, claiming, and reclaiming time-limited USDC gif
 
 This app uses **Circle user-controlled wallets** with **Google** sign-in (Programmable Wallets Web SDK). Configure Circle Console (User Controlled → Configurator) with your Google OAuth Web client id, and add env vars below.
 
-**Privy has been removed.** Users who signed in with Privy before must **sign in again with Google** after deploy; wallet addresses from Privy are **not** migrated.
-
 ## Setup
 
 1. Install dependencies:
