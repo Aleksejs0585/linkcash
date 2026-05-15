@@ -213,6 +213,11 @@ export function useCreateGift() {
         paymentIdHash: hash,
         amountUsdc: amount,
         refundAddress: senderWalletAddress,
+        onProgress: (attempt, max, detail) => {
+          setStatus(
+            `Waiting for Arc confirmation… ${detail} · ${attempt}/${max}`
+          );
+        },
       });
 
       const response = await fetch("/api/create-gift", {
