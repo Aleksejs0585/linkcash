@@ -557,6 +557,7 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
 
   const login = useCallback(async () => {
     setAuthError(null);
+    saveOAuthReturnTarget();
     const sdk = sdkRef.current;
     if (!sdk) {
       setAuthError("Wallet is still loading. Try again in a moment.");
