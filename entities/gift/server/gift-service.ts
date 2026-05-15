@@ -201,7 +201,7 @@ export async function reclaimGift(input: ReclaimGiftInput) {
     claimed: boolean;
   };
 
-  if (giftState.amount === 0n) {
+  if (giftState.amount === BigInt(0)) {
     throw new HttpError(404, "No gift found for this payment id.");
   }
   if (giftState.claimed) {
