@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import confetti from "canvas-confetti";
 import { AnimatePresence, motion } from "framer-motion";
+import AppShell from "@/components/ui/app-shell";
 import GlassCard from "../../../components/ui/glass-card";
 import MainMenu from "../../../components/ui/main-menu";
 import OAuthNavHint from "../../../components/ui/oauth-nav-hint";
@@ -35,12 +36,12 @@ type GiftDetailsResponse =
 export default function GiftPage() {
   if (!isCircleWalletConfigured()) {
     return (
-      <main className="relative flex min-h-screen items-center justify-center px-4 py-8 text-white sm:px-5 sm:py-10">
-        <GlassCard className="max-w-[420px] p-6 text-center sm:p-8">
+      <AppShell className="flex items-center justify-center px-4 py-8 sm:px-5 sm:py-10">
+        <GlassCard className="relative z-[1] max-w-[420px] p-6 text-center sm:p-8">
           <div className="mb-4 flex justify-start">
             <MainMenu />
           </div>
-          <h1 className="text-3xl font-semibold tracking-tight">
+          <h1 className="app-heading text-3xl">
             You received a gift
           </h1>
           <p className="soft-text mt-4 text-sm">
@@ -49,7 +50,7 @@ export default function GiftPage() {
             <code>CIRCLE_API_KEY</code> to enable Google sign-in and claiming.
           </p>
         </GlassCard>
-      </main>
+      </AppShell>
     );
   }
 
@@ -271,14 +272,12 @@ function GiftClaimContent() {
   const amountLabel = giftAmountUsdc ? `${giftAmountUsdc} USDC` : "Gift";
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center px-4 py-8 text-white sm:px-5 sm:py-10">
-      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[450px] w-[450px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,_rgba(139,92,246,0.2)_0%,_rgba(59,130,246,0.14)_35%,_transparent_70%)] blur-3xl" />
-
+    <AppShell className="flex items-center justify-center px-4 py-8 sm:px-5 sm:py-10">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: "easeOut" }}
-        className="w-full max-w-[420px] space-y-3"
+        className="relative z-[1] w-full max-w-[420px] space-y-3"
       >
         <div className="flex justify-start">
           <MainMenu />
@@ -290,13 +289,13 @@ function GiftClaimContent() {
             </p>
           )}
           <div className="space-y-2">
-            <p className="mx-auto inline-flex rounded-full border border-white/15 px-3 py-1 text-xs text-white/75">
+            <p className="app-chain-badge mx-auto">
               {ARC_TESTNET.chainName} · {ARC_TESTNET.chainId}
             </p>
             <p className="text-sm tracking-[0.06em] text-white/75">
               🎁 You received a gift
             </p>
-            <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
+            <h1 className="app-heading text-4xl sm:text-5xl">
               {giftLoading ? "Loading..." : amountLabel}
             </h1>
             <p className="soft-text text-sm">
@@ -330,7 +329,7 @@ function GiftClaimContent() {
                 }
                 whileHover={{ scale: loading ? 1 : 1.03 }}
                 whileTap={{ scale: 0.98 }}
-                className="accent-gradient w-full rounded-2xl px-5 py-3.5 text-base font-semibold shadow-[0_16px_40px_rgba(76,85,255,0.42)] transition hover:shadow-[0_18px_46px_rgba(99,102,241,0.5)] disabled:cursor-not-allowed disabled:opacity-65 sm:px-6 sm:py-4 sm:text-lg"
+                className="accent-gradient w-full rounded-[var(--radius)] px-5 py-3.5 text-base disabled:cursor-not-allowed disabled:opacity-65 sm:px-6 sm:py-4 sm:text-lg"
               >
                 {walletSyncing
                   ? "Preparing wallet..."
@@ -358,7 +357,7 @@ function GiftClaimContent() {
                     logout();
                     setStatus("Signed out. Click unwrap to sign in again.");
                   }}
-                  className="w-full rounded-xl border border-white/15 px-4 py-2.5 text-sm text-white/80 transition hover:bg-white/5"
+                  className="app-btn-secondary w-full px-4 py-2.5 text-sm"
                 >
                   Use a different account
                 </button>
@@ -374,7 +373,7 @@ function GiftClaimContent() {
               href={getArcExplorerTxUrl(txHash)}
               target="_blank"
               rel="noreferrer"
-              className="break-all text-xs text-blue-300/90 underline decoration-white/30 underline-offset-4 hover:text-blue-200"
+              className="app-link break-all text-xs"
             >
               View transaction on Arc Explorer
             </a>
@@ -394,15 +393,15 @@ function GiftClaimContent() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b0b0f]/95 px-6 text-center"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--bg)]/95 px-6 text-center"
           >
             <motion.div
               initial={{ opacity: 0, y: 14, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.4, ease: "easeOut" }}
-              className="w-full max-w-[420px] space-y-5 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl sm:p-8"
+              className="glass-card w-full max-w-[420px] space-y-5 p-6 sm:p-8"
             >
-              <h2 className="text-4xl font-semibold tracking-tight">
+              <h2 className="app-heading text-4xl">
                 You&apos;re now on-chain
               </h2>
               <p className="soft-text text-sm">
@@ -415,7 +414,7 @@ function GiftClaimContent() {
                   href={getArcExplorerTxUrl(successTxHash)}
                   target="_blank"
                   rel="noreferrer"
-                  className="block break-all text-xs text-blue-300/90 underline decoration-white/30 underline-offset-4 hover:text-blue-200"
+                  className="app-link block break-all text-xs"
                 >
                   {successTxHash}
                 </a>
@@ -423,13 +422,13 @@ function GiftClaimContent() {
               <div className="space-y-2">
                 <Link
                   href="/wallet"
-                  className="accent-gradient inline-flex w-full items-center justify-center rounded-2xl px-6 py-3.5 text-base font-semibold shadow-[0_14px_36px_rgba(76,85,255,0.38)] transition hover:scale-[1.02]"
+                  className="accent-gradient inline-flex w-full items-center justify-center rounded-[var(--radius)] px-6 py-3.5 text-base transition hover:scale-[1.02]"
                 >
                   Open my wallet
                 </Link>
                 <Link
                   href="/create"
-                  className="inline-flex w-full items-center justify-center rounded-2xl border border-white/15 px-6 py-3 text-sm font-medium text-white/85 transition hover:bg-white/5"
+                  className="app-btn-secondary inline-flex w-full items-center justify-center px-6 py-3 text-sm font-medium"
                 >
                   Create gift
                 </Link>
@@ -438,6 +437,6 @@ function GiftClaimContent() {
           </motion.div>
         )}
       </AnimatePresence>
-    </main>
+    </AppShell>
   );
 }

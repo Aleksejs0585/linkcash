@@ -1,17 +1,17 @@
 .landing-page {
-  --lp-bg: #0a0a0f;
-  --lp-bg2: #111118;
-  --lp-bg3: #18181f;
-  --lp-border: rgba(255, 255, 255, 0.07);
-  --lp-border2: rgba(255, 255, 255, 0.12);
-  --lp-text: #f0f0f4;
-  --lp-muted: #8888a0;
-  --lp-accent: #00e5a0;
-  --lp-accent-dim: rgba(0, 229, 160, 0.08);
-  --lp-r: 14px;
-  --lp-r-sm: 8px;
-  --lp-font-display: var(--font-landing-display), "Syne", sans-serif;
-  --lp-font-body: var(--font-landing-body), "DM Sans", sans-serif;
+  --lp-bg: var(--bg);
+  --lp-bg2: var(--bg2);
+  --lp-bg3: var(--bg3);
+  --lp-border: var(--border);
+  --lp-border2: var(--border2);
+  --lp-text: var(--text);
+  --lp-muted: var(--muted);
+  --lp-accent: var(--accent);
+  --lp-accent-dim: var(--accent-dim);
+  --lp-r: var(--radius);
+  --lp-r-sm: var(--radius-sm);
+  --lp-font-display: var(--font-display);
+  --lp-font-body: var(--font-body);
 
   position: relative;
   z-index: 1;
@@ -23,16 +23,6 @@
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
-}
-
-.landing-page::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  opacity: 0.025;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  pointer-events: none;
-  z-index: 0;
 }
 
 .landing-page a {

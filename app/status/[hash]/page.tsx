@@ -2,17 +2,18 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
+import AppShell from "@/components/ui/app-shell";
 import GlassCard from "@/components/ui/glass-card";
 import MainMenu from "@/components/ui/main-menu";
 import { ARC_TESTNET, getArcExplorerTxUrl } from "@/utils";
 import { trackEvent } from "@/lib/client/analytics";
 
 const statusStyles = {
-  active: "text-emerald-300 border-emerald-300/30 bg-emerald-400/10",
-  claimed: "text-blue-300 border-blue-300/30 bg-blue-400/10",
-  expired: "text-amber-300 border-amber-300/30 bg-amber-400/10",
-  reclaimed: "text-violet-300 border-violet-300/30 bg-violet-400/10",
-  not_found: "text-rose-300 border-rose-300/30 bg-rose-400/10",
+  active: "status-pill-active",
+  claimed: "status-pill-claimed",
+  expired: "status-pill-expired",
+  reclaimed: "status-pill-reclaimed",
+  not_found: "status-pill-not_found",
 } as const;
 
 function statusLabel(status: keyof typeof statusStyles) {
@@ -134,18 +135,16 @@ export default function GiftStatusPage() {
   };
 
   return (
-    <main className="relative min-h-screen px-4 py-8 text-white sm:px-5 sm:py-10">
-      <div className="pointer-events-none absolute left-1/2 top-0 h-[560px] w-[560px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,_rgba(139,92,246,0.2)_0%,_rgba(59,130,246,0.12)_40%,_transparent_75%)] blur-3xl" />
-
-      <div className="relative mx-auto w-full max-w-3xl space-y-4 sm:space-y-5">
+    <AppShell className="px-4 py-8 sm:px-5 sm:py-10" glow="top">
+      <div className="relative z-[1] mx-auto w-full max-w-3xl space-y-4 sm:space-y-5">
         <GlassCard className="space-y-4 p-4 sm:p-6">
           <div className="flex justify-start">
             <MainMenu />
           </div>
-          <p className="text-xs uppercase tracking-[0.18em] text-white/60">
+          <p className="app-section-label">
             Public gift status · {ARC_TESTNET.chainName}
           </p>
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+          <h1 className="app-heading text-2xl sm:text-3xl">
             Where are the funds now?
           </h1>
 
@@ -184,7 +183,7 @@ export default function GiftStatusPage() {
             <button
               type="button"
               onClick={onCopyStatusLink}
-              className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-white/85 transition hover:bg-white/5"
+              className="app-btn-secondary px-3 py-1.5 text-xs"
             >
               {copied ? "Copied" : "Copy status link"}
             </button>
@@ -209,7 +208,7 @@ export default function GiftStatusPage() {
         </GlassCard>
 
         <GlassCard className="space-y-3 p-4 sm:p-6">
-          <h2 className="text-lg font-semibold">Status timeline</h2>
+          <h2 className="app-heading text-lg">Status timeline</h2>
           {show.timeline.length === 0 ? (
             <p className="text-sm text-white/70">
               Timeline is unavailable for this hash.
@@ -219,7 +218,7 @@ export default function GiftStatusPage() {
               {show.timeline.map((step) => (
                 <div
                   key={step.id}
-                  className="rounded-xl border border-white/10 bg-black/25 p-3"
+                  className="app-panel p-3"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-sm font-medium">{step.title}</p>
@@ -238,7 +237,7 @@ export default function GiftStatusPage() {
                       href={step.explorerUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-1 block break-all text-xs text-blue-300 underline decoration-white/30 underline-offset-4 hover:text-blue-200"
+                      className="app-link mt-1 block break-all text-xs"
                     >
                       {step.txHash}
                     </a>
@@ -250,14 +249,14 @@ export default function GiftStatusPage() {
         </GlassCard>
 
         <GlassCard className="space-y-3 p-4 sm:p-6">
-          <h2 className="text-lg font-semibold">Explorer links</h2>
+          <h2 className="app-heading text-lg">Explorer links</h2>
           <div className="flex flex-wrap gap-2">
             {show.tx.fundingTxHash && (
               <a
                 href={getArcExplorerTxUrl(show.tx.fundingTxHash)}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-blue-300 transition hover:bg-white/5"
+                className="app-btn-secondary px-3 py-1.5 text-xs app-link"
               >
                 Funding tx
               </a>
@@ -267,7 +266,7 @@ export default function GiftStatusPage() {
                 href={getArcExplorerTxUrl(show.tx.claimTxHash)}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-blue-300 transition hover:bg-white/5"
+                className="app-btn-secondary px-3 py-1.5 text-xs app-link"
               >
                 Claim tx
               </a>
@@ -277,7 +276,7 @@ export default function GiftStatusPage() {
                 href={getArcExplorerTxUrl(show.tx.reclaimTxHash)}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-violet-300 transition hover:bg-white/5"
+                className="app-btn-secondary px-3 py-1.5 text-xs app-link"
               >
                 Reclaim tx
               </a>
@@ -293,7 +292,7 @@ export default function GiftStatusPage() {
         </GlassCard>
 
       </div>
-    </main>
+    </AppShell>
   );
 }
 

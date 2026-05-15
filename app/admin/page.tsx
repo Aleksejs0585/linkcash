@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import AppShell from "@/components/ui/app-shell";
 import GlassCard from "../../components/ui/glass-card";
 import MainMenu from "../../components/ui/main-menu";
 
@@ -214,15 +215,13 @@ export default function AdminPage() {
   const limitInputRef = useRef<HTMLInputElement | null>(null);
 
   return (
-    <main className="relative min-h-screen px-5 py-10 text-white">
-      <div className="mx-auto w-full max-w-3xl space-y-5">
+    <AppShell className="px-5 py-10" glow="top">
+      <div className="relative z-[1] mx-auto w-full max-w-3xl space-y-5">
         <GlassCard className="space-y-4 p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-white/60">
-                LinkCash Admin
-              </p>
-              <h1 className="mt-1 text-3xl font-semibold tracking-tight">
+              <p className="app-section-label">LinkCash Admin</p>
+              <h1 className="app-heading mt-1 text-3xl">
                 Claim Control Panel
               </h1>
             </div>
@@ -232,7 +231,7 @@ export default function AdminPage() {
                 <button
                   type="button"
                   onClick={onLogout}
-                  className="rounded-xl border border-white/15 px-3 py-2 text-sm text-white/80 transition hover:bg-white/5"
+                  className="app-btn-secondary px-3 py-2 text-sm"
                 >
                   Logout
                 </button>
@@ -247,12 +246,12 @@ export default function AdminPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Admin password"
-                className="w-full rounded-xl border border-white/15 bg-black/30 px-4 py-3 text-sm outline-none ring-blue-500/40 placeholder:text-white/45 focus:ring-2"
+                className="app-input"
               />
               <button
                 type="submit"
                 disabled={loading}
-                className="accent-gradient w-full rounded-xl px-4 py-3 text-sm font-semibold disabled:opacity-60"
+                className="accent-gradient w-full rounded-[var(--radius-sm)] px-4 py-3 text-sm disabled:opacity-60"
               >
                 {loading ? "Signing in..." : "Sign in"}
               </button>
@@ -260,7 +259,7 @@ export default function AdminPage() {
           ) : (
             <div className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-xl border border-white/10 bg-black/25 p-4">
+                <div className="app-panel p-4">
                   <p className="text-xs uppercase tracking-[0.15em] text-white/60">
                     Rate limit
                   </p>
@@ -271,13 +270,13 @@ export default function AdminPage() {
                     type="button"
                     onClick={onToggleRateLimit}
                     disabled={savingConfig}
-                    className="mt-3 rounded-lg border border-white/15 px-3 py-2 text-sm text-white/85 transition hover:bg-white/5 disabled:opacity-60"
+                    className="app-btn-secondary mt-3 px-3 py-2 text-sm disabled:opacity-60"
                   >
                     {config?.rateLimitEnabled ? "Disable" : "Enable"}
                   </button>
                 </div>
 
-                <div className="rounded-xl border border-white/10 bg-black/25 p-4">
+                <div className="app-panel p-4">
                   <p className="text-xs uppercase tracking-[0.15em] text-white/60">
                     Requests per minute
                   </p>
@@ -291,7 +290,7 @@ export default function AdminPage() {
                       type="number"
                       min={1}
                       defaultValue={String(config?.rateLimitPerMinute ?? 12)}
-                      className="w-full rounded-lg border border-white/15 bg-black/35 px-3 py-2 text-sm outline-none"
+                      className="app-input"
                     />
                     <button
                       type="button"
@@ -299,7 +298,7 @@ export default function AdminPage() {
                       onClick={() =>
                         onSaveLimit(Number(limitInputRef.current?.value ?? 12))
                       }
-                      className="rounded-lg border border-white/15 px-3 py-2 text-sm text-white/85 transition hover:bg-white/5 disabled:opacity-60"
+                      className="app-btn-secondary px-3 py-2 text-sm disabled:opacity-60"
                     >
                       Save
                     </button>
@@ -310,7 +309,7 @@ export default function AdminPage() {
               <button
                 type="button"
                 onClick={() => loadData().catch(() => undefined)}
-                className="rounded-lg border border-white/15 px-3 py-2 text-sm text-white/85 transition hover:bg-white/5"
+                className="app-btn-secondary px-3 py-2 text-sm"
               >
                 Refresh data
               </button>
@@ -341,7 +340,7 @@ export default function AdminPage() {
             )}
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border border-white/10 bg-black/25 p-4">
+              <div className="app-panel p-4">
                 <p className="text-xs uppercase tracking-[0.15em] text-white/60">Last 24h</p>
                 <div className="mt-2 space-y-1 text-sm text-white/85">
                   <p>Open: {funnel?.last24h.createOpen ?? 0}</p>
@@ -359,7 +358,7 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-white/10 bg-black/25 p-4">
+              <div className="app-panel p-4">
                 <p className="text-xs uppercase tracking-[0.15em] text-white/60">Last 7d</p>
                 <div className="mt-2 space-y-1 text-sm text-white/85">
                   <p>Open: {funnel?.last7d.createOpen ?? 0}</p>
@@ -378,7 +377,7 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-white/10 bg-black/25 p-4">
+            <div className="app-panel p-4">
               <p className="text-xs uppercase tracking-[0.15em] text-white/60">
                 Top sources (24h)
               </p>
@@ -403,7 +402,7 @@ export default function AdminPage() {
               )}
             </div>
 
-            <div className="rounded-xl border border-white/10 bg-black/25 p-4">
+            <div className="app-panel p-4">
               <p className="text-xs uppercase tracking-[0.15em] text-white/60">
                 Quality signals (24h)
               </p>
@@ -414,7 +413,7 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-white/10 bg-black/25 p-4">
+            <div className="app-panel p-4">
               <p className="text-xs uppercase tracking-[0.15em] text-white/60">
                 Cohorts by source + campaign + day (7d)
               </p>
@@ -457,7 +456,7 @@ export default function AdminPage() {
                 events.map((item) => (
                   <div
                     key={`${item.requestId}-${item.timestamp}`}
-                    className="rounded-xl border border-white/10 bg-black/25 p-3 text-xs"
+                    className="app-panel p-3 text-xs"
                   >
                     <p className="font-medium text-white/90">{item.event}</p>
                     <p className="mt-1 text-white/60">
@@ -484,6 +483,6 @@ export default function AdminPage() {
           </GlassCard>
         )}
       </div>
-    </main>
+    </AppShell>
   );
 }

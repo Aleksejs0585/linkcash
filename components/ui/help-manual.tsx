@@ -12,7 +12,7 @@ export default function HelpManual() {
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-label="How LinkCash works"
-        className="fixed right-4 top-4 z-[60] inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/40 text-lg font-semibold text-white shadow-lg backdrop-blur transition hover:scale-105 hover:bg-black/55"
+        className="fixed right-4 top-4 z-[60] inline-flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border2)] bg-[var(--bg2)] text-lg font-semibold text-[var(--text)] shadow-lg transition hover:scale-105 hover:border-[var(--accent)] hover:bg-[var(--bg3)]"
       >
         ?
       </button>
@@ -35,9 +35,9 @@ export default function HelpManual() {
               animate={{ opacity: 1, y: 0, x: 0 }}
               exit={{ opacity: 0, y: -10, x: 16 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="fixed right-4 top-16 z-[59] w-[min(92vw,420px)] rounded-2xl border border-white/10 bg-[#11131bcc] p-5 text-left text-sm text-white/90 shadow-2xl backdrop-blur-xl"
+              className="glass-card fixed right-4 top-16 z-[59] w-[min(92vw,420px)] p-5 text-left text-sm shadow-2xl"
             >
-              <h2 className="text-base font-semibold text-white">
+              <h2 className="app-heading text-base">
                 How LinkCash works
               </h2>
 

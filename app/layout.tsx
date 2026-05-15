@@ -1,12 +1,8 @@
 import type { ReactNode } from "react";
-import { DM_Sans, Inter, Syne } from "next/font/google";
+import { DM_Sans, Syne } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
 import HelpManual from "../components/ui/help-manual";
-
-const inter = Inter({
-  subsets: ["latin"],
-});
 
 const syne = Syne({
   subsets: ["latin"],
@@ -26,7 +22,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en">
       <body
-        className={`${inter.className} ${syne.variable} ${dmSans.variable} bg-app text-white antialiased`}
+        className={`${dmSans.className} ${syne.variable} ${dmSans.variable} bg-app antialiased`}
       >
         <Providers>{children}</Providers>
         <HelpManual />

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Contract, JsonRpcProvider, formatUnits, isAddress } from "ethers";
+import AppShell from "@/components/ui/app-shell";
 import GlassCard from "@/components/ui/glass-card";
 import MainMenu from "@/components/ui/main-menu";
 import OAuthNavHint from "@/components/ui/oauth-nav-hint";
@@ -19,19 +20,19 @@ const ERC20_ABI = [
 export default function WalletPage() {
   if (!isCircleWalletConfigured()) {
     return (
-      <main className="relative flex min-h-screen items-center justify-center px-5 py-10 text-white">
-        <GlassCard className="w-full max-w-[420px] space-y-3 p-8 text-center">
+      <AppShell className="flex items-center justify-center px-5 py-10">
+        <GlassCard className="relative z-[1] w-full max-w-[420px] space-y-3 p-8 text-center">
           <div className="flex justify-start">
             <MainMenu />
           </div>
-          <h1 className="text-3xl font-semibold tracking-tight">My wallet</h1>
+          <h1 className="app-heading text-3xl">My wallet</h1>
           <p className="soft-text text-sm">
             Set <code>NEXT_PUBLIC_CIRCLE_APP_ID</code> and{" "}
             <code>NEXT_PUBLIC_GOOGLE_CLIENT_ID</code> (plus server{" "}
             <code>CIRCLE_API_KEY</code>) to enable Circle wallets.
           </p>
         </GlassCard>
-      </main>
+      </AppShell>
     );
   }
 
@@ -105,18 +106,16 @@ function WalletContent() {
   };
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center px-5 py-10 text-white">
-      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[450px] w-[450px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,_rgba(139,92,246,0.2)_0%,_rgba(59,130,246,0.14)_35%,_transparent_70%)] blur-3xl" />
-
-      <GlassCard className="relative w-full max-w-[420px] space-y-6 p-8">
+    <AppShell className="flex items-center justify-center px-5 py-10">
+      <GlassCard className="relative z-[1] w-full max-w-[420px] space-y-6 p-8">
         <div className="flex justify-start">
           <MainMenu />
         </div>
         <div className="text-center">
-          <p className="mx-auto inline-flex rounded-full border border-white/15 px-3 py-1 text-xs text-white/75">
+          <p className="app-chain-badge mx-auto">
             {ARC_TESTNET.chainName}
           </p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight">
+          <h1 className="app-heading mt-3 text-3xl">
             My wallet
           </h1>
           <p className="soft-text mt-2 text-sm">
@@ -137,7 +136,7 @@ function WalletContent() {
             <button
               type="button"
               onClick={() => void login()}
-              className="accent-gradient w-full rounded-2xl px-6 py-3.5 text-base font-semibold"
+              className="accent-gradient w-full rounded-[var(--radius)] px-6 py-3.5 text-base"
             >
               Sign in with Google
             </button>
@@ -156,7 +155,7 @@ function WalletContent() {
             <button
               type="button"
               onClick={logout}
-              className="w-full rounded-xl border border-white/15 px-4 py-2.5 text-sm text-white/85 transition hover:bg-white/5"
+              className="app-btn-secondary w-full px-4 py-2.5 text-sm"
             >
               Sign out
             </button>
@@ -164,7 +163,7 @@ function WalletContent() {
         ) : (
           <div className="space-y-4">
             <WalletBackupWarning variant="inlineExportHint" />
-            <div className="rounded-xl border border-white/10 bg-black/25 p-4">
+            <div className="app-panel p-4">
               <p className="text-xs uppercase tracking-[0.15em] text-white/60">
                 Wallet address
               </p>
@@ -175,7 +174,7 @@ function WalletContent() {
                 <button
                   type="button"
                   onClick={() => void onCopy()}
-                  className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-white/85 transition hover:bg-white/5"
+                  className="app-btn-secondary px-3 py-1.5 text-xs"
                 >
                   {copied ? "Copied" : "Copy address"}
                 </button>
@@ -183,14 +182,14 @@ function WalletContent() {
                   href={getArcExplorerAddressUrl(walletAddressResolved)}
                   target="_blank"
                   rel="noreferrer"
-                  className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-blue-300 transition hover:bg-white/5"
+                  className="app-btn-secondary px-3 py-1.5 text-xs app-link"
                 >
                   View on explorer
                 </a>
               </div>
             </div>
 
-            <div className="rounded-xl border border-white/10 bg-black/25 p-4">
+            <div className="app-panel p-4">
               <p className="text-xs uppercase tracking-[0.15em] text-white/60">
                 USDC balance
               </p>
@@ -200,7 +199,7 @@ function WalletContent() {
               <button
                 type="button"
                 onClick={() => loadBalance().catch(() => undefined)}
-                className="mt-3 rounded-lg border border-white/15 px-3 py-1.5 text-xs text-white/85 transition hover:bg-white/5"
+                className="app-btn-secondary mt-3 px-3 py-1.5 text-xs"
               >
                 Refresh balance
               </button>
@@ -209,7 +208,7 @@ function WalletContent() {
             <button
               type="button"
               onClick={logout}
-              className="w-full rounded-xl border border-white/15 px-4 py-2.5 text-sm text-white/85 transition hover:bg-white/5"
+              className="app-btn-secondary w-full px-4 py-2.5 text-sm"
             >
               Sign out
             </button>
@@ -218,6 +217,6 @@ function WalletContent() {
 
         {error && <p className="text-sm text-rose-400">{error}</p>}
       </GlassCard>
-    </main>
+    </AppShell>
   );
 }

@@ -44,7 +44,7 @@ export default function MainMenu({ className }: MainMenuProps) {
         aria-haspopup="menu"
         aria-controls="main-app-menu"
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-black/20 px-3 py-2 text-sm text-white/85 transition hover:bg-white/10"
+        className="app-btn-secondary inline-flex items-center gap-2 px-3 py-2 text-sm"
       >
         <HiOutlineMenuAlt2 className="h-5 w-5 shrink-0" aria-hidden />
         Menu
@@ -54,26 +54,50 @@ export default function MainMenu({ className }: MainMenuProps) {
           id="main-app-menu"
           role="menu"
           aria-orientation="vertical"
-          className="absolute left-0 top-full z-50 mt-2 min-w-[220px] rounded-xl border border-white/15 bg-black/90 py-1 shadow-xl backdrop-blur-md"
+          className="absolute left-0 top-full z-50 mt-2 min-w-[220px] rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--bg2)] py-1 shadow-xl"
         >
           <Link
             href="/"
             role="menuitem"
-            className="block rounded-lg px-3 py-2.5 text-left text-sm text-white/90 transition hover:bg-white/10"
+            className="block rounded-lg px-3 py-2.5 text-left text-sm transition hover:bg-[var(--bg3)]"
             onClick={() => setOpen(false)}
           >
             Home
+          </Link>
+          <Link
+            href="/create"
+            role="menuitem"
+            className="block rounded-lg px-3 py-2.5 text-left text-sm transition hover:bg-[var(--bg3)]"
+            onClick={() => setOpen(false)}
+          >
+            Create gift
+          </Link>
+          <Link
+            href="/wallet"
+            role="menuitem"
+            className="block rounded-lg px-3 py-2.5 text-left text-sm transition hover:bg-[var(--bg3)]"
+            onClick={() => setOpen(false)}
+          >
+            My wallet
+          </Link>
+          <Link
+            href="/gifts"
+            role="menuitem"
+            className="block rounded-lg px-3 py-2.5 text-left text-sm transition hover:bg-[var(--bg3)]"
+            onClick={() => setOpen(false)}
+          >
+            Dashboard
           </Link>
           <a
             href={productUrl}
             role="menuitem"
             target="_blank"
             rel="noopener noreferrer"
-            className="block rounded-lg px-3 py-2.5 text-left text-sm text-white/90 transition hover:bg-white/10"
+            className="block rounded-lg px-3 py-2.5 text-left text-sm transition hover:bg-[var(--bg3)]"
             onClick={() => setOpen(false)}
           >
             Product site
-            <span className="ml-1 text-xs text-white/45" aria-hidden>
+            <span className="ml-1 text-xs text-[var(--muted)]" aria-hidden>
               ↗
             </span>
           </a>

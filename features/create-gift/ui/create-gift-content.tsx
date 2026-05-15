@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { FaLink } from "react-icons/fa";
+import AppShell from "@/components/ui/app-shell";
 import GlassCard from "@/components/ui/glass-card";
 import MainMenu from "@/components/ui/main-menu";
 import OAuthNavHint from "@/components/ui/oauth-nav-hint";
@@ -40,10 +41,8 @@ export function CreateGiftContent() {
   } = useCreateGift();
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center px-4 py-8 text-white sm:px-5 sm:py-10">
-      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,_rgba(139,92,246,0.2)_0%,_rgba(59,130,246,0.12)_35%,_transparent_70%)] blur-3xl" />
-
-      <GlassCard className="relative max-w-[460px] space-y-6 p-5 text-center sm:p-8">
+    <AppShell className="flex items-center justify-center px-4 py-8 sm:px-5 sm:py-10">
+      <GlassCard className="relative z-[1] max-w-[460px] space-y-6 p-5 text-center sm:p-8">
         <div className="flex justify-start">
           <MainMenu />
         </div>
@@ -52,10 +51,10 @@ export function CreateGiftContent() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, ease: "easeOut" }}
         >
-          <p className="mx-auto mb-3 inline-flex rounded-full border border-white/15 px-3 py-1 text-xs text-white/75">
+          <p className="app-chain-badge mx-auto mb-3">
             {ARC_TESTNET.chainName}
           </p>
-          <h1 className="text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
+          <h1 className="app-heading text-3xl leading-tight sm:text-5xl">
             Send crypto like a message
           </h1>
           <p className="soft-text mt-3 text-base">
@@ -80,7 +79,7 @@ export function CreateGiftContent() {
               onClick={() => void login()}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.98 }}
-              className="accent-gradient w-full rounded-2xl px-5 py-3.5 text-base font-semibold shadow-[0_14px_36px_rgba(76,85,255,0.38)] transition sm:px-6 sm:py-4 sm:text-lg"
+              className="accent-gradient w-full rounded-[var(--radius)] px-5 py-3.5 text-base sm:px-6 sm:py-4 sm:text-lg"
             >
               Sign in with Google
             </motion.button>
@@ -116,7 +115,7 @@ export function CreateGiftContent() {
               }
               whileHover={{ scale: creating ? 1 : 1.03 }}
               whileTap={{ scale: 0.98 }}
-              className="accent-gradient w-full rounded-2xl px-5 py-3.5 text-base font-semibold shadow-[0_14px_36px_rgba(76,85,255,0.38)] transition disabled:opacity-65 sm:px-6 sm:py-4 sm:text-lg"
+              className="accent-gradient w-full rounded-[var(--radius)] px-5 py-3.5 text-base disabled:opacity-65 sm:px-6 sm:py-4 sm:text-lg"
             >
             {creating
               ? "Funding gift..."
@@ -129,10 +128,10 @@ export function CreateGiftContent() {
           </div>
         )}
 
-        <div className="rounded-2xl border border-white/10 bg-black/20 p-4 text-left">
+        <div className="app-panel app-field p-4 text-left">
           <label
             htmlFor="amount"
-            className="soft-text text-xs uppercase tracking-[0.15em]"
+            className="app-section-label"
           >
             Gift amount (USDC)
           </label>
@@ -143,13 +142,13 @@ export function CreateGiftContent() {
             step="0.01"
             value={amount}
             onChange={(event) => setAmount(event.target.value)}
-            className="mt-2 w-full rounded-xl border border-white/15 bg-black/30 px-3 py-2 text-sm text-white outline-none ring-blue-500/40 focus:ring-2"
+            className="app-input"
           />
         </div>
-        <div className="rounded-2xl border border-white/10 bg-black/20 p-4 text-left">
+        <div className="app-panel app-field p-4 text-left">
           <label
             htmlFor="expiresInHours"
-            className="soft-text text-xs uppercase tracking-[0.15em]"
+            className="app-section-label"
           >
             Expiry (hours)
           </label>
@@ -161,7 +160,7 @@ export function CreateGiftContent() {
             step="1"
             value={expiresInHours}
             onChange={(event) => setExpiresInHours(event.target.value)}
-            className="mt-2 w-full rounded-xl border border-white/15 bg-black/30 px-3 py-2 text-sm text-white outline-none ring-blue-500/40 focus:ring-2"
+            className="app-input"
           />
           {senderWalletAddress ? (
             <p className="mt-2 break-all text-xs text-white/60">
@@ -183,7 +182,7 @@ export function CreateGiftContent() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 12 }}
               transition={{ duration: 0.35, ease: "easeOut" }}
-              className="rounded-2xl border border-white/10 bg-black/35 p-4 text-left"
+              className="app-panel p-4 text-left"
             >
               <p className="soft-text text-xs uppercase tracking-[0.18em]">
                 Gift link
@@ -192,7 +191,7 @@ export function CreateGiftContent() {
                 href={link}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-blue-300 underline decoration-white/20 underline-offset-4 transition hover:text-blue-200"
+                className="app-link mt-2 inline-flex items-center gap-2 text-sm font-medium"
               >
                 <FaLink className="h-3.5 w-3.5 shrink-0" />
                 Open gift link
@@ -200,7 +199,7 @@ export function CreateGiftContent() {
               {paymentIdHash && (
                 <Link
                   href={statusLink}
-                  className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-violet-300 underline decoration-white/20 underline-offset-4 transition hover:text-violet-200"
+                  className="app-link mt-2 inline-flex items-center gap-2 text-sm font-medium"
                 >
                   Track public status
                 </Link>
@@ -208,7 +207,7 @@ export function CreateGiftContent() {
               <button
                 type="button"
                 onClick={onCopy}
-                className="mt-4 rounded-xl border border-white/15 px-4 py-2 text-sm font-medium text-white/90 transition hover:border-white/30 hover:bg-white/5"
+                className="app-btn-secondary mt-4 px-4 py-2 text-sm font-medium"
               >
                 {copied ? "Copied ✓" : "Copy link"}
               </button>
@@ -224,7 +223,7 @@ export function CreateGiftContent() {
                         ? item.label
                         : `${item.label} (requires configuration)`
                     }
-                    className="inline-flex h-10 items-center justify-center rounded-xl border border-white/15 px-3 py-2 text-center text-xs font-medium text-white/90 transition hover:border-white/30 hover:bg-white/5"
+                    className="app-btn-secondary inline-flex h-10 items-center justify-center px-3 py-2 text-center text-xs font-medium"
                   >
                     <item.icon
                       className="h-5 w-5 shrink-0"
@@ -237,7 +236,7 @@ export function CreateGiftContent() {
                 type="button"
                 onClick={onReclaim}
                 disabled={reclaiming}
-                className="mt-2 rounded-xl border border-white/15 px-4 py-2 text-sm font-medium text-white/90 transition hover:border-white/30 hover:bg-white/5 disabled:opacity-65"
+                className="app-btn-secondary mt-2 px-4 py-2 text-sm font-medium disabled:opacity-65"
               >
                 {reclaiming ? "Reclaiming..." : "Reclaim expired gift"}
               </button>
@@ -253,13 +252,13 @@ export function CreateGiftContent() {
         <div className="text-center">
           <Link
             href="/gifts"
-            className="text-sm text-white/70 underline decoration-white/25 underline-offset-4"
+            className="app-link text-sm"
           >
             View sender dashboard
           </Link>
         </div>
       </GlassCard>
-    </main>
+    </AppShell>
   );
 }
 

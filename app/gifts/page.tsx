@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { isAddress } from "ethers";
+import AppShell from "@/components/ui/app-shell";
 import GlassCard from "../../components/ui/glass-card";
 import MainMenu from "../../components/ui/main-menu";
 import OAuthNavHint from "../../components/ui/oauth-nav-hint";
@@ -36,19 +37,19 @@ type SenderGiftsResponse =
 export default function SenderDashboardPage() {
   if (!isCircleWalletConfigured()) {
     return (
-      <main className="relative flex min-h-screen items-center justify-center px-5 py-10 text-white">
-        <GlassCard className="w-full max-w-[520px] space-y-3 p-8 text-center">
+      <AppShell className="flex items-center justify-center px-5 py-10">
+        <GlassCard className="relative z-[1] w-full max-w-[520px] space-y-3 p-8 text-center">
           <div className="flex justify-start">
             <MainMenu />
           </div>
-          <h1 className="text-3xl font-semibold tracking-tight">Sender Dashboard</h1>
+          <h1 className="app-heading text-3xl">Sender Dashboard</h1>
           <p className="soft-text text-sm">
             Set <code>NEXT_PUBLIC_CIRCLE_APP_ID</code>,{" "}
             <code>NEXT_PUBLIC_GOOGLE_CLIENT_ID</code>, and server{" "}
             <code>CIRCLE_API_KEY</code> to view the sender dashboard.
           </p>
         </GlassCard>
-      </main>
+      </AppShell>
     );
   }
 
@@ -134,23 +135,20 @@ function SenderDashboardContent() {
   };
 
   const statusClassByType: Record<SenderGiftStatus, string> = {
-    active: "text-emerald-300 border-emerald-300/30 bg-emerald-400/10",
-    expired: "text-amber-300 border-amber-300/30 bg-amber-400/10",
-    claimed: "text-blue-300 border-blue-300/30 bg-blue-400/10",
-    reclaimed: "text-violet-300 border-violet-300/30 bg-violet-400/10",
+    active: "status-pill-active",
+    expired: "status-pill-expired",
+    claimed: "status-pill-claimed",
+    reclaimed: "status-pill-reclaimed",
   };
 
   return (
-    <main className="relative min-h-screen px-4 py-8 text-white sm:px-5 sm:py-10">
-      <div className="pointer-events-none absolute left-1/2 top-0 h-[560px] w-[560px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,_rgba(139,92,246,0.2)_0%,_rgba(59,130,246,0.12)_40%,_transparent_75%)] blur-3xl" />
-      <div className="relative mx-auto w-full max-w-4xl space-y-4 sm:space-y-5">
+    <AppShell className="px-4 py-8 sm:px-5 sm:py-10" glow="top">
+      <div className="relative z-[1] mx-auto w-full max-w-4xl space-y-4 sm:space-y-5">
         <GlassCard className="space-y-4 p-4 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-white/60">
-                {ARC_TESTNET.chainName}
-              </p>
-              <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
+              <p className="app-section-label">{ARC_TESTNET.chainName}</p>
+              <h1 className="app-heading mt-1 text-2xl sm:text-3xl">
                 Sender Dashboard
               </h1>
               <p className="soft-text mt-2 text-sm">
@@ -162,7 +160,7 @@ function SenderDashboardContent() {
               <button
                 type="button"
                 onClick={() => loadGifts().catch(() => undefined)}
-                className="rounded-xl border border-white/15 px-3 py-2 text-sm text-white/85 transition hover:bg-white/5"
+                className="app-btn-secondary px-3 py-2 text-sm"
               >
                 Refresh
               </button>
@@ -182,7 +180,7 @@ function SenderDashboardContent() {
               <button
                 type="button"
                 onClick={() => void login()}
-                className="accent-gradient w-full rounded-xl px-4 py-3 text-sm font-semibold"
+                className="accent-gradient w-full rounded-[var(--radius-sm)] px-4 py-3 text-sm"
               >
                 Sign in with Google
               </button>
@@ -198,7 +196,7 @@ function SenderDashboardContent() {
                 : "No wallet address for this session yet."}
             </p>
           ) : (
-            <p className="break-all rounded-xl border border-white/10 bg-black/25 p-3 text-xs text-white/70">
+            <p className="app-panel break-all p-3 text-xs text-[var(--muted)]">
               Sender wallet: {senderWalletAddress}
             </p>
           )}
@@ -224,12 +222,12 @@ function SenderDashboardContent() {
               {gifts.map((gift) => (
                 <div
                   key={gift.paymentIdHash}
-                  className="rounded-xl border border-white/10 bg-black/25 p-3 sm:p-4"
+                  className="app-panel p-3 sm:p-4"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-base font-semibold">{gift.amountUsdc} USDC</p>
                     <span
-                      className={`rounded-full border px-2.5 py-1 text-[11px] uppercase tracking-[0.1em] ${statusClassByType[gift.status]}`}
+                      className={`rounded-full border px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.1em] ${statusClassByType[gift.status]}`}
                     >
                       {gift.status}
                     </span>
@@ -248,7 +246,7 @@ function SenderDashboardContent() {
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Link
                       href={`/status/${gift.paymentIdHash}`}
-                      className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-violet-300 transition hover:bg-white/5"
+                      className="app-btn-secondary px-3 py-1.5 text-xs app-link"
                     >
                       Track status
                     </Link>
@@ -256,7 +254,7 @@ function SenderDashboardContent() {
                       href={getArcExplorerTxUrl(gift.fundedTxHash)}
                       target="_blank"
                       rel="noreferrer"
-                      className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-blue-300 transition hover:bg-white/5"
+                      className="app-btn-secondary px-3 py-1.5 text-xs app-link"
                     >
                       Funding tx
                     </a>
@@ -266,7 +264,7 @@ function SenderDashboardContent() {
                         href={getArcExplorerTxUrl(gift.reclaimTxHash)}
                         target="_blank"
                         rel="noreferrer"
-                        className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-violet-300 transition hover:bg-white/5"
+                        className="app-btn-secondary px-3 py-1.5 text-xs app-link"
                       >
                         Reclaim tx
                       </a>
@@ -277,7 +275,7 @@ function SenderDashboardContent() {
                         type="button"
                         onClick={() => onReclaim(gift.paymentIdHash)}
                         disabled={reclaimingHash === gift.paymentIdHash}
-                        className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-white/85 transition hover:bg-white/5 disabled:opacity-60"
+                        className="app-btn-secondary px-3 py-1.5 text-xs disabled:opacity-60"
                       >
                         {reclaimingHash === gift.paymentIdHash
                           ? "Reclaiming..."
@@ -291,6 +289,6 @@ function SenderDashboardContent() {
           )}
         </GlassCard>
       </div>
-    </main>
+    </AppShell>
   );
 }
