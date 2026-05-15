@@ -265,6 +265,7 @@ export async function getGiftByHash(input: GiftHashInput) {
   return {
     ok: true as const,
     amountUsdc: formatUnits(gift.amount, 6),
+    refundAddress: getAddress(gift.refundAddress),
     expiresAt: Number(gift.expiresAt),
     claimed: gift.claimed,
     senderDisplayName: metadata?.senderDisplayName,
