@@ -2,6 +2,8 @@ import { Contract, Wallet, formatUnits, getAddress, parseUnits } from "ethers";
 import { createArcProviderWithContractCheck } from "@/lib/server/arc-chain";
 import { getArcReadEnv, getArcRelayerEnv } from "@/lib/server/env";
 import { HttpError } from "@/lib/server/http-errors";
+import { giftMetadataStore } from "@/lib/server/gift-metadata-store";
+import { buildGiftMetadata } from "@/lib/server/gift-metadata";
 import { senderGiftStore } from "@/lib/server/sender-gift-store";
 import type {
   CreateGiftInput,
@@ -31,6 +33,14 @@ type SenderGiftItem = {
   fundedTxHash: string;
   reclaimTxHash?: string;
 };
+
+async function persistGiftMetadata(input: CreateGiftInput): Promise<void> {
+  const metadata = buildGiftMetadata(
+    input.senderDisplayName,
+    input.giftMessage
+  );
+  await giftMetadataStore.set(input.paymentIdHash, metadata);
+}
 
 export async function createGift(input: CreateGiftInput) {
   const { rpcUrl, privateKey, contractAddress, usdcAddress } = getArcRelayerEnv();
@@ -72,6 +82,8 @@ export async function createGift(input: CreateGiftInput) {
     expiresAt: Number(expiresAt),
     txHash,
   });
+
+  await persistGiftMetadata(input);
 
   return {
     ok: true as const,
@@ -126,6 +138,7 @@ export async function syncClientFundedGift(input: CreateGiftInput) {
     const state = (await gift.gifts(input.paymentIdHash)) as {
       expiresAt: bigint;
     };
+    await persistGiftMetadata(input);
     return {
       ok: true as const,
       txHash: already.txHash,
@@ -180,6 +193,8 @@ export async function syncClientFundedGift(input: CreateGiftInput) {
     expiresAt: expiresAtNum,
     txHash,
   });
+
+  await persistGiftMetadata(input);
 
   return {
     ok: true as const,
@@ -245,11 +260,15 @@ export async function getGiftByHash(input: GiftHashInput) {
     return { ok: false as const, error: "Gift not found.", status: 404 };
   }
 
+  const metadata = await giftMetadataStore.get(input.hash);
+
   return {
     ok: true as const,
     amountUsdc: formatUnits(gift.amount, 6),
     expiresAt: Number(gift.expiresAt),
     claimed: gift.claimed,
+    senderDisplayName: metadata?.senderDisplayName,
+    giftMessage: metadata?.giftMessage,
   };
 }
 

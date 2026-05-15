@@ -25,6 +25,12 @@ import {
   saveOAuthReturnTarget,
 } from "@/lib/client/oauth-return";
 import {
+  clearGoogleDisplayName,
+  extractGoogleDisplayName,
+  persistGoogleDisplayName,
+  readGoogleDisplayName,
+} from "@/lib/client/google-display-name";
+import {
   clearCircleSession,
   readCircleSession,
   writeCircleSession,
@@ -45,6 +51,7 @@ type CircleWalletContextValue = {
   primaryWalletId: string | null;
   userToken: string | null;
   encryptionKey: string | null;
+  googleDisplayName: string | null;
   login: () => Promise<void>;
   logout: () => void;
   executeChallenge: (challengeId: string) => Promise<void>;
@@ -60,6 +67,7 @@ const unconfiguredValue: CircleWalletContextValue = {
   primaryWalletId: null,
   userToken: null,
   encryptionKey: null,
+  googleDisplayName: null,
   login: async () => {
     /* no-op when Circle env is missing */
   },
@@ -168,6 +176,9 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
   const [authError, setAuthError] = useState<string | null>(null);
   const [bootstrapError, setBootstrapError] = useState<string | null>(null);
   const [walletSyncing, setWalletSyncing] = useState(false);
+  const [googleDisplayName, setGoogleDisplayName] = useState<string | null>(
+    () => readGoogleDisplayName()
+  );
 
   const walletAddress = useMemo(
     () => pickArcWallet(wallets)?.address ?? null,
@@ -289,6 +300,11 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
                 userToken: string;
                 encryptionKey: string;
                 refreshToken: string;
+                oAuthInfo?: {
+                  name?: string;
+                  email?: string;
+                  socialUserInfo?: { name?: string };
+                };
               }
             | undefined
         ) => {
@@ -315,6 +331,11 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
           }
 
           setAuthError(null);
+          const profileName = extractGoogleDisplayName(result);
+          if (profileName) {
+            persistGoogleDisplayName(profileName);
+            setGoogleDisplayName(profileName);
+          }
           setUserToken(result.userToken);
           setEncryptionKey(result.encryptionKey);
           writeCircleSession({
@@ -576,9 +597,11 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     clearOAuthFlowState();
     clearCircleSession();
+    clearGoogleDisplayName();
     clearCircleDeviceBindingCookies();
     setUserToken(null);
     setEncryptionKey(null);
+    setGoogleDisplayName(null);
     setWallets([]);
     setAuthError(null);
     setDeviceToken("");
@@ -610,6 +633,7 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
       primaryWalletId,
       userToken,
       encryptionKey,
+      googleDisplayName,
       login,
       logout,
       executeChallenge,
@@ -623,6 +647,7 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
       bootstrapError,
       encryptionKey,
       executeChallenge,
+      googleDisplayName,
       login,
       logout,
       primaryWalletId,

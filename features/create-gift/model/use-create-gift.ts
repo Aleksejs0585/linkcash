@@ -1,7 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useCircleWallet } from "@/features/circle-wallet/model/circle-wallet-provider";
+import {
+  GIFT_MESSAGE_MAX,
+  SENDER_DISPLAY_NAME_MAX,
+} from "@/lib/gift-metadata-limits";
+import { readGoogleDisplayName } from "@/lib/client/google-display-name";
 import { getPublicGiftContractAddress } from "@/features/create-gift/lib/gift-usdc";
 import { waitForClientFundedGift } from "@/features/create-gift/lib/read-gift-on-chain";
 import {
@@ -68,8 +73,10 @@ export function useCreateGift() {
     authError,
     bootstrapError,
     walletSyncing,
+    googleDisplayName,
   } = useCircleWallet();
 
+  const senderNameTouchedRef = useRef(false);
   const [link, setLink] = useState("");
   const [paymentIdHash, setPaymentIdHash] = useState<string | null>(null);
   const [giftExpiresAt, setGiftExpiresAt] = useState<number | null>(null);
@@ -77,6 +84,8 @@ export function useCreateGift() {
   const [copied, setCopied] = useState(false);
   const [amount, setAmount] = useState("10");
   const [expiresInHours, setExpiresInHours] = useState("24");
+  const [senderDisplayName, setSenderDisplayName] = useState("");
+  const [giftMessage, setGiftMessage] = useState("");
   const [creating, setCreating] = useState(false);
   const [reclaiming, setReclaiming] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
@@ -104,6 +113,14 @@ export function useCreateGift() {
       variant: `create_primary_copy_v1:${createCopyVariant}`,
     });
   }, [createCopyVariant]);
+
+  useEffect(() => {
+    if (!authenticated || senderNameTouchedRef.current) return;
+    const fromGoogle = googleDisplayName ?? readGoogleDisplayName();
+    if (fromGoogle) {
+      setSenderDisplayName(fromGoogle);
+    }
+  }, [authenticated, googleDisplayName]);
 
   useEffect(() => {
     if (!giftExpiresAt) return;
@@ -157,6 +174,21 @@ export function useCreateGift() {
       return;
     }
 
+    const trimmedName = senderDisplayName.trim().replace(/\s+/g, " ");
+    if (!trimmedName) {
+      setStatus("Add your name so the recipient knows who sent the gift.");
+      return;
+    }
+    if (trimmedName.length > SENDER_DISPLAY_NAME_MAX) {
+      setStatus(`Name must be ${SENDER_DISPLAY_NAME_MAX} characters or fewer.`);
+      return;
+    }
+    const trimmedMessage = giftMessage.trim().replace(/\s+/g, " ");
+    if (trimmedMessage.length > GIFT_MESSAGE_MAX) {
+      setStatus(`Message must be ${GIFT_MESSAGE_MAX} characters or fewer.`);
+      return;
+    }
+
     setCreating(true);
     setStatus(null);
 
@@ -191,6 +223,8 @@ export function useCreateGift() {
           amountUsdc: amount,
           refundAddress: senderWalletAddress,
           expiresInHours: hoursNum,
+          senderDisplayName: trimmedName,
+          giftMessage: trimmedMessage || undefined,
           syncClientFunding: true,
         }),
       });
@@ -306,6 +340,13 @@ export function useCreateGift() {
     shareLinks,
     setAmount,
     setExpiresInHours,
+    senderDisplayName,
+    giftMessage,
+    setSenderDisplayName: (value: string) => {
+      senderNameTouchedRef.current = true;
+      setSenderDisplayName(value);
+    },
+    setGiftMessage,
     onCreate,
     onReclaim,
     onCopy,

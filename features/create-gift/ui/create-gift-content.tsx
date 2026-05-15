@@ -29,6 +29,8 @@ export function CreateGiftContent() {
     copied,
     amount,
     expiresInHours,
+    senderDisplayName,
+    giftMessage,
     creating,
     reclaiming,
     status,
@@ -36,6 +38,8 @@ export function CreateGiftContent() {
     shareLinks,
     setAmount,
     setExpiresInHours,
+    setSenderDisplayName,
+    setGiftMessage,
     onCreate,
     onReclaim,
     onCopy,
@@ -65,6 +69,53 @@ export function CreateGiftContent() {
               : "No wallet setup needed. Just a link."}
           </p>
         </motion.div>
+
+        {authenticated ? (
+          <>
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, ease: "easeOut", delay: 0.05 }}
+              className="app-panel app-field p-4 text-left"
+            >
+              <label htmlFor="senderDisplayName" className="app-section-label">
+                Your name (shown to recipient)
+              </label>
+              <input
+                id="senderDisplayName"
+                type="text"
+                maxLength={40}
+                value={senderDisplayName}
+                onChange={(event) => setSenderDisplayName(event.target.value)}
+                placeholder="Alex K."
+                className="app-input"
+                autoComplete="name"
+              />
+              <p className="mt-2 text-xs text-white/55">
+                Prefilled from Google — you can edit before sending.
+              </p>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, ease: "easeOut", delay: 0.08 }}
+              className="app-panel app-field p-4 text-left"
+            >
+              <label htmlFor="giftMessage" className="app-section-label">
+                Personal message (optional)
+              </label>
+              <textarea
+                id="giftMessage"
+                maxLength={200}
+                rows={3}
+                value={giftMessage}
+                onChange={(event) => setGiftMessage(event.target.value)}
+                placeholder="Happy birthday! 🎉"
+                className="app-input resize-none"
+              />
+            </motion.div>
+          </>
+        ) : null}
 
         {bootstrapError && (
           <p className="rounded-xl border border-rose-500/40 bg-rose-950/40 p-3 text-sm text-rose-200">

@@ -1,12 +1,18 @@
 import { getAddress, isAddress, isHexString } from "ethers";
 import { z } from "zod";
 import { HttpError } from "@/lib/server/http-errors";
+import {
+  sanitizeGiftMessage,
+  sanitizeSenderDisplayName,
+} from "@/lib/server/gift-metadata";
 
 export type CreateGiftInput = {
   paymentIdHash: string;
   amountUsdc: string;
   refundAddress: string;
   expiresInHours: number;
+  senderDisplayName: string;
+  giftMessage?: string;
 };
 
 /** Parsed POST /api/create-gift body (optional on-chain sync path). */
@@ -32,6 +38,8 @@ const createGiftSchema = z
     amountUsdc: z.string().trim(),
     refundAddress: z.string().trim(),
     expiresInHours: z.coerce.number().default(24),
+    senderDisplayName: z.string().trim(),
+    giftMessage: z.string().trim().optional(),
     syncClientFunding: z.literal(true).optional(),
   })
   .strict();
@@ -52,6 +60,8 @@ export function parseCreateGiftInput(body: unknown): CreateGiftParsed {
     amountUsdc,
     refundAddress,
     expiresInHours,
+    senderDisplayName,
+    giftMessage,
     syncClientFunding,
   } = parsed.data;
 
@@ -78,6 +88,8 @@ export function parseCreateGiftInput(body: unknown): CreateGiftParsed {
     amountUsdc,
     refundAddress: getAddress(refundAddress),
     expiresInHours,
+    senderDisplayName: sanitizeSenderDisplayName(senderDisplayName),
+    giftMessage: sanitizeGiftMessage(giftMessage),
   };
   if (syncClientFunding === true) {
     return { ...base, syncClientFunding: true };

@@ -19,6 +19,7 @@ import {
   clearOAuthFlowState,
   markAutoClaimAfterAuth,
 } from "@/lib/client/oauth-return";
+import { displayNameInitials } from "@/lib/client/google-display-name";
 import {
   ARC_TESTNET,
   getPaymentIdHashFromPath,
@@ -32,11 +33,22 @@ type GiftDetailsResponse =
       amountUsdc: string;
       expiresAt: number;
       claimed: boolean;
+      senderDisplayName?: string;
+      giftMessage?: string;
     }
   | {
       ok: false;
       error: string;
     };
+
+function formatExpiryRemaining(seconds: number): string {
+  if (seconds <= 0) return "Expired";
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  const secs = seconds % 60;
+  return minutes > 0 ? `${minutes}m ${secs}s` : `${secs}s`;
+}
 
 export default function GiftPage() {
   if (!isCircleWalletConfigured()) {
@@ -76,6 +88,10 @@ function GiftClaimContent() {
   const { claimGift, loading, txHash, error } = useGift();
   const [status, setStatus] = useState<string | null>(null);
   const [giftAmountUsdc, setGiftAmountUsdc] = useState<string | null>(null);
+  const [senderDisplayName, setSenderDisplayName] = useState<string | null>(
+    null
+  );
+  const [giftMessage, setGiftMessage] = useState<string | null>(null);
   const [expiresAtSec, setExpiresAtSec] = useState<number | null>(null);
   const [giftLoading, setGiftLoading] = useState(true);
   const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
@@ -115,6 +131,8 @@ function GiftClaimContent() {
 
           setGiftAmountUsdc(data.amountUsdc);
           setExpiresAtSec(data.expiresAt);
+          setSenderDisplayName(data.senderDisplayName?.trim() || null);
+          setGiftMessage(data.giftMessage?.trim() || null);
         })
         .catch((e) => {
           setStatus(
@@ -275,6 +293,11 @@ function GiftClaimContent() {
       ? (remainingSeconds % 60).toString().padStart(2, "0")
       : "--";
   const amountLabel = giftAmountUsdc ? `${giftAmountUsdc} USDC` : "Gift";
+  const hasNamedGift = Boolean(senderDisplayName);
+  const expiryLabel =
+    remainingSeconds === null
+      ? "Checking expiry..."
+      : formatExpiryRemaining(remainingSeconds);
 
   return (
     <AppShell className="flex items-center justify-center px-4 py-8 sm:px-5 sm:py-10">
@@ -293,33 +316,62 @@ function GiftClaimContent() {
               {bootstrapError}
             </p>
           )}
-          <div className="space-y-2">
-            <p className="app-chain-badge mx-auto">
-              {ARC_TESTNET.chainName} · {ARC_TESTNET.chainId}
-            </p>
-            <p className="text-sm tracking-[0.06em] text-white/75">
-              🎁 You received a gift
-            </p>
-            <h1 className="app-heading text-4xl sm:text-5xl">
-              {giftLoading ? "Loading..." : amountLabel}
-            </h1>
-            <p className="soft-text text-sm">
-              Someone sent you crypto
-            </p>
-            {authenticated && (
-              <p className="mt-2 break-all text-xs text-white/60">
-                Receiving wallet: {receiverAddress ?? "not ready"}
+          {hasNamedGift ? (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="app-gift-card"
+            >
+              <div className="app-gift-avatar" aria-hidden>
+                {displayNameInitials(senderDisplayName!)}
+              </div>
+              <p className="app-gift-from">Gift from</p>
+              <p className="app-gift-name">{senderDisplayName}</p>
+              {giftMessage ? (
+                <p className="app-gift-msg">&quot;{giftMessage}&quot;</p>
+              ) : null}
+              <p className="app-gift-amount">
+                {giftLoading ? "—" : giftAmountUsdc ?? "—"}
               </p>
-            )}
-          </div>
+              <p className="app-gift-token">USDC · {ARC_TESTNET.chainName}</p>
+              <p className="app-gift-expiry countdown-tick">
+                {remainingSeconds === null
+                  ? "Checking expiry..."
+                  : remainingSeconds <= 0
+                    ? "Gift expired"
+                    : `Expires in ${expiryLabel}`}
+              </p>
+            </motion.div>
+          ) : (
+            <div className="space-y-2">
+              <p className="app-chain-badge mx-auto">
+                {ARC_TESTNET.chainName} · {ARC_TESTNET.chainId}
+              </p>
+              <p className="text-sm tracking-[0.06em] text-white/75">
+                🎁 You received a gift
+              </p>
+              <h1 className="app-heading text-4xl sm:text-5xl">
+                {giftLoading ? "Loading..." : amountLabel}
+              </h1>
+              <p className="soft-text text-sm">Someone sent you crypto</p>
+            </div>
+          )}
 
-          <p className="countdown-tick text-sm text-white/70">
-            {remainingSeconds === null
-              ? "Checking expiry..."
-              : remainingSeconds <= 0
-                ? "Gift expired"
-                : `Expires in ${minutes}:${seconds}`}
-          </p>
+          {!hasNamedGift ? (
+            <p className="countdown-tick text-sm text-white/70">
+              {remainingSeconds === null
+                ? "Checking expiry..."
+                : remainingSeconds <= 0
+                  ? "Gift expired"
+                  : `Expires in ${minutes}:${seconds}`}
+            </p>
+          ) : null}
+
+          {authenticated ? (
+            <p className="break-all text-xs text-white/60">
+              Receiving wallet: {receiverAddress ?? "not ready"}
+            </p>
+          ) : null}
 
           {!isSuccess && (
             <div className="space-y-3">
@@ -341,13 +393,20 @@ function GiftClaimContent() {
                   : loading
                     ? "Opening your gift..."
                     : !authenticated
-                      ? "Sign in & unwrap"
+                      ? hasNamedGift
+                        ? "Claim with Google →"
+                        : "Sign in & unwrap"
                       : claimCopyVariant === "b"
                         ? "Claim to my wallet"
                         : "Unwrap your gift"}
               </motion.button>
               {!authenticated && (
                 <>
+                  {hasNamedGift ? (
+                    <p className="text-xs text-white/55">
+                      No wallet or account needed
+                    </p>
+                  ) : null}
                   <OAuthNavHint />
                   {authError && (
                     <p className="text-xs text-rose-400">{authError}</p>

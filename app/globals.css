@@ -299,3 +299,72 @@ body::before {
     transform: scale(0.8);
   }
 }
+
+/* Named gift claim card */
+.app-gift-card {
+  border-radius: 20px;
+  border: 1px solid var(--border2);
+  background: var(--bg);
+  padding: 1.5rem 1.25rem;
+  text-align: center;
+}
+
+.app-gift-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  margin: 0 auto 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), var(--arc));
+}
+
+.app-gift-from {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+}
+
+.app-gift-name {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.app-gift-msg {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-style: italic;
+  margin-bottom: 1.25rem;
+}
+
+.app-gift-amount {
+  font-family: var(--font-display);
+  font-size: 2.625rem;
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+
+.app-gift-token {
+  font-size: 0.8125rem;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+
+.app-gift-expiry {
+  display: inline-block;
+  font-size: 0.6875rem;
+  color: #e87800;
+  background: rgba(232, 120, 0, 0.08);
+  border: 1px solid rgba(232, 120, 0, 0.15);
+  border-radius: 100px;
+  padding: 0.25rem 0.75rem;
+}
