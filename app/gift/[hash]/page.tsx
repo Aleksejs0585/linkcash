@@ -46,8 +46,7 @@ function formatExpiryRemaining(seconds: number): string {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   if (hours > 0) return `${hours}h ${minutes}m`;
-  const secs = seconds % 60;
-  return minutes > 0 ? `${minutes}m ${secs}s` : `${secs}s`;
+  return `${minutes}m`;
 }
 
 export default function GiftPage() {
@@ -282,18 +281,10 @@ function GiftClaimContent() {
     await runClaim();
   };
 
-  const minutes =
-    remainingSeconds !== null
-      ? Math.floor(remainingSeconds / 60)
-          .toString()
-          .padStart(2, "0")
-      : "--";
-  const seconds =
-    remainingSeconds !== null
-      ? (remainingSeconds % 60).toString().padStart(2, "0")
-      : "--";
   const amountLabel = giftAmountUsdc ? `${giftAmountUsdc} USDC` : "Gift";
   const hasNamedGift = Boolean(senderDisplayName);
+  const expiryUrgent =
+    remainingSeconds !== null && remainingSeconds > 0 && remainingSeconds < 3600;
   const expiryLabel =
     remainingSeconds === null
       ? "Checking expiry..."
@@ -334,7 +325,7 @@ function GiftClaimContent() {
                 {giftLoading ? "—" : giftAmountUsdc ?? "—"}
               </p>
               <p className="app-gift-token">USDC · {ARC_TESTNET.chainName}</p>
-              <p className="app-gift-expiry countdown-tick">
+              <p className={`app-gift-expiry countdown-tick${expiryUrgent ? " text-rose-400" : ""}`}>
                 {remainingSeconds === null
                   ? "Checking expiry..."
                   : remainingSeconds <= 0
@@ -358,12 +349,12 @@ function GiftClaimContent() {
           )}
 
           {!hasNamedGift ? (
-            <p className="countdown-tick text-sm text-white/70">
+            <p className={`countdown-tick text-sm${expiryUrgent ? " text-rose-400" : " text-white/70"}`}>
               {remainingSeconds === null
                 ? "Checking expiry..."
                 : remainingSeconds <= 0
                   ? "Gift expired"
-                  : `Expires in ${minutes}:${seconds}`}
+                  : `Expires in ${expiryLabel}`}
             </p>
           ) : null}
 
