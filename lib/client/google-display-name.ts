@@ -1,4 +1,5 @@
 const STORAGE_KEY = "linkcash:google-display-name";
+const EMAIL_STORAGE_KEY = "linkcash:google-email";
 
 export function persistGoogleDisplayName(name: string): void {
   if (typeof window === "undefined") return;
@@ -16,6 +17,20 @@ export function readGoogleDisplayName(): string | null {
 export function clearGoogleDisplayName(): void {
   if (typeof window === "undefined") return;
   window.sessionStorage.removeItem(STORAGE_KEY);
+  window.sessionStorage.removeItem(EMAIL_STORAGE_KEY);
+}
+
+export function persistGoogleEmail(email: string): void {
+  if (typeof window === "undefined") return;
+  const trimmed = email.trim().toLowerCase();
+  if (!trimmed || !trimmed.includes("@")) return;
+  window.sessionStorage.setItem(EMAIL_STORAGE_KEY, trimmed.slice(0, 40));
+}
+
+export function readGoogleEmail(): string | null {
+  if (typeof window === "undefined") return null;
+  const value = window.sessionStorage.getItem(EMAIL_STORAGE_KEY);
+  return value?.trim() ? value : null;
 }
 
 type OAuthLoginPayload = {
@@ -36,9 +51,36 @@ export function extractGoogleDisplayName(
   return name.length > 0 ? name.slice(0, 40) : null;
 }
 
+export function extractGoogleEmail(
+  result: OAuthLoginPayload | undefined
+): string | null {
+  const email = result?.oAuthInfo?.email?.trim().toLowerCase();
+  if (!email || !email.includes("@")) return null;
+  return email.slice(0, 40);
+}
+
+/** Default sender label on create: Google email, then display name. */
+export function resolveDefaultSenderLabel(
+  email: string | null | undefined,
+  displayName: string | null | undefined
+): string | null {
+  const normalizedEmail = email?.trim().toLowerCase();
+  if (normalizedEmail && normalizedEmail.includes("@")) {
+    return normalizedEmail.slice(0, 40);
+  }
+  const normalizedName = displayName?.trim().replace(/\s+/g, " ");
+  return normalizedName ? normalizedName.slice(0, 40) : null;
+}
+
 export function displayNameInitials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "🎁";
+  const label = name.trim();
+  if (!label) return "🎁";
+  if (label.includes("@")) {
+    const local = (label.split("@")[0] ?? "").replace(/[^a-zA-Z0-9]/g, "");
+    if (local.length >= 2) return local.slice(0, 2).toUpperCase();
+    if (local.length === 1) return local.toUpperCase();
+  }
+  const parts = label.split(/\s+/).filter(Boolean);
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return `${parts[0][0] ?? ""}${parts[parts.length - 1][0] ?? ""}`.toUpperCase();
 }

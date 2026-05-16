@@ -87,12 +87,12 @@ export function CreateGiftContent() {
                 maxLength={40}
                 value={senderDisplayName}
                 onChange={(event) => setSenderDisplayName(event.target.value)}
-                placeholder="Alex K."
+                placeholder="you@example.com"
                 className="app-input"
-                autoComplete="name"
+                autoComplete="email"
               />
               <p className="mt-2 text-xs text-white/55">
-                Prefilled from Google — you can edit before sending.
+                Prefilled with your Google email — you can change it before sending.
               </p>
             </motion.div>
             <motion.div

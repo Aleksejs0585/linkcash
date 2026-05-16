@@ -6,7 +6,11 @@ import {
   GIFT_MESSAGE_MAX,
   SENDER_DISPLAY_NAME_MAX,
 } from "@/lib/gift-metadata-limits";
-import { readGoogleDisplayName } from "@/lib/client/google-display-name";
+import {
+  readGoogleDisplayName,
+  readGoogleEmail,
+  resolveDefaultSenderLabel,
+} from "@/lib/client/google-display-name";
 import { getPublicGiftContractAddress } from "@/features/create-gift/lib/gift-usdc";
 import { waitForClientFundedGift } from "@/features/create-gift/lib/read-gift-on-chain";
 import {
@@ -74,6 +78,7 @@ export function useCreateGift() {
     bootstrapError,
     walletSyncing,
     googleDisplayName,
+    googleEmail,
   } = useCircleWallet();
 
   const senderNameTouchedRef = useRef(false);
@@ -116,11 +121,14 @@ export function useCreateGift() {
 
   useEffect(() => {
     if (!authenticated || senderNameTouchedRef.current) return;
-    const fromGoogle = googleDisplayName ?? readGoogleDisplayName();
-    if (fromGoogle) {
-      setSenderDisplayName(fromGoogle);
+    const defaultLabel = resolveDefaultSenderLabel(
+      googleEmail ?? readGoogleEmail(),
+      googleDisplayName ?? readGoogleDisplayName()
+    );
+    if (defaultLabel) {
+      setSenderDisplayName(defaultLabel);
     }
-  }, [authenticated, googleDisplayName]);
+  }, [authenticated, googleDisplayName, googleEmail]);
 
   useEffect(() => {
     if (!giftExpiresAt) return;
@@ -176,7 +184,9 @@ export function useCreateGift() {
 
     const trimmedName = senderDisplayName.trim().replace(/\s+/g, " ");
     if (!trimmedName) {
-      setStatus("Add your name so the recipient knows who sent the gift.");
+      setStatus(
+        "Add how the recipient should see you (your email is filled in by default after sign-in)."
+      );
       return;
     }
     if (trimmedName.length > SENDER_DISPLAY_NAME_MAX) {

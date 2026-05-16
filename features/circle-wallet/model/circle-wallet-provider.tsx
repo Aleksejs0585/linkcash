@@ -30,8 +30,11 @@ import {
 import {
   clearGoogleDisplayName,
   extractGoogleDisplayName,
+  extractGoogleEmail,
   persistGoogleDisplayName,
+  persistGoogleEmail,
   readGoogleDisplayName,
+  readGoogleEmail,
 } from "@/lib/client/google-display-name";
 import {
   clearCircleSession,
@@ -55,6 +58,7 @@ type CircleWalletContextValue = {
   userToken: string | null;
   encryptionKey: string | null;
   googleDisplayName: string | null;
+  googleEmail: string | null;
   login: () => Promise<void>;
   logout: () => void;
   executeChallenge: (challengeId: string) => Promise<void>;
@@ -71,6 +75,7 @@ const unconfiguredValue: CircleWalletContextValue = {
   userToken: null,
   encryptionKey: null,
   googleDisplayName: null,
+  googleEmail: null,
   login: async () => {
     /* no-op when Circle env is missing */
   },
@@ -186,6 +191,9 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
   const [walletSyncing, setWalletSyncing] = useState(false);
   const [googleDisplayName, setGoogleDisplayName] = useState<string | null>(
     () => readGoogleDisplayName()
+  );
+  const [googleEmail, setGoogleEmail] = useState<string | null>(() =>
+    readGoogleEmail()
   );
 
   const walletAddress = useMemo(
@@ -417,6 +425,11 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
           if (profileName) {
             persistGoogleDisplayName(profileName);
             setGoogleDisplayName(profileName);
+          }
+          const profileEmail = extractGoogleEmail(result);
+          if (profileEmail) {
+            persistGoogleEmail(profileEmail);
+            setGoogleEmail(profileEmail);
           }
           setUserToken(result.userToken);
           setEncryptionKey(result.encryptionKey);
@@ -668,6 +681,7 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
     setUserToken(null);
     setEncryptionKey(null);
     setGoogleDisplayName(null);
+    setGoogleEmail(null);
     setWallets([]);
     setAuthError(null);
     setDeviceToken("");
@@ -700,6 +714,7 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
       userToken,
       encryptionKey,
       googleDisplayName,
+      googleEmail,
       login,
       logout,
       executeChallenge,
@@ -714,6 +729,7 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
       encryptionKey,
       executeChallenge,
       googleDisplayName,
+      googleEmail,
       login,
       logout,
       primaryWalletId,
