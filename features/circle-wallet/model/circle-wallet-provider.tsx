@@ -17,6 +17,7 @@ import type { Authentication } from "@circle-fin/w3s-pw-web-sdk/dist/src/types";
 import { isCircleWalletConfigured } from "../config/circle-env";
 import {
   formatCircleAuthError,
+  isAuthCancellation,
   isStaleCircleDeviceIdError,
   shouldResetCircleDeviceBinding,
 } from "../lib/auth-errors";
@@ -169,6 +170,9 @@ function clearCircleDeviceBindingCookies() {
 function CircleWalletInner({ children }: { children: ReactNode }) {
   const sdkRef = useRef<W3SSdk | null>(null);
   const deviceBootstrapRecoveryAttempted = useRef(false);
+  const deviceRebindRetryPendingRef = useRef(false);
+  const loginAutoRetryUsedRef = useRef(false);
+  const loginInFlightRef = useRef(false);
   const [sdkReady, setSdkReady] = useState(false);
   const [deviceId, setDeviceId] = useState("");
   const [deviceIdResetKey, setDeviceIdResetKey] = useState(0);
@@ -272,6 +276,17 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
     []
   );
 
+  const resetCircleDeviceBinding = useCallback(() => {
+    clearCircleDeviceBindingCookies();
+    setDeviceToken("");
+    setDeviceEncryptionKey("");
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem("deviceId");
+    }
+    setDeviceId("");
+    setDeviceIdResetKey((k) => k + 1);
+  }, []);
+
   const createDeviceToken = useCallback(async (id: string) => {
     const data = await postCircle<{
       deviceToken: string;
@@ -286,7 +301,51 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
     setCookie("deviceEncryptionKey", data.deviceEncryptionKey);
     setCookie("appId", appId);
     setCookie("google.clientId", googleClientId);
+    return data;
   }, []);
+
+  const applySdkLoginConfigs = useCallback(
+    (sdk: W3SSdk, dt: string, dek: string) => {
+      setCookie("appId", appId);
+      setCookie("google.clientId", googleClientId);
+      setCookie("deviceToken", dt);
+      setCookie("deviceEncryptionKey", dek);
+      sdk.updateConfigs({
+        appSettings: { appId },
+        loginConfigs: {
+          deviceToken: dt,
+          deviceEncryptionKey: dek,
+          google: {
+            clientId: googleClientId,
+            redirectUri: window.location.origin,
+            selectAccountPrompt: true,
+          },
+        },
+      });
+    },
+    []
+  );
+
+  const performGoogleLogin = useCallback(async () => {
+    if (loginInFlightRef.current) return;
+    const sdk = sdkRef.current;
+    if (!sdk) {
+      throw new Error("Wallet is still loading. Try again in a moment.");
+    }
+    if (!deviceId) {
+      throw new Error("Missing device id.");
+    }
+
+    loginInFlightRef.current = true;
+    try {
+      const { deviceToken: dt, deviceEncryptionKey: dek } =
+        await createDeviceToken(deviceId);
+      applySdkLoginConfigs(sdk, dt, dek);
+      await sdk.performLogin(SocialLoginProvider.GOOGLE);
+    } finally {
+      loginInFlightRef.current = false;
+    }
+  }, [applySdkLoginConfigs, createDeviceToken, deviceId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -317,22 +376,36 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
           if (error) {
             const err = error as { message?: string };
             const raw = err.message ?? "Sign-in failed.";
-            if (shouldResetCircleDeviceBinding(raw)) {
-              clearCircleDeviceBindingCookies();
-              setDeviceToken("");
-              setDeviceEncryptionKey("");
-              if (typeof window !== "undefined") {
-                window.localStorage.removeItem("deviceId");
-              }
-              setDeviceId("");
-              setDeviceIdResetKey((k) => k + 1);
-            }
-            clearOAuthFlowState();
-            setAuthError(formatCircleAuthError(raw));
             setUserToken(null);
             setEncryptionKey(null);
+
+            if (isAuthCancellation(raw)) {
+              deviceRebindRetryPendingRef.current = false;
+              clearOAuthFlowState();
+              setAuthError(formatCircleAuthError(raw));
+              return;
+            }
+
+            if (shouldResetCircleDeviceBinding(raw)) {
+              if (!loginAutoRetryUsedRef.current) {
+                deviceRebindRetryPendingRef.current = true;
+                loginAutoRetryUsedRef.current = false;
+                resetCircleDeviceBinding();
+                setAuthError("Refreshing wallet session…");
+                return;
+              }
+              deviceRebindRetryPendingRef.current = false;
+            } else {
+              deviceRebindRetryPendingRef.current = false;
+              clearOAuthFlowState();
+            }
+
+            setAuthError(formatCircleAuthError(raw));
             return;
           }
+
+          deviceRebindRetryPendingRef.current = false;
+          loginAutoRetryUsedRef.current = false;
 
           if (!result) {
             setAuthError("Sign-in returned no credentials.");
@@ -463,42 +536,20 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
           setDeviceToken(existingDt);
           setDeviceEncryptionKey(existingDek);
           const sdk = sdkRef.current;
-          if (sdk && typeof window !== "undefined") {
-            sdk.updateConfigs({
-              appSettings: { appId },
-              loginConfigs: {
-                deviceToken: existingDt,
-                deviceEncryptionKey: existingDek,
-                google: {
-                  clientId: googleClientId,
-                  redirectUri: window.location.origin,
-                  selectAccountPrompt: true,
-                },
-              },
-            });
+          if (sdk) {
+            applySdkLoginConfigs(sdk, existingDt, existingDek);
           }
           return;
         }
 
-        await createDeviceToken(deviceId);
+        const fresh = await createDeviceToken(deviceId);
         const sdk = sdkRef.current;
-        if (sdk && typeof window !== "undefined") {
-          const dt = (getCookie("deviceToken") as string) || "";
-          const dek = (getCookie("deviceEncryptionKey") as string) || "";
-          if (dt && dek) {
-            sdk.updateConfigs({
-              appSettings: { appId },
-              loginConfigs: {
-                deviceToken: dt,
-                deviceEncryptionKey: dek,
-                google: {
-                  clientId: googleClientId,
-                  redirectUri: window.location.origin,
-                  selectAccountPrompt: true,
-                },
-              },
-            });
-          }
+        if (sdk) {
+          applySdkLoginConfigs(
+            sdk,
+            fresh.deviceToken,
+            fresh.deviceEncryptionKey
+          );
         }
       } catch (e) {
         const raw =
@@ -508,20 +559,20 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
           isStaleCircleDeviceIdError(raw)
         ) {
           deviceBootstrapRecoveryAttempted.current = true;
-          if (typeof window !== "undefined") {
-            window.localStorage.removeItem("deviceId");
-          }
-          clearCircleDeviceBindingCookies();
-          setDeviceToken("");
-          setDeviceEncryptionKey("");
-          setDeviceId("");
-          setDeviceIdResetKey((k) => k + 1);
+          resetCircleDeviceBinding();
           return;
         }
         setBootstrapError(formatCircleAuthError(raw));
       }
     })();
-  }, [sdkReady, deviceId, deviceToken, createDeviceToken]);
+  }, [
+    sdkReady,
+    deviceId,
+    deviceToken,
+    createDeviceToken,
+    applySdkLoginConfigs,
+    resetCircleDeviceBinding,
+  ]);
 
   useEffect(() => {
     if (!sdkReady || !deviceToken || !deviceEncryptionKey) return;
@@ -557,75 +608,59 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
     Boolean(deviceEncryptionKey) &&
     !bootstrapError;
 
+  useEffect(() => {
+    if (!deviceRebindRetryPendingRef.current || loginAutoRetryUsedRef.current) {
+      return;
+    }
+    if (!sdkReady || !deviceId || !deviceToken || !deviceEncryptionKey) return;
+
+    loginAutoRetryUsedRef.current = true;
+    saveOAuthReturnTarget();
+    void performGoogleLogin().catch((e) => {
+      deviceRebindRetryPendingRef.current = false;
+      const raw = e instanceof Error ? e.message : "Sign-in failed to start.";
+      if (isAuthCancellation(raw)) {
+        clearOAuthFlowState();
+      }
+      setAuthError(formatCircleAuthError(raw));
+    });
+  }, [
+    sdkReady,
+    deviceId,
+    deviceToken,
+    deviceEncryptionKey,
+    deviceIdResetKey,
+    performGoogleLogin,
+  ]);
+
   const login = useCallback(async () => {
     setAuthError(null);
     saveOAuthReturnTarget();
-    const sdk = sdkRef.current;
-    if (!sdk) {
-      setAuthError("Wallet is still loading. Try again in a moment.");
-      return;
-    }
-    if (!deviceId) {
-      setAuthError("Missing device id.");
-      return;
-    }
+    loginAutoRetryUsedRef.current = false;
 
     try {
-      let dt = deviceToken;
-      let dek = deviceEncryptionKey;
-      if (!dt || !dek) {
-        const fresh = await postCircle<{
-          deviceToken: string;
-          deviceEncryptionKey: string;
-        }>({
-          action: "createDeviceToken",
-          deviceId,
-        });
-        dt = fresh.deviceToken;
-        dek = fresh.deviceEncryptionKey;
-        setDeviceToken(dt);
-        setDeviceEncryptionKey(dek);
-        setCookie("deviceToken", dt);
-        setCookie("deviceEncryptionKey", dek);
-      }
-
-      setCookie("appId", appId);
-      setCookie("google.clientId", googleClientId);
-      setCookie("deviceToken", dt);
-      setCookie("deviceEncryptionKey", dek);
-
-      sdk.updateConfigs({
-        appSettings: { appId },
-        loginConfigs: {
-          deviceToken: dt,
-          deviceEncryptionKey: dek,
-          google: {
-            clientId: googleClientId,
-            redirectUri: window.location.origin,
-            selectAccountPrompt: true,
-          },
-        },
-      });
-
-      await sdk.performLogin(SocialLoginProvider.GOOGLE);
+      await performGoogleLogin();
     } catch (e) {
       const raw = e instanceof Error ? e.message : "Sign-in failed to start.";
-      if (shouldResetCircleDeviceBinding(raw)) {
-        clearCircleDeviceBindingCookies();
-        setDeviceToken("");
-        setDeviceEncryptionKey("");
-        if (typeof window !== "undefined") {
-          window.localStorage.removeItem("deviceId");
-        }
-        setDeviceId("");
-        setDeviceIdResetKey((k) => k + 1);
+      if (isAuthCancellation(raw)) {
+        clearOAuthFlowState();
+        setAuthError(formatCircleAuthError(raw));
+        return;
       }
-      clearOAuthFlowState();
+      if (shouldResetCircleDeviceBinding(raw) && !loginAutoRetryUsedRef.current) {
+        deviceRebindRetryPendingRef.current = true;
+        resetCircleDeviceBinding();
+        setAuthError("Refreshing wallet session…");
+        return;
+      }
+      deviceRebindRetryPendingRef.current = false;
       setAuthError(formatCircleAuthError(raw));
     }
-  }, [deviceEncryptionKey, deviceId, deviceToken]);
+  }, [performGoogleLogin, resetCircleDeviceBinding]);
 
   const logout = useCallback(() => {
+    deviceRebindRetryPendingRef.current = false;
+    loginAutoRetryUsedRef.current = false;
     clearOAuthFlowState();
     clearCircleSession();
     clearGoogleDisplayName();

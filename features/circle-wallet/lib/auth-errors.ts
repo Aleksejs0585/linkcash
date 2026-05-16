@@ -1,3 +1,7 @@
+export function isAuthCancellation(message: string): boolean {
+  return /popup closed|user closed|cancel/i.test(message);
+}
+
 export function shouldResetCircleDeviceBinding(message: string): boolean {
   return (
     /device token is invalid/i.test(message) ||
@@ -34,7 +38,7 @@ export function formatCircleAuthError(message: string): string {
     );
   }
 
-  if (/popup closed|user closed|cancel/i.test(message)) {
+  if (isAuthCancellation(message)) {
     return "Sign-in was cancelled. Click Sign in with Google to try again.";
   }
 
