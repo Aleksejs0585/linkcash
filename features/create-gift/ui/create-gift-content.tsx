@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
-import { FaLink } from "react-icons/fa";
+import { motion } from "framer-motion";
 import AppShell from "@/components/ui/app-shell";
 import GlassCard from "@/components/ui/glass-card";
 import MainMenu from "@/components/ui/main-menu";
@@ -10,6 +9,7 @@ import OAuthNavHint from "@/components/ui/oauth-nav-hint";
 import { WalletBackupWarning } from "@/components/ui/wallet-backup-warning";
 import { ARC_TESTNET } from "@/utils";
 import { useCreateGift } from "../model/use-create-gift";
+import { GiftLinkModal } from "./gift-link-modal";
 
 export function CreateGiftContent() {
   const {
@@ -44,10 +44,28 @@ export function CreateGiftContent() {
     onReclaim,
     onCopy,
     onShareClick,
+    giftLinkModalOpen,
+    openGiftLinkModal,
+    closeGiftLinkModal,
   } = useCreateGift();
 
   return (
     <AppShell className="flex items-center justify-center px-4 py-8 sm:px-5 sm:py-10">
+      <GiftLinkModal
+        open={giftLinkModalOpen}
+        link={link}
+        statusLink={statusLink}
+        paymentIdHash={paymentIdHash}
+        copied={copied}
+        reclaimAvailable={reclaimAvailable}
+        reclaiming={reclaiming}
+        reclaimCountdownLabel={reclaimCountdownLabel}
+        shareLinks={shareLinks}
+        onClose={closeGiftLinkModal}
+        onCopy={onCopy}
+        onReclaim={() => void onReclaim()}
+        onShareClick={onShareClick}
+      />
       <GlassCard className="relative z-[1] max-w-[460px] space-y-6 p-5 text-center sm:p-8">
         <div className="flex justify-start">
           <MainMenu />
@@ -126,7 +144,7 @@ export function CreateGiftContent() {
         {!ready ? (
           <p className="text-sm text-white/70">Loading wallet...</p>
         ) : !authenticated ? (
-          <div className="space-y-2">
+          <motion.div className="space-y-2">
             <motion.button
               type="button"
               onClick={() => void login()}
@@ -140,9 +158,9 @@ export function CreateGiftContent() {
             {authError && (
               <p className="text-center text-sm text-rose-400">{authError}</p>
             )}
-          </div>
+          </motion.div>
         ) : (
-          <div className="space-y-3">
+          <motion.div className="space-y-3">
             <WalletBackupWarning />
             {!hasGiftContractConfig && (
               <p className="rounded-xl border border-amber-500/40 bg-amber-950/35 p-3 text-left text-xs text-amber-100">
@@ -170,65 +188,78 @@ export function CreateGiftContent() {
               whileTap={{ scale: 0.98 }}
               className="accent-gradient w-full rounded-[var(--radius)] px-5 py-3.5 text-base disabled:opacity-65 sm:px-6 sm:py-4 sm:text-lg"
             >
-            {creating
-              ? "Funding gift..."
-              : walletSyncing
-                ? "Preparing wallet..."
-                : createCopyVariant === "b"
-                  ? "Fund gift link"
-                  : "Create gift"}
-          </motion.button>
-          </div>
+              {creating
+                ? "Funding gift..."
+                : walletSyncing
+                  ? "Preparing wallet..."
+                  : createCopyVariant === "b"
+                    ? "Fund gift link"
+                    : "Create gift"}
+            </motion.button>
+            {link && !giftLinkModalOpen ? (
+              <button
+                type="button"
+                onClick={openGiftLinkModal}
+                className="app-btn-secondary w-full px-4 py-2.5 text-sm font-medium"
+              >
+                View gift link & share
+              </button>
+            ) : null}
+          </motion.div>
         )}
 
         {authenticated ? (
           <>
-        <div className="app-panel app-field p-4 text-left">
-          <label
-            htmlFor="amount"
-            className="app-section-label"
-          >
-            Gift amount (USDC)
-          </label>
-          <input
-            id="amount"
-            type="number"
-            min="0.01"
-            step="0.01"
-            value={amount}
-            onChange={(event) => setAmount(event.target.value)}
-            className="app-input"
-          />
-        </div>
-        <div className="app-panel app-field p-4 text-left">
-          <label
-            htmlFor="expiresInHours"
-            className="app-section-label"
-          >
-            Expiry (hours)
-          </label>
-          <input
-            id="expiresInHours"
-            type="number"
-            min="1"
-            max="720"
-            step="1"
-            value={expiresInHours}
-            onChange={(event) => setExpiresInHours(event.target.value)}
-            className="app-input"
-          />
-          {senderWalletAddress ? (
-            <p className="mt-2 break-all text-xs text-white/60">
-              Refund wallet: {senderWalletAddress}
-            </p>
-          ) : (
-            <p className="mt-2 text-xs text-amber-300">
-              {walletSyncing
-                ? "Circle wallet is finishing setup on Arc Testnet..."
-                : "Wallet address is not ready yet. Wait a few seconds or sign out and sign in again."}
-            </p>
-          )}
-        </div>
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, ease: "easeOut", delay: 0.1 }}
+              className="app-panel app-field p-4 text-left"
+            >
+              <label htmlFor="amount" className="app-section-label">
+                Gift amount (USDC)
+              </label>
+              <input
+                id="amount"
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={amount}
+                onChange={(event) => setAmount(event.target.value)}
+                className="app-input"
+              />
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, ease: "easeOut", delay: 0.12 }}
+              className="app-panel app-field p-4 text-left"
+            >
+              <label htmlFor="expiresInHours" className="app-section-label">
+                Expiry (hours)
+              </label>
+              <input
+                id="expiresInHours"
+                type="number"
+                min="1"
+                max="720"
+                step="1"
+                value={expiresInHours}
+                onChange={(event) => setExpiresInHours(event.target.value)}
+                className="app-input"
+              />
+              {senderWalletAddress ? (
+                <p className="mt-2 break-all text-xs text-white/60">
+                  Refund wallet: {senderWalletAddress}
+                </p>
+              ) : (
+                <p className="mt-2 text-xs text-amber-300">
+                  {walletSyncing
+                    ? "Circle wallet is finishing setup on Arc Testnet..."
+                    : "Wallet address is not ready yet. Wait a few seconds or sign out and sign in again."}
+                </p>
+              )}
+            </motion.div>
           </>
         ) : (
           <p className="soft-text text-sm">
@@ -236,98 +267,17 @@ export function CreateGiftContent() {
           </p>
         )}
 
-        <AnimatePresence>
-          {authenticated && link && (
-            <motion.div
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 12 }}
-              transition={{ duration: 0.35, ease: "easeOut" }}
-              className="app-panel p-4 text-left"
-            >
-              <p className="soft-text text-xs uppercase tracking-[0.18em]">
-                Gift link
-              </p>
-              <a
-                href={link}
-                target="_blank"
-                rel="noreferrer"
-                className="app-link mt-2 inline-flex items-center gap-2 text-sm font-medium"
-              >
-                <FaLink className="h-3.5 w-3.5 shrink-0" />
-                Open gift link
-              </a>
-              {paymentIdHash && (
-                <Link
-                  href={statusLink}
-                  className="app-link mt-2 inline-flex items-center gap-2 text-sm font-medium"
-                >
-                  Track public status
-                </Link>
-              )}
-              <button
-                type="button"
-                onClick={onCopy}
-                className="app-btn-secondary mt-4 px-4 py-2 text-sm font-medium"
-              >
-                {copied ? "Copied ✓" : "Copy link"}
-              </button>
-              <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {shareLinks.map((item) => (
-                  <button
-                    key={item.label}
-                    type="button"
-                    onClick={() => onShareClick(item.label, item.href)}
-                    aria-label={item.label}
-                    title={
-                      item.href
-                        ? item.label
-                        : `${item.label} (requires configuration)`
-                    }
-                    className="app-btn-secondary inline-flex h-10 items-center justify-center px-3 py-2 text-center text-xs font-medium"
-                  >
-                    <item.icon
-                      className="h-5 w-5 shrink-0"
-                      style={{ color: item.iconColor }}
-                    />
-                  </button>
-                ))}
-              </div>
-              {reclaimAvailable ? (
-                <button
-                  type="button"
-                  onClick={onReclaim}
-                  disabled={reclaiming}
-                  className="app-btn-secondary mt-2 px-4 py-2 text-sm font-medium disabled:opacity-65"
-                >
-                  {reclaiming ? "Reclaiming..." : "Reclaim expired gift"}
-                </button>
-              ) : (
-                <p className="mt-2 text-xs text-[var(--muted)]">
-                  {reclaimCountdownLabel
-                    ? `Reclaim opens in ${reclaimCountdownLabel} (after expiry).`
-                    : "Reclaim is available only after the gift expires."}
-                </p>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {status && <p className="break-all text-sm text-white/75">{status}</p>}
         {authenticated && authError && (
           <p className="text-center text-sm text-rose-400">{authError}</p>
         )}
 
-        <div className="text-center">
-          <Link
-            href="/gifts"
-            className="app-link text-sm"
-          >
+        <motion.div className="text-center">
+          <Link href="/gifts" className="app-link text-sm">
             View sender dashboard
           </Link>
-        </div>
+        </motion.div>
       </GlassCard>
     </AppShell>
   );
 }
-

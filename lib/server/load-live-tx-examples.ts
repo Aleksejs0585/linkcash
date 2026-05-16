@@ -4,32 +4,13 @@ import {
   liveActivityToLandingRow,
 } from "./live-activity-store";
 import { loadLiveTxExamplesFromChain } from "./live-tx-from-chain";
+import {
+  mergeTxExamples,
+  type LandingTxExample,
+} from "./live-tx-merge";
 import { senderGiftStore } from "./sender-gift-store";
 
-/** Rows shown on the landing “Recent claims” block (deduped, newest first). */
-const LANDING_LIVE_TX_LIMIT = 10;
-
-export type LandingTxExample = {
-  txHash: string;
-  label: string;
-  timestamp: string;
-};
-
-function mergeTxExamples(items: LandingTxExample[]): LandingTxExample[] {
-  const seen = new Set<string>();
-  return items
-    .sort(
-      (a, b) =>
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-    )
-    .filter((item) => {
-      const key = item.txHash.toLowerCase();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    })
-    .slice(0, LANDING_LIVE_TX_LIMIT);
-}
+export { LANDING_LIVE_TX_LIMIT, mergeTxExamples, type LandingTxExample };
 
 async function loadFromLogFiles(): Promise<LandingTxExample[]> {
   const [senderEvents, claimEvents] = await Promise.all([
@@ -61,22 +42,20 @@ async function loadFromLogFiles(): Promise<LandingTxExample[]> {
       timestamp: event.timestamp,
     }));
 
-  return mergeTxExamples([...claimed, ...funded, ...reclaimed]);
+  return [...claimed, ...funded, ...reclaimed];
 }
 
+/**
+ * Landing feed: prefer on-chain gift-contract events, then merge Redis/logs.
+ */
 export async function loadLiveTxExamples(): Promise<LandingTxExample[]> {
-  const fromRedis = (await liveActivityStore.readRecent(80)).map(
-    liveActivityToLandingRow
-  );
-  if (fromRedis.length > 0) {
-    return mergeTxExamples(fromRedis);
-  }
+  const [fromChain, fromRedis, fromFiles] = await Promise.all([
+    loadLiveTxExamplesFromChain(),
+    liveActivityStore.readRecent(120).then((rows) =>
+      rows.map(liveActivityToLandingRow)
+    ),
+    loadFromLogFiles(),
+  ]);
 
-  const fromFiles = await loadFromLogFiles();
-  if (fromFiles.length > 0) {
-    return fromFiles;
-  }
-
-  const fromChain = await loadLiveTxExamplesFromChain();
-  return mergeTxExamples(fromChain);
+  return mergeTxExamples([...fromChain, ...fromRedis, ...fromFiles]);
 }

@@ -94,6 +94,7 @@ export function useCreateGift() {
   const [creating, setCreating] = useState(false);
   const [reclaiming, setReclaiming] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const [giftLinkModalOpen, setGiftLinkModalOpen] = useState(false);
   const [createCopyVariant] = useState(() =>
     getOrAssignVariant("create_primary_copy_v1", ["a", "b"])
   );
@@ -256,6 +257,7 @@ export function useCreateGift() {
       setPaymentIdHash(hash);
       setGiftExpiresAt(data.expiresAt);
       setLink(giftLink);
+      setGiftLinkModalOpen(true);
       setCopied(false);
       setStatus(
         `Gift funded. Refund wallet: ${data.refundAddress}. Expires at: ${new Date(
@@ -369,5 +371,8 @@ export function useCreateGift() {
     onReclaim,
     onCopy,
     onShareClick,
+    giftLinkModalOpen,
+    openGiftLinkModal: () => setGiftLinkModalOpen(true),
+    closeGiftLinkModal: () => setGiftLinkModalOpen(false),
   };
 }
