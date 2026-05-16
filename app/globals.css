@@ -59,20 +59,9 @@ body::before {
   font-family: var(--font-display);
 }
 
-/* Brand wordmark — DM Sans; Link = light text, Cash = accent */
+/* Brand wordmark wrapper — font-size set per context in landing.css */
 .linkcash-logo {
-  font-family: var(--font-body);
-  font-weight: 600;
-  letter-spacing: -0.02em;
   white-space: nowrap;
-}
-
-.linkcash-logo-link {
-  color: var(--text);
-}
-
-.linkcash-logo-cash {
-  color: var(--accent);
 }
 
 /* Pages */
