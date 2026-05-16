@@ -1,7 +1,6 @@
 import { describe, it, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import {
-  AUTO_CLAIM_AFTER_AUTH_KEY,
   OAUTH_RETURN_KEY,
   consumeAutoClaimAfterAuth,
   getCurrentAppPath,

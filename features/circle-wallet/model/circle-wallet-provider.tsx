@@ -367,6 +367,11 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
     setAuthError("Refreshing wallet session…");
   }, [resetCircleDeviceBinding]);
 
+  const scheduleDeviceRebindRetryRef = useRef(scheduleDeviceRebindRetry);
+  useEffect(() => {
+    scheduleDeviceRebindRetryRef.current = scheduleDeviceRebindRetry;
+  });
+
   const performGoogleLogin = useCallback(async () => {
     if (loginInFlightRef.current) {
       throw new Error("Sign-in is already in progress. Please wait a moment.");
@@ -431,7 +436,7 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
 
             if (shouldResetCircleDeviceBinding(raw)) {
               if (!loginAutoRetryUsedRef.current) {
-                scheduleDeviceRebindRetry();
+                scheduleDeviceRebindRetryRef.current();
                 return;
               }
               deviceRebindRetryPendingRef.current = false;
@@ -488,7 +493,7 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
                 clearCircleSession();
                 setUserToken(null);
                 setEncryptionKey(null);
-                scheduleDeviceRebindRetry();
+                scheduleDeviceRebindRetryRef.current();
                 return;
               }
               if (shouldClearStoredUserSession(raw)) {
@@ -726,7 +731,7 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
       deviceRebindRetryPendingRef.current = false;
       setAuthError(formatCircleAuthError(raw));
     }
-  }, [performGoogleLogin, resetCircleDeviceBinding]);
+  }, [performGoogleLogin, scheduleDeviceRebindRetry]);
 
   const logout = useCallback(() => {
     deviceRebindRetryPendingRef.current = false;

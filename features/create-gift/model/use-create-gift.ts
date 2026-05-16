@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useCircleWallet } from "@/features/circle-wallet/model/circle-wallet-provider";
 import {
   GIFT_MESSAGE_MAX,
@@ -81,7 +81,7 @@ export function useCreateGift() {
     googleEmail,
   } = useCircleWallet();
 
-  const senderNameTouchedRef = useRef(false);
+  const [senderNameTouched, setSenderNameTouched] = useState(false);
   const [link, setLink] = useState("");
   const [paymentIdHash, setPaymentIdHash] = useState<string | null>(null);
   const [giftExpiresAt, setGiftExpiresAt] = useState<number | null>(null);
@@ -119,16 +119,19 @@ export function useCreateGift() {
     });
   }, [createCopyVariant]);
 
-  useEffect(() => {
-    if (!authenticated || senderNameTouchedRef.current) return;
-    const defaultLabel = resolveDefaultSenderLabel(
-      googleEmail ?? readGoogleEmail(),
-      googleDisplayName ?? readGoogleDisplayName()
+  const suggestedSenderName = useMemo(() => {
+    if (!authenticated) return "";
+    return (
+      resolveDefaultSenderLabel(
+        googleEmail ?? readGoogleEmail(),
+        googleDisplayName ?? readGoogleDisplayName()
+      ) ?? ""
     );
-    if (defaultLabel) {
-      setSenderDisplayName(defaultLabel);
-    }
   }, [authenticated, googleDisplayName, googleEmail]);
+
+  const senderNameInputValue = senderNameTouched
+    ? senderDisplayName
+    : senderDisplayName || suggestedSenderName;
 
   useEffect(() => {
     if (!giftExpiresAt) return;
@@ -182,7 +185,7 @@ export function useCreateGift() {
       return;
     }
 
-    const trimmedName = senderDisplayName.trim().replace(/\s+/g, " ");
+    const trimmedName = senderNameInputValue.trim().replace(/\s+/g, " ");
     if (!trimmedName) {
       setStatus(
         "Add how the recipient should see you (your email is filled in by default after sign-in)."
@@ -355,10 +358,10 @@ export function useCreateGift() {
     shareLinks,
     setAmount,
     setExpiresInHours,
-    senderDisplayName,
+    senderDisplayName: senderNameInputValue,
     giftMessage,
     setSenderDisplayName: (value: string) => {
-      senderNameTouchedRef.current = true;
+      setSenderNameTouched(true);
       setSenderDisplayName(value);
     },
     setGiftMessage,
