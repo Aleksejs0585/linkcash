@@ -17,6 +17,17 @@ export function isStaleCircleDeviceIdError(message: string): boolean {
   );
 }
 
+/** Drop stored Circle user session after API rejects user credentials. */
+export function shouldClearStoredUserSession(message: string): boolean {
+  return (
+    /invalid credentials?/i.test(message) ||
+    /user token is invalid/i.test(message) ||
+    /unauthorized/i.test(message) ||
+    /session expired/i.test(message) ||
+    /token expired/i.test(message)
+  );
+}
+
 export function formatCircleAuthError(message: string): string {
   if (/invalid credentials?/i.test(message)) {
     return (

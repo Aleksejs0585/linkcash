@@ -2,6 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
   formatCircleAuthError,
+  shouldClearStoredUserSession,
   shouldResetCircleDeviceBinding,
 } from "./auth-errors.ts";
 
@@ -37,5 +38,18 @@ describe("shouldResetCircleDeviceBinding", () => {
       ),
       true
     );
+  });
+});
+
+describe("shouldClearStoredUserSession", () => {
+  it("returns false for challenge cancellation", () => {
+    assert.equal(
+      shouldClearStoredUserSession("Wallet setup was cancelled."),
+      false
+    );
+  });
+
+  it("returns true for invalid user token", () => {
+    assert.equal(shouldClearStoredUserSession("Invalid credentials."), true);
   });
 });
