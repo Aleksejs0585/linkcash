@@ -128,6 +128,7 @@ export function useCreateGift() {
     [googleDisplayName, googleEmail]
   );
 
+
   const senderNameInputValue = senderNameTouched
     ? senderDisplayName
     : senderDisplayName || suggestedSenderName;
