@@ -177,7 +177,11 @@ function SenderDashboardContent() {
           )}
 
           {!ready ? (
-            <p className="text-sm text-white/70">Loading wallet...</p>
+            <div className="animate-pulse space-y-3" aria-hidden>
+              <div className="h-9 w-full rounded-[var(--radius-sm)] bg-white/8" />
+              <div className="h-14 w-full rounded-[var(--radius)] bg-white/6" />
+              <div className="h-9 w-3/4 rounded-[var(--radius-sm)] bg-white/8" />
+            </div>
           ) : !authenticated ? (
             <div className="space-y-2">
               <button

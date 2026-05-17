@@ -307,7 +307,16 @@ function GiftClaimContent() {
               {bootstrapError}
             </p>
           )}
-          {hasNamedGift ? (
+          {giftLoading ? (
+            <div className="animate-pulse space-y-3 py-2" aria-hidden>
+              <div className="mx-auto h-14 w-14 rounded-full bg-white/10" />
+              <div className="mx-auto h-3 w-20 rounded bg-white/8" />
+              <div className="mx-auto h-3 w-28 rounded bg-white/10" />
+              <div className="mx-auto h-10 w-36 rounded bg-white/10" />
+              <div className="mx-auto h-3 w-24 rounded bg-white/8" />
+              <div className="mx-auto h-3 w-32 rounded bg-white/6" />
+            </div>
+          ) : hasNamedGift ? (
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -321,9 +330,7 @@ function GiftClaimContent() {
               {giftMessage ? (
                 <p className="app-gift-msg">&quot;{giftMessage}&quot;</p>
               ) : null}
-              <p className="app-gift-amount">
-                {giftLoading ? "—" : giftAmountUsdc ?? "—"}
-              </p>
+              <p className="app-gift-amount">{giftAmountUsdc ?? "—"}</p>
               <p className="app-gift-token">USDC · {ARC_TESTNET.chainName}</p>
               <p className={`app-gift-expiry countdown-tick${expiryUrgent ? " text-rose-400" : ""}`}>
                 {remainingSeconds === null
@@ -341,14 +348,12 @@ function GiftClaimContent() {
               <p className="text-sm tracking-[0.06em] text-white/75">
                 🎁 You received a gift
               </p>
-              <h1 className="app-heading text-4xl sm:text-5xl">
-                {giftLoading ? "Loading..." : amountLabel}
-              </h1>
+              <h1 className="app-heading text-4xl sm:text-5xl">{amountLabel}</h1>
               <p className="soft-text text-sm">Someone sent you crypto</p>
             </div>
           )}
 
-          {!hasNamedGift ? (
+          {!giftLoading && !hasNamedGift ? (
             <p className={`countdown-tick text-sm${expiryUrgent ? " text-rose-400" : " text-white/70"}`}>
               {remainingSeconds === null
                 ? "Checking expiry..."
@@ -372,6 +377,7 @@ function GiftClaimContent() {
                 disabled={
                   loading ||
                   !ready ||
+                  giftLoading ||
                   remainingSeconds === 0 ||
                   walletSyncing
                 }
