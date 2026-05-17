@@ -295,7 +295,7 @@ function GiftClaimContent() {
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45, ease: "easeOut" }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
         className="relative z-[1] w-full max-w-[420px] space-y-3"
       >
         <div className="flex justify-start">
@@ -453,7 +453,7 @@ function GiftClaimContent() {
             <motion.div
               initial={{ opacity: 0, y: 14, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.4, ease: "easeOut" }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
               className="glass-card w-full max-w-[420px] space-y-5 p-6 sm:p-8"
             >
               <h2 className="app-heading text-4xl">

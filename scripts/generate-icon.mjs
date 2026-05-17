@@ -1,5 +1,4 @@
 import sharp from "sharp";
-import { writeFileSync } from "fs";
 import { resolve } from "path";
 
 const SIZE = 512;

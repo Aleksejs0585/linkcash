@@ -11,6 +11,9 @@ import { ARC_TESTNET } from "@/utils";
 import { useCreateGift } from "../model/use-create-gift";
 import { GiftLinkModal } from "./gift-link-modal";
 
+const FIELD_TRANSITION = { duration: 0.3, ease: "easeOut" } as const;
+const FADE_IN = { initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 } } as const;
+
 export function CreateGiftContent() {
   const {
     ready,
@@ -70,11 +73,9 @@ export function CreateGiftContent() {
         <div className="flex justify-start">
           <MainMenu />
         </div>
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, ease: "easeOut" }}
-        >
+
+        {/* Header */}
+        <motion.div {...FADE_IN} transition={FIELD_TRANSITION}>
           <p className="app-chain-badge mx-auto mb-3">
             {ARC_TESTNET.chainName}
           </p>
@@ -88,12 +89,12 @@ export function CreateGiftContent() {
           </p>
         </motion.div>
 
+        {/* Form fields — all visible before the action button */}
         {authenticated ? (
           <>
             <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, ease: "easeOut", delay: 0.05 }}
+              {...FADE_IN}
+              transition={{ ...FIELD_TRANSITION, delay: 0.05 }}
               className="app-panel app-field p-4 text-left"
             >
               <label htmlFor="senderDisplayName" className="app-section-label">
@@ -113,10 +114,10 @@ export function CreateGiftContent() {
                 Prefilled with your Google email — you can change it before sending.
               </p>
             </motion.div>
+
             <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, ease: "easeOut", delay: 0.08 }}
+              {...FADE_IN}
+              transition={{ ...FIELD_TRANSITION, delay: 0.08 }}
               className="app-panel app-field p-4 text-left"
             >
               <label htmlFor="giftMessage" className="app-section-label">
@@ -132,7 +133,61 @@ export function CreateGiftContent() {
                 className="app-input resize-none"
               />
             </motion.div>
+
+            <motion.div
+              {...FADE_IN}
+              transition={{ ...FIELD_TRANSITION, delay: 0.1 }}
+              className="app-panel app-field p-4 text-left"
+            >
+              <label htmlFor="amount" className="app-section-label">
+                Gift amount (USDC)
+              </label>
+              <input
+                id="amount"
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={amount}
+                onChange={(event) => setAmount(event.target.value)}
+                className="app-input"
+              />
+            </motion.div>
+
+            <motion.div
+              {...FADE_IN}
+              transition={{ ...FIELD_TRANSITION, delay: 0.12 }}
+              className="app-panel app-field p-4 text-left"
+            >
+              <label htmlFor="expiresInHours" className="app-section-label">
+                Expiry (hours)
+              </label>
+              <input
+                id="expiresInHours"
+                type="number"
+                min="1"
+                max="720"
+                step="1"
+                value={expiresInHours}
+                onChange={(event) => setExpiresInHours(event.target.value)}
+                className="app-input"
+              />
+              {senderWalletAddress ? (
+                <p className="mt-2 break-all text-xs text-white/60">
+                  Refund wallet: {senderWalletAddress}
+                </p>
+              ) : (
+                <p className="mt-2 text-xs text-amber-300">
+                  {walletSyncing
+                    ? "Circle wallet is finishing setup on Arc Testnet..."
+                    : "Wallet address is not ready yet. Wait a few seconds or sign out and sign in again."}
+                </p>
+              )}
+            </motion.div>
           </>
+        ) : ready ? (
+          <p className="soft-text text-sm">
+            Sign in with Google to set amount and create a gift link.
+          </p>
         ) : null}
 
         {bootstrapError && (
@@ -141,6 +196,7 @@ export function CreateGiftContent() {
           </p>
         )}
 
+        {/* Action area */}
         {!ready ? (
           <p className="text-sm text-white/70">Loading wallet...</p>
         ) : !authenticated ? (
@@ -206,65 +262,6 @@ export function CreateGiftContent() {
               </button>
             ) : null}
           </motion.div>
-        )}
-
-        {authenticated ? (
-          <>
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, ease: "easeOut", delay: 0.1 }}
-              className="app-panel app-field p-4 text-left"
-            >
-              <label htmlFor="amount" className="app-section-label">
-                Gift amount (USDC)
-              </label>
-              <input
-                id="amount"
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={amount}
-                onChange={(event) => setAmount(event.target.value)}
-                className="app-input"
-              />
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, ease: "easeOut", delay: 0.12 }}
-              className="app-panel app-field p-4 text-left"
-            >
-              <label htmlFor="expiresInHours" className="app-section-label">
-                Expiry (hours)
-              </label>
-              <input
-                id="expiresInHours"
-                type="number"
-                min="1"
-                max="720"
-                step="1"
-                value={expiresInHours}
-                onChange={(event) => setExpiresInHours(event.target.value)}
-                className="app-input"
-              />
-              {senderWalletAddress ? (
-                <p className="mt-2 break-all text-xs text-white/60">
-                  Refund wallet: {senderWalletAddress}
-                </p>
-              ) : (
-                <p className="mt-2 text-xs text-amber-300">
-                  {walletSyncing
-                    ? "Circle wallet is finishing setup on Arc Testnet..."
-                    : "Wallet address is not ready yet. Wait a few seconds or sign out and sign in again."}
-                </p>
-              )}
-            </motion.div>
-          </>
-        ) : (
-          <p className="soft-text text-sm">
-            Sign in with Google to set amount and create a gift link.
-          </p>
         )}
 
         {status && <p className="break-all text-sm text-white/75">{status}</p>}

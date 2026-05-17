@@ -273,7 +273,7 @@ function SenderDashboardContent() {
                     {gift.status === "expired" && (
                       <button
                         type="button"
-                        onClick={() => onReclaim(gift.paymentIdHash)}
+                        onClick={() => void onReclaim(gift.paymentIdHash)}
                         disabled={reclaimingHash === gift.paymentIdHash}
                         className="app-btn-secondary px-3 py-1.5 text-xs disabled:opacity-60"
                       >
