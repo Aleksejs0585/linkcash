@@ -89,7 +89,10 @@ export function useCreateGift() {
   const [copied, setCopied] = useState(false);
   const [amount, setAmount] = useState("10");
   const [expiresInHours, setExpiresInHours] = useState("24");
-  const [senderDisplayName, setSenderDisplayName] = useState("");
+  const [senderDisplayName, setSenderDisplayName] = useState(
+    () =>
+      resolveDefaultSenderLabel(readGoogleEmail(), readGoogleDisplayName()) ?? ""
+  );
   const [giftMessage, setGiftMessage] = useState("");
   const [creating, setCreating] = useState(false);
   const [reclaiming, setReclaiming] = useState(false);
@@ -116,15 +119,14 @@ export function useCreateGift() {
     });
   }, [createCopyVariant]);
 
-  const suggestedSenderName = useMemo(() => {
-    if (!authenticated) return "";
-    return (
+  const suggestedSenderName = useMemo(
+    () =>
       resolveDefaultSenderLabel(
         googleEmail ?? readGoogleEmail(),
         googleDisplayName ?? readGoogleDisplayName()
-      ) ?? ""
-    );
-  }, [authenticated, googleDisplayName, googleEmail]);
+      ) ?? "",
+    [googleDisplayName, googleEmail]
+  );
 
   const senderNameInputValue = senderNameTouched
     ? senderDisplayName
