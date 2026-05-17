@@ -54,6 +54,7 @@ export default function HelpManual() {
             transition={{ duration: 0.2, ease: "easeOut" }}
             className="fixed inset-x-0 top-[64px] z-[59] overflow-y-auto px-4 pb-8"
             style={{ maxHeight: "calc(100vh - 64px)" }}
+            onClick={() => setOpen(false)}
           >
             <aside
               role="dialog"
