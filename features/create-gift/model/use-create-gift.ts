@@ -102,11 +102,7 @@ export function useCreateGift() {
   const giftContractAddress = useMemo(() => getPublicGiftContractAddress(), []);
   const hasGiftContractConfig = Boolean(giftContractAddress);
 
-  const facebookAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID?.trim() ?? "";
-  const shareLinks = useMemo(
-    () => buildShareLinks(link, facebookAppId),
-    [facebookAppId, link]
-  );
+  const shareLinks = useMemo(() => buildShareLinks(link), [link]);
   const statusLink = useMemo(
     () => (paymentIdHash ? generateStatusLink(paymentIdHash) : ""),
     [paymentIdHash]
@@ -321,13 +317,6 @@ export function useCreateGift() {
 
   const onShareClick = (label: string, href: string | null) => {
     if (!href) {
-      if (label === "Messenger") {
-        setStatus(
-          "Messenger share requires NEXT_PUBLIC_FACEBOOK_APP_ID. Add it in Vercel and redeploy."
-        );
-        return;
-      }
-
       setStatus(`${label} share is temporarily unavailable.`);
       return;
     }

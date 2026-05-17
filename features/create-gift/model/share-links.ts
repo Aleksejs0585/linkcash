@@ -2,7 +2,6 @@
 
 import type { IconType } from "react-icons";
 import {
-  FaFacebookMessenger,
   FaSnapchatGhost,
   FaTelegramPlane,
   FaWhatsapp,
@@ -16,20 +15,10 @@ export type ShareLinkItem = {
   iconColor: string;
 };
 
-export function buildShareLinks(
-  link: string,
-  facebookAppId: string
-): ShareLinkItem[] {
+export function buildShareLinks(link: string): ShareLinkItem[] {
   const shareText = "I sent you a USDC gift on LinkCash. Claim it here";
   const encodedLink = encodeURIComponent(link);
   const encodedText = encodeURIComponent(shareText);
-  const messengerShareHref = facebookAppId
-    ? `https://www.facebook.com/dialog/send?app_id=${encodeURIComponent(
-        facebookAppId
-      )}&link=${encodedLink}&redirect_uri=${encodeURIComponent(
-        "https://www.linkcash.app/create"
-      )}`
-    : null;
 
   return [
     {
@@ -43,12 +32,6 @@ export function buildShareLinks(
       href: `https://t.me/share/url?url=${encodedLink}&text=${encodedText}`,
       icon: FaTelegramPlane,
       iconColor: "#229ED9",
-    },
-    {
-      label: "Messenger",
-      href: messengerShareHref,
-      icon: FaFacebookMessenger,
-      iconColor: "#1877F2",
     },
     {
       label: "Gmail",
