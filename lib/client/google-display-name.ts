@@ -5,31 +5,31 @@ export function persistGoogleDisplayName(name: string): void {
   if (typeof window === "undefined") return;
   const trimmed = name.trim().replace(/\s+/g, " ");
   if (!trimmed) return;
-  window.sessionStorage.setItem(STORAGE_KEY, trimmed.slice(0, 40));
+  window.localStorage.setItem(STORAGE_KEY, trimmed.slice(0, 40));
 }
 
 export function readGoogleDisplayName(): string | null {
   if (typeof window === "undefined") return null;
-  const value = window.sessionStorage.getItem(STORAGE_KEY);
+  const value = window.localStorage.getItem(STORAGE_KEY);
   return value?.trim() ? value : null;
 }
 
 export function clearGoogleDisplayName(): void {
   if (typeof window === "undefined") return;
-  window.sessionStorage.removeItem(STORAGE_KEY);
-  window.sessionStorage.removeItem(EMAIL_STORAGE_KEY);
+  window.localStorage.removeItem(STORAGE_KEY);
+  window.localStorage.removeItem(EMAIL_STORAGE_KEY);
 }
 
 export function persistGoogleEmail(email: string): void {
   if (typeof window === "undefined") return;
   const trimmed = email.trim().toLowerCase();
   if (!trimmed || !trimmed.includes("@")) return;
-  window.sessionStorage.setItem(EMAIL_STORAGE_KEY, trimmed.slice(0, 40));
+  window.localStorage.setItem(EMAIL_STORAGE_KEY, trimmed.slice(0, 40));
 }
 
 export function readGoogleEmail(): string | null {
   if (typeof window === "undefined") return null;
-  const value = window.sessionStorage.getItem(EMAIL_STORAGE_KEY);
+  const value = window.localStorage.getItem(EMAIL_STORAGE_KEY);
   return value?.trim() ? value : null;
 }
 
