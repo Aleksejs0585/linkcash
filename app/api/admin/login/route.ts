@@ -4,13 +4,13 @@ import {
   createAdminSession,
   isAdminConfigured,
   validateAdminPassword,
-} from "../../../../lib/server/admin-auth";
+} from "@/lib/server/admin-auth";
 import {
   canAttemptAdminLogin,
   clearAdminLoginFailures,
   markAdminLoginFailure,
-} from "../../../../lib/server/admin-login-guard";
-import { adminAuditStore } from "../../../../lib/server/admin-audit-store";
+} from "@/lib/server/admin-login-guard";
+import { adminAuditStore } from "@/lib/server/admin-audit-store";
 
 type LoginBody = {
   password: string;

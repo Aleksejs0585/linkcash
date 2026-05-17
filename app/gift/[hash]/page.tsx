@@ -5,14 +5,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import confetti from "canvas-confetti";
 import { AnimatePresence, motion } from "framer-motion";
 import AppShell from "@/components/ui/app-shell";
-import GlassCard from "../../../components/ui/glass-card";
-import MainMenu from "../../../components/ui/main-menu";
-import OAuthNavHint from "../../../components/ui/oauth-nav-hint";
-import { isCircleWalletConfigured } from "../../../features/circle-wallet/config/circle-env";
-import { useCircleWallet } from "../../../features/circle-wallet/model/circle-wallet-provider";
-import { useGift } from "../../../hooks/useGift";
-import { trackEvent } from "../../../lib/client/analytics";
-import { getOrAssignVariant } from "../../../lib/client/experiments";
+import GlassCard from "@/components/ui/glass-card";
+import MainMenu from "@/components/ui/main-menu";
+import OAuthNavHint from "@/components/ui/oauth-nav-hint";
+import { isCircleWalletConfigured } from "@/features/circle-wallet/config/circle-env";
+import { useCircleWallet } from "@/features/circle-wallet/model/circle-wallet-provider";
+import { useGift } from "@/hooks/useGift";
+import { trackEvent } from "@/lib/client/analytics";
+import { getOrAssignVariant } from "@/lib/client/experiments";
 import {
   AUTO_CLAIM_AFTER_AUTH_KEY,
   consumeAutoClaimAfterAuth,
@@ -25,7 +25,7 @@ import {
   getPaymentIdHashFromPath,
   getArcExplorerTxUrl,
   getSecretFromHash,
-} from "../../../utils";
+} from "@/utils";
 
 type GiftDetailsResponse =
   | {

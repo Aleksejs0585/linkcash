@@ -4,11 +4,10 @@ import { useState } from "react";
 
 export default function LinkCopyDemo() {
   const [copied, setCopied] = useState(false);
-  const demoUrl = "https://linkcash.app/claim/a7f3k9x2";
-
   const onCopy = async () => {
     try {
-      await navigator.clipboard.writeText(demoUrl);
+      const url = `${window.location.origin}/claim/a7f3k9x2`;
+      await navigator.clipboard.writeText(url);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
     } catch {

@@ -4,12 +4,12 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { isAddress } from "ethers";
 import AppShell from "@/components/ui/app-shell";
-import GlassCard from "../../components/ui/glass-card";
-import MainMenu from "../../components/ui/main-menu";
-import OAuthNavHint from "../../components/ui/oauth-nav-hint";
-import { isCircleWalletConfigured } from "../../features/circle-wallet/config/circle-env";
-import { useCircleWallet } from "../../features/circle-wallet/model/circle-wallet-provider";
-import { ARC_TESTNET, getArcExplorerTxUrl } from "../../utils";
+import GlassCard from "@/components/ui/glass-card";
+import MainMenu from "@/components/ui/main-menu";
+import OAuthNavHint from "@/components/ui/oauth-nav-hint";
+import { isCircleWalletConfigured } from "@/features/circle-wallet/config/circle-env";
+import { useCircleWallet } from "@/features/circle-wallet/model/circle-wallet-provider";
+import { ARC_TESTNET, getArcExplorerTxUrl } from "@/utils";
 
 type SenderGiftStatus = "active" | "expired" | "claimed" | "reclaimed";
 

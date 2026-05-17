@@ -1,17 +1,17 @@
 import { readFile } from "node:fs/promises";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { isAdminAuthenticated } from "../../../../lib/server/admin-auth";
+import { isAdminAuthenticated } from "@/lib/server/admin-auth";
 import {
   type ClaimAuditEvent,
   resolveClaimAuditLogPath,
-} from "../../../../lib/server/claim-audit-store";
+} from "@/lib/server/claim-audit-store";
 import {
   getClaimRuntimeConfig,
   updateClaimRuntimeConfig,
-} from "../../../../lib/server/claim-config-store";
-import { productAnalyticsStore } from "../../../../lib/server/product-analytics-store";
-import { buildFunnelSummary } from "../../../../lib/server/funnel-metrics";
+} from "@/lib/server/claim-config-store";
+import { productAnalyticsStore } from "@/lib/server/product-analytics-store";
+import { buildFunnelSummary } from "@/lib/server/funnel-metrics";
 
 type UpdateConfigBody = {
   rateLimitEnabled?: boolean;

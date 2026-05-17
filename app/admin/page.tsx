@@ -9,8 +9,8 @@ import {
   useState,
 } from "react";
 import AppShell from "@/components/ui/app-shell";
-import GlassCard from "../../components/ui/glass-card";
-import MainMenu from "../../components/ui/main-menu";
+import GlassCard from "@/components/ui/glass-card";
+import MainMenu from "@/components/ui/main-menu";
 
 type ClaimRuntimeConfig = {
   rateLimitEnabled: boolean;

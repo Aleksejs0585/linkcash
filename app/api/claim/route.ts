@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { parseClaimInput } from "@/entities/claim/server/claim-validation";
 import { getClientIp, submitClaim } from "@/entities/claim/server/claim-service";
-import { claimAuditStore } from "../../../lib/server/claim-audit-store";
+import { claimAuditStore } from "@/lib/server/claim-audit-store";
 import { HttpError, errorMessage } from "@/lib/server/http-errors";
 
 export const runtime = "nodejs";

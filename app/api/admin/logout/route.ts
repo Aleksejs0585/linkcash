@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { clearAdminSession } from "../../../../lib/server/admin-auth";
-import { adminAuditStore } from "../../../../lib/server/admin-audit-store";
+import { clearAdminSession } from "@/lib/server/admin-auth";
+import { adminAuditStore } from "@/lib/server/admin-audit-store";
 
 export const runtime = "nodejs";
 
