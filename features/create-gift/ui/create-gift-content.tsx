@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import AppShell from "@/components/ui/app-shell";
 import GlassCard from "@/components/ui/glass-card";
 import MainMenu from "@/components/ui/main-menu";
+import { HelpTrigger } from "@/components/ui/help-manual";
 import OAuthNavHint from "@/components/ui/oauth-nav-hint";
 import { WalletBackupWarning } from "@/components/ui/wallet-backup-warning";
 import { ARC_TESTNET } from "@/utils";
@@ -70,8 +71,9 @@ export function CreateGiftContent() {
         onShareClick={onShareClick}
       />
       <GlassCard className="relative z-[1] max-w-[460px] space-y-6 p-5 text-center sm:p-8">
-        <div className="flex justify-start">
+        <div className="flex items-center justify-between">
           <MainMenu />
+          <HelpTrigger />
         </div>
 
         {/* Header */}

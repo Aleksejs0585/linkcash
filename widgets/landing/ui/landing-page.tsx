@@ -8,6 +8,7 @@ import { shortTxHash, txRowIcon, txStatusLabel } from "../lib/tx-display";
 import type { LandingTxExample } from "@/lib/server/load-live-tx-examples";
 import { getArcExplorerTxUrl } from "@/utils";
 import LinkCashLogo from "@/components/ui/linkcash-logo";
+import { HelpTrigger } from "@/components/ui/help-manual";
 import LandingFaq from "./landing-faq";
 import LinkCopyDemo from "./link-copy-demo";
 
@@ -32,6 +33,7 @@ export default function LandingPage({ txExamples }: LandingPageProps) {
           <Link href="/create" className="landing-btn-primary">
             Send USDC →
           </Link>
+          <HelpTrigger className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-sm font-semibold text-white/70 transition hover:border-white/25 hover:bg-white/10 hover:text-white" />
         </div>
       </nav>
 

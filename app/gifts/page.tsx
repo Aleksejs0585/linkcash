@@ -6,6 +6,7 @@ import { isAddress } from "ethers";
 import AppShell from "@/components/ui/app-shell";
 import GlassCard from "@/components/ui/glass-card";
 import MainMenu from "@/components/ui/main-menu";
+import { HelpTrigger } from "@/components/ui/help-manual";
 import OAuthNavHint from "@/components/ui/oauth-nav-hint";
 import { isCircleWalletConfigured } from "@/features/circle-wallet/config/circle-env";
 import { useCircleWallet } from "@/features/circle-wallet/model/circle-wallet-provider";
@@ -39,8 +40,9 @@ export default function SenderDashboardPage() {
     return (
       <AppShell className="flex items-center justify-center px-5 py-10">
         <GlassCard className="relative z-[1] w-full max-w-[520px] space-y-3 p-8 text-center">
-          <div className="flex justify-start">
+          <div className="flex items-center justify-between">
             <MainMenu />
+            <HelpTrigger />
           </div>
           <h1 className="app-heading text-3xl">Sender Dashboard</h1>
           <p className="soft-text text-sm">
@@ -157,6 +159,7 @@ function SenderDashboardContent() {
             </div>
             <div className="flex items-center gap-2">
               <MainMenu />
+              <HelpTrigger />
               <button
                 type="button"
                 onClick={() => loadGifts().catch(() => undefined)}
