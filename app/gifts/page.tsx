@@ -26,14 +26,46 @@ type SenderGiftItem = {
 };
 
 type SenderGiftsResponse =
-  | {
-      ok: true;
-      gifts: SenderGiftItem[];
-    }
-  | {
-      ok: false;
-      error: string;
-    };
+  | { ok: true; gifts: SenderGiftItem[] }
+  | { ok: false; error: string };
+
+function timeAgo(date: Date): string {
+  const diffMs = Date.now() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60_000);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  return `${Math.floor(diffHr / 24)}d ago`;
+}
+
+function expiryLabel(expiresAt: number, status: SenderGiftStatus): string {
+  const date = new Date(expiresAt * 1000);
+  const now = Date.now() / 1000;
+  if (status === "active") {
+    const rem = expiresAt - Math.floor(now);
+    if (rem <= 0) return "Expiring...";
+    const h = Math.floor(rem / 3600);
+    const m = Math.floor((rem % 3600) / 60);
+    return h > 0 ? `Expires in ${h}h ${m}m` : `Expires in ${m}m`;
+  }
+  if (status === "expired") return `Expired ${timeAgo(date)}`;
+  if (status === "claimed") return `Expired ${date.toLocaleDateString()}`;
+  return date.toLocaleDateString();
+}
+
+const STATUS_LABEL: Record<SenderGiftStatus, string> = {
+  active: "Active",
+  expired: "Expired",
+  claimed: "Claimed",
+  reclaimed: "Reclaimed",
+};
+
+const STATUS_ICON: Record<SenderGiftStatus, string> = {
+  active: "●",
+  expired: "⚠",
+  claimed: "✓",
+  reclaimed: "↩",
+};
 
 export default function SenderDashboardPage() {
   if (!isCircleWalletConfigured()) {
@@ -79,10 +111,8 @@ function SenderDashboardContent() {
       setGifts([]);
       return;
     }
-
     setLoading(true);
     setError(null);
-
     try {
       const response = await fetch(
         `/api/sender-gifts?senderAddress=${senderWalletAddress}`,
@@ -92,7 +122,6 @@ function SenderDashboardContent() {
       if (!response.ok || !data.ok) {
         throw new Error(data.ok ? "Failed to load sender gifts." : data.error);
       }
-
       setGifts(data.gifts);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load sender gifts.");
@@ -112,7 +141,6 @@ function SenderDashboardContent() {
     setReclaimingHash(paymentIdHash);
     setError(null);
     setStatus(null);
-
     try {
       const response = await fetch("/api/reclaim-gift", {
         method: "POST",
@@ -122,12 +150,10 @@ function SenderDashboardContent() {
       const data = (await response.json()) as
         | { ok: true; txHash: string }
         | { error: string };
-
       if (!response.ok || !("txHash" in data)) {
         throw new Error("error" in data ? data.error : "Failed to reclaim gift.");
       }
-
-      setStatus(`Reclaim submitted. Tx: ${data.txHash}`);
+      setStatus(`Reclaimed. Tx: ${data.txHash}`);
       await loadGifts();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to reclaim gift.");
@@ -136,26 +162,19 @@ function SenderDashboardContent() {
     }
   };
 
-  const statusClassByType: Record<SenderGiftStatus, string> = {
-    active: "status-pill-active",
-    expired: "status-pill-expired",
-    claimed: "status-pill-claimed",
-    reclaimed: "status-pill-reclaimed",
-  };
+  const expiredUnclaimed = gifts.filter((g) => g.status === "expired");
 
   return (
     <AppShell className="px-4 py-8 sm:px-5 sm:py-10" glow="top">
-      <div className="relative z-[1] mx-auto w-full max-w-4xl space-y-4 sm:space-y-5">
+      <div className="relative z-[1] mx-auto w-full max-w-3xl space-y-4 sm:space-y-5">
+
+        {/* Header card */}
         <GlassCard className="space-y-4 p-4 sm:p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="app-section-label">{ARC_TESTNET.chainName}</p>
-              <h1 className="app-heading mt-1 text-2xl sm:text-3xl">
-                Sender Dashboard
-              </h1>
-              <p className="soft-text mt-2 text-sm">
-                Track funded gifts and reclaim expired gifts.
-              </p>
+              <h1 className="app-heading mt-1 text-2xl sm:text-3xl">Sender Dashboard</h1>
+              <p className="soft-text mt-1 text-sm">All gifts you funded on-chain.</p>
             </div>
             <div className="flex items-center gap-2">
               <MainMenu />
@@ -163,9 +182,10 @@ function SenderDashboardContent() {
               <button
                 type="button"
                 onClick={() => loadGifts().catch(() => undefined)}
-                className="app-btn-secondary px-3 py-2 text-sm"
+                disabled={loading}
+                className="app-btn-secondary px-3 py-2 text-sm disabled:opacity-60"
               >
-                Refresh
+                {loading ? "Loading…" : "Refresh"}
               </button>
             </div>
           </div>
@@ -192,9 +212,7 @@ function SenderDashboardContent() {
                 Sign in with Google
               </button>
               <OAuthNavHint className="text-left text-xs leading-relaxed text-white/55" />
-              {authError && (
-                <p className="text-sm text-rose-400">{authError}</p>
-              )}
+              {authError && <p className="text-sm text-rose-400">{authError}</p>}
             </div>
           ) : !senderWalletAddress ? (
             <p className="rounded-xl border border-white/10 bg-black/30 p-3 text-sm text-amber-300">
@@ -203,8 +221,8 @@ function SenderDashboardContent() {
                 : "No wallet address for this session yet."}
             </p>
           ) : (
-            <p className="app-panel break-all p-3 text-xs text-[var(--muted)]">
-              Sender wallet: {senderWalletAddress}
+            <p className="break-all text-xs text-white/40">
+              {senderWalletAddress}
             </p>
           )}
 
@@ -212,48 +230,93 @@ function SenderDashboardContent() {
           {error && <p className="text-sm text-rose-400">{error}</p>}
         </GlassCard>
 
-        <GlassCard className="space-y-3 p-4 sm:p-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Created gifts</h2>
-            <p className="text-xs text-white/60">{gifts.length} total</p>
+        {/* Gifts list */}
+        <GlassCard className="p-4 sm:p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-base font-semibold">
+              Created gifts
+              {gifts.length > 0 && (
+                <span className="ml-2 text-sm font-normal text-white/50">
+                  {gifts.length} total
+                  {expiredUnclaimed.length > 0 && (
+                    <span className="ml-1 text-amber-400">
+                      · {expiredUnclaimed.length} expired
+                    </span>
+                  )}
+                </span>
+              )}
+            </h2>
+            {expiredUnclaimed.length > 1 && (
+              <button
+                type="button"
+                onClick={() =>
+                  expiredUnclaimed.forEach((g) => void onReclaim(g.paymentIdHash))
+                }
+                disabled={reclaimingHash !== null}
+                className="accent-gradient rounded-[var(--radius-sm)] px-3 py-1.5 text-xs font-medium disabled:opacity-60"
+              >
+                Reclaim all expired ({expiredUnclaimed.length})
+              </button>
+            )}
           </div>
 
-          {loading ? (
-            <p className="text-sm text-white/65">Loading gifts...</p>
+          {loading && gifts.length === 0 ? (
+            <div className="animate-pulse space-y-3" aria-hidden>
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="h-24 rounded-[var(--radius)] bg-white/6" />
+              ))}
+            </div>
           ) : gifts.length === 0 ? (
-            <p className="text-sm text-white/60">
-              No gifts yet. Create your first gift from the create page.
-            </p>
+            <div className="py-8 text-center">
+              <p className="text-2xl">🎁</p>
+              <p className="mt-2 text-sm text-white/60">No gifts yet.</p>
+              <Link
+                href="/create"
+                className="mt-3 inline-block text-sm text-[var(--accent)] underline-offset-2 hover:underline"
+              >
+                Create your first gift →
+              </Link>
+            </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {gifts.map((gift) => (
                 <div
                   key={gift.paymentIdHash}
-                  className="app-panel p-3 sm:p-4"
+                  className="app-panel p-4"
                 >
+                  {/* Top row: amount + status */}
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-base font-semibold">{gift.amountUsdc} USDC</p>
+                    <span className="text-xl font-bold tracking-tight">
+                      {gift.amountUsdc}{" "}
+                      <span className="text-base font-normal text-white/60">USDC</span>
+                    </span>
                     <span
-                      className={`rounded-full border px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.1em] ${statusClassByType[gift.status]}`}
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.08em] status-pill-${gift.status}`}
                     >
-                      {gift.status}
+                      <span aria-hidden>{STATUS_ICON[gift.status]}</span>
+                      {STATUS_LABEL[gift.status]}
                     </span>
                   </div>
 
-                  <p className="mt-2 break-all text-xs text-white/60">
-                    hash: {gift.paymentIdHash}
-                  </p>
-                  <p className="mt-1 text-xs text-white/60">
-                    created: {new Date(gift.createdAt).toLocaleString()}
-                  </p>
-                  <p className="mt-1 text-xs text-white/60">
-                    expires: {new Date(gift.expiresAt * 1000).toLocaleString()}
-                  </p>
+                  {/* Dates row */}
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-white/50">
+                    <span>Sent {timeAgo(new Date(gift.createdAt))}</span>
+                    <span
+                      className={
+                        gift.status === "expired" ? "text-amber-400" :
+                        gift.status === "active" ? "text-emerald-400/80" :
+                        ""
+                      }
+                    >
+                      {expiryLabel(gift.expiresAt, gift.status)}
+                    </span>
+                  </div>
 
-                  <div className="mt-3 flex flex-wrap gap-2">
+                  {/* Actions row */}
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
                     <Link
                       href={`/status/${gift.paymentIdHash}`}
-                      className="app-btn-secondary px-3 py-1.5 text-xs app-link"
+                      className="app-btn-secondary px-3 py-1.5 text-xs"
                     >
                       Track status
                     </Link>
@@ -261,19 +324,18 @@ function SenderDashboardContent() {
                       href={getArcExplorerTxUrl(gift.fundedTxHash)}
                       target="_blank"
                       rel="noreferrer"
-                      className="app-btn-secondary px-3 py-1.5 text-xs app-link"
+                      className="app-btn-secondary px-3 py-1.5 text-xs"
                     >
-                      Funding tx
+                      Funding tx ↗
                     </a>
-
                     {gift.reclaimTxHash && (
                       <a
                         href={getArcExplorerTxUrl(gift.reclaimTxHash)}
                         target="_blank"
                         rel="noreferrer"
-                        className="app-btn-secondary px-3 py-1.5 text-xs app-link"
+                        className="app-btn-secondary px-3 py-1.5 text-xs"
                       >
-                        Reclaim tx
+                        Reclaim tx ↗
                       </a>
                     )}
 
@@ -281,12 +343,12 @@ function SenderDashboardContent() {
                       <button
                         type="button"
                         onClick={() => void onReclaim(gift.paymentIdHash)}
-                        disabled={reclaimingHash === gift.paymentIdHash}
-                        className="app-btn-secondary px-3 py-1.5 text-xs disabled:opacity-60"
+                        disabled={reclaimingHash !== null}
+                        className="accent-gradient rounded-[var(--radius-sm)] px-3 py-1.5 text-xs font-medium disabled:opacity-60"
                       >
                         {reclaimingHash === gift.paymentIdHash
-                          ? "Reclaiming..."
-                          : "Reclaim"}
+                          ? "Reclaiming…"
+                          : "↩ Reclaim"}
                       </button>
                     )}
                   </div>
