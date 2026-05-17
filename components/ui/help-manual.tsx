@@ -52,14 +52,14 @@ export default function HelpManual() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="fixed inset-x-0 top-[64px] z-[59] flex justify-center overflow-y-auto px-4 pb-8"
+            className="fixed inset-x-0 top-[64px] z-[59] overflow-y-auto px-4 pb-8"
             style={{ maxHeight: "calc(100vh - 64px)" }}
           >
             <aside
               role="dialog"
               aria-modal="true"
               aria-labelledby="help-title"
-              className="glass-card relative mt-3 w-full max-w-[480px] p-5 text-left text-sm shadow-2xl sm:p-6"
+              className="glass-card relative mx-auto mt-3 w-full max-w-[480px] p-5 text-left text-sm shadow-2xl sm:p-6"
               onClick={(e) => e.stopPropagation()}
             >
               <button
