@@ -10,7 +10,6 @@ import { getArcExplorerTxUrl } from "@/utils";
 import LinkCashLogo from "@/components/ui/linkcash-logo";
 import { HelpTrigger } from "@/components/ui/help-manual";
 import LandingFaq from "./landing-faq";
-import LinkCopyDemo from "./link-copy-demo";
 
 export type { LandingTxExample };
 
@@ -68,8 +67,6 @@ export default function LandingPage({ txExamples }: LandingPageProps) {
             See how it works
           </a>
         </div>
-
-        <LinkCopyDemo />
 
         <div className="landing-stats">
           <div>
