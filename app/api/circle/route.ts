@@ -445,6 +445,44 @@ export async function POST(request: Request) {
         return NextResponse.json(inner, { status: 200 });
       }
 
+      case "refreshUserToken": {
+        const refreshToken = params.refreshToken as string | undefined;
+        if (!refreshToken) {
+          return NextResponse.json(
+            { error: "Missing refreshToken" },
+            { status: 400 }
+          );
+        }
+
+        const response = await fetch(
+          `${CIRCLE_BASE_URL}/v1/w3s/users/social/token`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${CIRCLE_API_KEY}`,
+            },
+            body: JSON.stringify({
+              idempotencyKey: crypto.randomUUID(),
+              refreshToken,
+            }),
+          }
+        );
+
+        const data = (await response.json()) as Record<string, unknown>;
+
+        if (!response.ok) {
+          return NextResponse.json(data, { status: response.status });
+        }
+
+        const inner = data.data as {
+          userToken?: string;
+          encryptionKey?: string;
+          refreshToken?: string;
+        };
+        return NextResponse.json(inner, { status: 200 });
+      }
+
       default:
         return NextResponse.json(
           { error: `Unknown action: ${action}` },

@@ -41,7 +41,33 @@ import {
   clearCircleSession,
   readCircleSession,
   writeCircleSession,
+  type CircleSessionCredentials,
 } from "../lib/circle-session";
+
+async function tryRefreshUserToken(
+  refreshToken: string
+): Promise<CircleSessionCredentials | null> {
+  try {
+    const response = await fetch("/api/circle", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "refreshUserToken", refreshToken }),
+    });
+    const data = (await response.json()) as {
+      userToken?: string;
+      encryptionKey?: string;
+      refreshToken?: string;
+    };
+    if (!response.ok || !data.userToken || !data.encryptionKey) return null;
+    return {
+      userToken: data.userToken,
+      encryptionKey: data.encryptionKey,
+      refreshToken: data.refreshToken ?? refreshToken,
+    };
+  } catch {
+    return null;
+  }
+}
 
 const CIRCLE_USER_WAS_INITIALIZED = 155106;
 
@@ -651,6 +677,23 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
           e instanceof Error
             ? e.message
             : "Session expired. Please sign in again with Google.";
+
+        // Try silent refresh before giving up
+        if (shouldClearStoredUserSession(raw) && session.refreshToken) {
+          const refreshed = await tryRefreshUserToken(session.refreshToken);
+          if (refreshed) {
+            writeCircleSession(refreshed);
+            setUserToken(refreshed.userToken);
+            setEncryptionKey(refreshed.encryptionKey);
+            try {
+              await ensureWalletReady(refreshed.userToken, refreshed.encryptionKey);
+              return;
+            } catch {
+              // refresh succeeded but wallet load failed — fall through
+            }
+          }
+        }
+
         if (shouldResetCircleDeviceBinding(raw) && !loginAutoRetryUsedRef.current) {
           clearCircleSession();
           setUserToken(null);
