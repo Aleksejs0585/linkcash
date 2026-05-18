@@ -461,45 +461,111 @@ function GiftClaimContent() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--bg)]/95 px-6 text-center"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--bg)]/96 px-5 text-center"
           >
             <motion.div
-              initial={{ opacity: 0, y: 14, scale: 0.98 }}
+              initial={{ opacity: 0, y: 16, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className="glass-card w-full max-w-[420px] space-y-5 p-6 sm:p-8"
+              transition={{ duration: 0.28, ease: "easeOut" }}
+              className="glass-card w-full max-w-[400px] overflow-hidden p-0"
             >
-              <h2 className="app-heading text-4xl">
-                You&apos;re now on-chain
-              </h2>
-              <p className="soft-text text-sm">
-                {giftAmountUsdc
-                  ? `${giftAmountUsdc} USDC has been added to your wallet`
-                  : "Your gift has been added to your wallet"}
-              </p>
-              {successTxHash && (
-                <a
-                  href={getArcExplorerTxUrl(successTxHash)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="app-link block break-all text-xs"
+              {/* Green header band */}
+              <div className="relative flex flex-col items-center bg-gradient-to-b from-emerald-950/60 to-transparent px-6 pb-6 pt-8">
+                <motion.div
+                  initial={{ scale: 0.4, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.1, duration: 0.35, type: "spring", stiffness: 200 }}
+                  className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-emerald-500/50 bg-emerald-950/80 text-3xl shadow-lg shadow-emerald-900/40"
                 >
-                  {successTxHash}
-                </a>
-              )}
-              <div className="space-y-2">
-                <Link
-                  href="/wallet"
-                  className="accent-gradient inline-flex w-full items-center justify-center rounded-[var(--radius)] px-6 py-3.5 text-base transition hover:scale-[1.02]"
+                  ✓
+                </motion.div>
+                <motion.h2
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="app-heading mt-4 text-3xl sm:text-4xl"
                 >
-                  Open my wallet
-                </Link>
-                <Link
-                  href="/create"
-                  className="app-btn-secondary inline-flex w-full items-center justify-center px-6 py-3 text-sm font-medium"
+                  You&apos;re on-chain!
+                </motion.h2>
+                {senderDisplayName && (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.28 }}
+                    className="mt-1 text-sm text-white/55"
+                  >
+                    Gift from {senderDisplayName}
+                  </motion.p>
+                )}
+              </div>
+
+              <div className="space-y-5 px-6 pb-7">
+                {/* Amount */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.22, type: "spring", stiffness: 180 }}
                 >
-                  Create gift
-                </Link>
+                  {giftAmountUsdc && (
+                    <div className="flex items-baseline justify-center gap-2">
+                      <span className="text-5xl font-bold tracking-tight text-emerald-300">
+                        {giftAmountUsdc}
+                      </span>
+                      <span className="text-xl text-white/50">USDC</span>
+                    </div>
+                  )}
+                  <p className="mt-1 text-sm text-white/50">
+                    added to your Arc wallet
+                  </p>
+                </motion.div>
+
+                {/* Tx link */}
+                {successTxHash && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.32 }}
+                  >
+                    <a
+                      href={getArcExplorerTxUrl(successTxHash)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="app-link text-xs"
+                    >
+                      {successTxHash.slice(0, 10)}…{successTxHash.slice(-6)} ↗
+                    </a>
+                  </motion.div>
+                )}
+
+                {/* CTAs */}
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.36 }}
+                  className="space-y-2.5"
+                >
+                  <Link
+                    href="/wallet"
+                    className="accent-gradient inline-flex w-full items-center justify-center rounded-[var(--radius)] px-6 py-3.5 text-base font-medium transition hover:scale-[1.02]"
+                  >
+                    Open my wallet
+                  </Link>
+                  <Link
+                    href="/create"
+                    className="app-btn-secondary inline-flex w-full items-center justify-center gap-1.5 px-6 py-3 text-sm font-medium"
+                  >
+                    🎁 Send a gift yourself
+                  </Link>
+                </motion.div>
+
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.48 }}
+                  className="text-xs text-white/30"
+                >
+                  No wallet setup needed for your recipient either
+                </motion.p>
               </div>
             </motion.div>
           </motion.div>
