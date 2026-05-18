@@ -61,7 +61,7 @@ export function GiftLinkModal({
             className="fixed inset-0 z-[56] flex items-center justify-center px-4 py-8"
           >
             <div
-              className="glass-card relative w-full max-w-[420px] p-5 text-left shadow-2xl sm:p-6"
+              className="glass-card relative max-h-[calc(100svh-3rem)] w-full max-w-[420px] overflow-y-auto p-5 text-left shadow-2xl sm:p-6"
               onClick={(e) => e.stopPropagation()}
               onKeyDown={(e) => e.stopPropagation()}
             >
@@ -146,7 +146,7 @@ export function GiftLinkModal({
                 className="mt-4 flex justify-center"
               >
                 <div className="rounded-xl bg-white p-3">
-                  <QRCodeSVG value={link} size={148} />
+                  <QRCodeSVG value={link} size={132} />
                 </div>
               </motion.div>
 
