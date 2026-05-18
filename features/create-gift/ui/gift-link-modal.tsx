@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
+import { QRCodeSVG } from "qrcode.react";
 import { FaLink } from "react-icons/fa";
 import type { ShareLinkItem } from "../model/share-links";
 
@@ -136,6 +137,17 @@ export function GiftLinkModal({
                     />
                   </button>
                 ))}
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.14 }}
+                className="mt-4 flex justify-center"
+              >
+                <div className="rounded-xl bg-white p-3">
+                  <QRCodeSVG value={link} size={148} />
+                </div>
               </motion.div>
 
               {reclaimAvailable ? (
