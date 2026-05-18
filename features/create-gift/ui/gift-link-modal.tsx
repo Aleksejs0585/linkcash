@@ -146,7 +146,16 @@ export function GiftLinkModal({
                 className="mt-4 flex justify-center"
               >
                 <div className="rounded-xl bg-white p-3">
-                  <QRCodeSVG value={link} size={132} />
+                  <QRCodeSVG
+                    value={link}
+                    size={132}
+                    imageSettings={{
+                      src: "/linkcash-icon-512.png",
+                      height: 28,
+                      width: 28,
+                      excavate: true,
+                    }}
+                  />
                 </div>
               </motion.div>
 
