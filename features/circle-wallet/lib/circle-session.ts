@@ -10,25 +10,25 @@ export type CircleSessionCredentials = {
 
 export function readCircleSession(): CircleSessionCredentials | null {
   if (typeof window === "undefined") return null;
-  const userToken = window.sessionStorage.getItem(USER);
-  const encryptionKey = window.sessionStorage.getItem(ENC);
+  const userToken = window.localStorage.getItem(USER);
+  const encryptionKey = window.localStorage.getItem(ENC);
   if (!userToken || !encryptionKey) return null;
-  const refreshToken = window.sessionStorage.getItem(REFRESH) ?? "";
+  const refreshToken = window.localStorage.getItem(REFRESH) ?? "";
   return { userToken, encryptionKey, refreshToken };
 }
 
 export function writeCircleSession(creds: CircleSessionCredentials): void {
   if (typeof window === "undefined") return;
-  window.sessionStorage.setItem(USER, creds.userToken);
-  window.sessionStorage.setItem(ENC, creds.encryptionKey);
+  window.localStorage.setItem(USER, creds.userToken);
+  window.localStorage.setItem(ENC, creds.encryptionKey);
   if (creds.refreshToken) {
-    window.sessionStorage.setItem(REFRESH, creds.refreshToken);
+    window.localStorage.setItem(REFRESH, creds.refreshToken);
   }
 }
 
 export function clearCircleSession(): void {
   if (typeof window === "undefined") return;
-  window.sessionStorage.removeItem(USER);
-  window.sessionStorage.removeItem(ENC);
-  window.sessionStorage.removeItem(REFRESH);
+  window.localStorage.removeItem(USER);
+  window.localStorage.removeItem(ENC);
+  window.localStorage.removeItem(REFRESH);
 }

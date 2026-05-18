@@ -42,6 +42,12 @@ type RootLayoutProps = {
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://accounts.google.com" />
+        <link rel="preconnect" href="https://oauth2.googleapis.com" />
+        <link rel="dns-prefetch" href="https://accounts.google.com" />
+        <link rel="dns-prefetch" href="https://oauth2.googleapis.com" />
+      </head>
       <body
         className={`${dmSans.className} ${syne.variable} ${dmSans.variable} bg-app antialiased`}
       >
