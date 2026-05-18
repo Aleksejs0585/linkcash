@@ -554,7 +554,7 @@ function GiftClaimContent() {
                     href="/create"
                     className="app-btn-secondary inline-flex w-full items-center justify-center gap-1.5 px-6 py-3 text-sm font-medium"
                   >
-                    🎁 Send a gift yourself
+                    🎁 Send someone a gift
                   </Link>
                 </motion.div>
 
