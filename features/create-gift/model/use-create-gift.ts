@@ -23,6 +23,7 @@ import { formatGiftTxError } from "../lib/gift-errors";
 import { buildShareLinks } from "./share-links";
 import { trackEvent } from "@/lib/client/analytics";
 import { getOrAssignVariant } from "@/lib/client/experiments";
+import { toast } from "@/lib/client/toast";
 
 type CreateGiftSuccess = {
   ok: true;
@@ -258,11 +259,8 @@ export function useCreateGift() {
       setLink(giftLink);
       setGiftLinkModalOpen(true);
       setCopied(false);
-      setStatus(
-        `Gift funded. Refund wallet: ${data.refundAddress}. Expires at: ${new Date(
-          data.expiresAt * 1000
-        ).toLocaleString()}. Tx: ${data.txHash}`
-      );
+      setStatus(null);
+      toast("Gift funded! Share the link with your recipient.", "success");
       trackEvent({
         event: "gift_funded",
         path: "/create",
@@ -301,10 +299,12 @@ export function useCreateGift() {
         throw new Error("error" in data ? data.error : "Failed to reclaim gift.");
       }
 
-      setStatus(`Reclaim submitted successfully. Tx: ${data.txHash}`);
+      toast("Reclaim submitted successfully.", "success");
+      setStatus(null);
     } catch (error) {
       const raw =
         error instanceof Error ? error.message : "Failed to reclaim expired gift.";
+      toast(formatGiftTxError(raw), "error");
       setStatus(formatGiftTxError(raw));
     } finally {
       setReclaiming(false);
@@ -315,12 +315,13 @@ export function useCreateGift() {
     if (!link) return;
     await navigator.clipboard.writeText(link);
     setCopied(true);
+    toast("Link copied!", "success");
     setTimeout(() => setCopied(false), 1800);
   };
 
   const onShareClick = (label: string, href: string | null) => {
     if (!href) {
-      setStatus(`${label} share is temporarily unavailable.`);
+      toast(`${label} share is temporarily unavailable.`, "info");
       return;
     }
 

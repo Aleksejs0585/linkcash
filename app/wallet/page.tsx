@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { Contract, JsonRpcProvider, formatUnits, isAddress } from "ethers";
 import AppShell from "@/components/ui/app-shell";
 import GlassCard from "@/components/ui/glass-card";
@@ -199,22 +200,48 @@ function WalletContent() {
               <p className="text-xs uppercase tracking-[0.15em] text-white/60">
                 USDC balance
               </p>
-              <p className="mt-2 text-2xl font-semibold">
-                {loadingBalance ? "Loading..." : `${balance ?? "0"} USDC`}
-              </p>
+              {loadingBalance ? (
+                <div className="mt-2 animate-pulse">
+                  <div className="h-9 w-36 rounded bg-white/8" />
+                </div>
+              ) : (
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="text-3xl font-bold tracking-tight">
+                    {balance ?? "0"}
+                  </span>
+                  <span className="text-base text-white/50">USDC</span>
+                </div>
+              )}
               <button
                 type="button"
                 onClick={() => loadBalance().catch(() => undefined)}
-                className="app-btn-secondary mt-3 px-3 py-1.5 text-xs"
+                disabled={loadingBalance}
+                className="app-btn-secondary mt-3 px-3 py-1.5 text-xs disabled:opacity-50"
               >
-                Refresh balance
+                Refresh
               </button>
             </div>
+
+            <Link
+              href="/create"
+              className="accent-gradient flex w-full items-center justify-center gap-2 rounded-[var(--radius)] px-5 py-3 text-sm font-medium"
+            >
+              🎁 Send a gift
+            </Link>
+
+            <a
+              href="https://faucet.circle.com"
+              target="_blank"
+              rel="noreferrer"
+              className="app-btn-secondary flex w-full items-center justify-center gap-1 px-4 py-2.5 text-sm"
+            >
+              Get testnet USDC ↗
+            </a>
 
             <button
               type="button"
               onClick={logout}
-              className="app-btn-secondary w-full px-4 py-2.5 text-sm"
+              className="w-full px-4 py-2 text-xs text-white/35 transition hover:text-white/60"
             >
               Sign out
             </button>

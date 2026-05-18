@@ -4,11 +4,25 @@ import { DM_Sans, Syne } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
 import HelpManual from "@/components/ui/help-manual";
+import ToastContainer from "@/components/ui/toast-container";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_APP_URL ?? "https://linkcash.app"
   ),
+  title: {
+    default: "LinkCash — Send USDC like a message",
+    template: "%s | LinkCash",
+  },
+  description:
+    "Share a link. Recipient signs in with Google, gets a Circle wallet, and claims USDC gaslessly on Arc.",
+  openGraph: {
+    siteName: "LinkCash",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
 };
 
 const syne = Syne({
@@ -33,6 +47,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
       >
         <Providers>{children}</Providers>
         <HelpManual />
+        <ToastContainer />
       </body>
     </html>
   );
