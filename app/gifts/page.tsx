@@ -29,6 +29,19 @@ type SenderGiftsResponse =
   | { ok: true; gifts: SenderGiftItem[] }
   | { ok: false; error: string };
 
+type ReceivedGiftItem = {
+  paymentIdHash: string;
+  amountUsdc: string;
+  txHash: string;
+  senderDisplayName: string | null;
+  giftMessage: string | null;
+  claimedAt: string | null;
+};
+
+type ReceivedGiftsResponse =
+  | { ok: true; gifts: ReceivedGiftItem[] }
+  | { ok: false; error: string };
+
 function timeAgo(date: Date): string {
   const diffMs = Date.now() - date.getTime();
   const diffMin = Math.floor(diffMs / 60_000);
@@ -90,6 +103,8 @@ export default function SenderDashboardPage() {
   return <SenderDashboardContent />;
 }
 
+type Tab = "sent" | "received";
+
 function SenderDashboardContent() {
   const {
     ready,
@@ -100,31 +115,35 @@ function SenderDashboardContent() {
     bootstrapError,
     walletSyncing,
   } = useCircleWallet();
+  const [tab, setTab] = useState<Tab>("sent");
   const [loading, setLoading] = useState(false);
   const [reclaimingHash, setReclaimingHash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [gifts, setGifts] = useState<SenderGiftItem[]>([]);
+  const [receivedGifts, setReceivedGifts] = useState<ReceivedGiftItem[]>([]);
 
   const loadGifts = useCallback(async () => {
     if (!senderWalletAddress || !isAddress(senderWalletAddress)) {
       setGifts([]);
+      setReceivedGifts([]);
       return;
     }
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(
-        `/api/sender-gifts?senderAddress=${senderWalletAddress}`,
-        { method: "GET" }
-      );
-      const data = (await response.json()) as SenderGiftsResponse;
-      if (!response.ok || !data.ok) {
-        throw new Error(data.ok ? "Failed to load sender gifts." : data.error);
-      }
-      setGifts(data.gifts);
+      const [sentRes, receivedRes] = await Promise.all([
+        fetch(`/api/sender-gifts?senderAddress=${senderWalletAddress}`),
+        fetch(`/api/received-gifts?receiverAddress=${senderWalletAddress}`),
+      ]);
+      const sentData = (await sentRes.json()) as SenderGiftsResponse;
+      const receivedData = (await receivedRes.json()) as ReceivedGiftsResponse;
+      if (!sentRes.ok || !sentData.ok) throw new Error(sentData.ok ? "Failed to load sent gifts." : sentData.error);
+      if (!receivedRes.ok || !receivedData.ok) throw new Error(receivedData.ok ? "Failed to load received gifts." : receivedData.error);
+      setGifts(sentData.gifts);
+      setReceivedGifts(receivedData.gifts);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load sender gifts.");
+      setError(e instanceof Error ? e.message : "Failed to load gifts.");
     } finally {
       setLoading(false);
     }
@@ -232,21 +251,31 @@ function SenderDashboardContent() {
 
         {/* Gifts list */}
         <GlassCard className="p-4 sm:p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-base font-semibold">
-              Created gifts
-              {gifts.length > 0 && (
-                <span className="ml-2 text-sm font-normal text-white/50">
-                  {gifts.length} total
-                  {expiredUnclaimed.length > 0 && (
-                    <span className="ml-1 text-amber-400">
-                      · {expiredUnclaimed.length} expired
-                    </span>
+          {/* Tabs */}
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="flex gap-1 rounded-lg border border-white/10 bg-white/4 p-1">
+              {(["sent", "received"] as Tab[]).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setTab(t)}
+                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                    tab === t
+                      ? "bg-white/12 text-white"
+                      : "text-white/50 hover:text-white/75"
+                  }`}
+                >
+                  {t === "sent" ? "Sent" : "Received"}
+                  {t === "sent" && gifts.length > 0 && (
+                    <span className="ml-1.5 text-xs text-white/40">{gifts.length}</span>
                   )}
-                </span>
-              )}
-            </h2>
-            {expiredUnclaimed.length > 1 && (
+                  {t === "received" && receivedGifts.length > 0 && (
+                    <span className="ml-1.5 text-xs text-white/40">{receivedGifts.length}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+            {tab === "sent" && expiredUnclaimed.length > 1 && (
               <button
                 type="button"
                 onClick={() =>
@@ -255,17 +284,56 @@ function SenderDashboardContent() {
                 disabled={reclaimingHash !== null}
                 className="accent-gradient rounded-[var(--radius-sm)] px-3 py-1.5 text-xs font-medium disabled:opacity-60"
               >
-                Reclaim all expired ({expiredUnclaimed.length})
+                Reclaim all ({expiredUnclaimed.length})
               </button>
             )}
           </div>
 
-          {loading && gifts.length === 0 ? (
+          {loading && gifts.length === 0 && receivedGifts.length === 0 ? (
             <div className="animate-pulse space-y-3" aria-hidden>
               {[0, 1, 2].map((i) => (
                 <div key={i} className="h-24 rounded-[var(--radius)] bg-white/6" />
               ))}
             </div>
+          ) : tab === "received" ? (
+            receivedGifts.length === 0 ? (
+              <div className="py-8 text-center">
+                <p className="text-2xl">📭</p>
+                <p className="mt-2 text-sm text-white/60">No received gifts yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {receivedGifts.map((gift) => (
+                  <div key={gift.paymentIdHash} className="app-panel p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-xl font-bold tracking-tight">
+                        {gift.amountUsdc}{" "}
+                        <span className="text-base font-normal text-white/60">USDC</span>
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.08em] text-emerald-300">
+                        ✓ Claimed
+                      </span>
+                    </div>
+                    {gift.senderDisplayName && (
+                      <p className="mt-2 text-sm text-white/70">
+                        From <span className="text-white/90">{gift.senderDisplayName}</span>
+                      </p>
+                    )}
+                    {gift.giftMessage && (
+                      <p className="mt-1 text-sm italic text-white/55">"{gift.giftMessage}"</p>
+                    )}
+                    <div className="mt-3">
+                      <a
+                        href={`/status/${gift.paymentIdHash}`}
+                        className="app-btn-secondary px-3 py-1.5 text-xs"
+                      >
+                        View details
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
           ) : gifts.length === 0 ? (
             <div className="py-8 text-center">
               <p className="text-2xl">🎁</p>

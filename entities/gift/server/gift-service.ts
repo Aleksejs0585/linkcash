@@ -1,4 +1,4 @@
-import { Contract, Wallet, formatUnits, getAddress, parseUnits } from "ethers";
+import { Contract, type EventLog, type Log, Wallet, formatUnits, getAddress, parseUnits } from "ethers";
 import { createArcProviderWithContractCheck } from "@/lib/server/arc-chain";
 import { getArcReadEnv, getArcRelayerEnv } from "@/lib/server/env";
 import { HttpError } from "@/lib/server/http-errors";
@@ -9,6 +9,7 @@ import type {
   CreateGiftInput,
   GiftHashInput,
   ReclaimGiftInput,
+  ReceiverGiftsInput,
   SenderGiftsInput,
 } from "./gift-validation";
 
@@ -340,6 +341,54 @@ export async function getSenderGifts(input: SenderGiftsInput) {
         fundedTxHash: entry.txHash,
         reclaimTxHash: reclaimedTxHash,
       } satisfies SenderGiftItem;
+    })
+  );
+
+  return { ok: true as const, gifts };
+}
+
+const GIFT_CLAIMED_ABI = [
+  "event GiftClaimed(bytes32 indexed paymentIdHash, address indexed recipient, uint256 amount)",
+];
+
+export async function getReceivedGifts(input: ReceiverGiftsInput) {
+  const { rpcUrl, contractAddress } = getArcReadEnv();
+  const provider = await createArcProviderWithContractCheck(rpcUrl, contractAddress);
+  const contract = new Contract(contractAddress, GIFT_CLAIMED_ABI, provider);
+
+  const latestBlock = await provider.getBlockNumber();
+  const filter = contract.filters.GiftClaimed(null, input.receiverAddress);
+
+  const LOG_CHUNK = 80_000;
+  const MAX_CHUNKS = 8;
+  let toBlock = latestBlock;
+  const logs: EventLog[] = [];
+
+  for (let i = 0; i < MAX_CHUNKS && toBlock >= 0; i++) {
+    const fromBlock = Math.max(0, toBlock - LOG_CHUNK);
+    const batch = await contract.queryFilter(filter, fromBlock, toBlock);
+    for (const log of batch) {
+      if ((log as EventLog).args) logs.push(log as EventLog);
+    }
+    if (fromBlock === 0) break;
+    toBlock = fromBlock - 1;
+  }
+
+  logs.sort((a, b) => b.blockNumber - a.blockNumber);
+
+  const gifts = await Promise.all(
+    logs.map(async (log) => {
+      const paymentIdHash = log.args[0] as string;
+      const amount = log.args[2] as bigint;
+      const metadata = await giftMetadataStore.get(paymentIdHash);
+      return {
+        paymentIdHash,
+        amountUsdc: formatUnits(amount, 6),
+        txHash: log.transactionHash,
+        senderDisplayName: metadata?.senderDisplayName ?? null,
+        giftMessage: metadata?.giftMessage ?? null,
+        claimedAt: metadata?.createdAt ?? null,
+      };
     })
   );
 

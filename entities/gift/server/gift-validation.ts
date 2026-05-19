@@ -127,3 +127,13 @@ export function parseSenderGiftsInput(senderAddress: string | null): SenderGifts
   return { senderAddress: value };
 }
 
+export type ReceiverGiftsInput = { receiverAddress: string };
+
+export function parseReceiverGiftsInput(receiverAddress: string | null): ReceiverGiftsInput {
+  const value = receiverAddress?.trim();
+  if (!value || !isAddress(value)) {
+    throw new HttpError(400, "receiverAddress query param must be a valid address.");
+  }
+  return { receiverAddress: value };
+}
+

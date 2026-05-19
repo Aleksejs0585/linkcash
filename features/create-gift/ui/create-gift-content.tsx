@@ -144,6 +144,22 @@ export function CreateGiftContent() {
               <label htmlFor="amount" className="app-section-label">
                 Gift amount (USDC)
               </label>
+              <div className="mb-2 flex gap-2">
+                {["5", "10", "25", "50"].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setAmount(preset)}
+                    className={`rounded-lg border px-3 py-1.5 text-sm transition ${
+                      amount === preset
+                        ? "border-white/40 bg-white/15 text-white"
+                        : "border-white/12 bg-white/5 text-white/55 hover:border-white/25 hover:text-white/80"
+                    }`}
+                  >
+                    ${preset}
+                  </button>
+                ))}
+              </div>
               <input
                 id="amount"
                 type="number"
