@@ -35,6 +35,7 @@ type GiftDetailsResponse =
       claimed: boolean;
       senderDisplayName?: string;
       giftMessage?: string;
+      createdAt?: string | null;
     }
   | {
       ok: false;
@@ -93,6 +94,7 @@ function GiftClaimContent() {
   );
   const [giftMessage, setGiftMessage] = useState<string | null>(null);
   const [expiresAtSec, setExpiresAtSec] = useState<number | null>(null);
+  const [createdAtSec, setCreatedAtSec] = useState<number | null>(null);
   const [giftLoading, setGiftLoading] = useState(true);
   const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -133,6 +135,9 @@ function GiftClaimContent() {
           setExpiresAtSec(data.expiresAt);
           setSenderDisplayName(data.senderDisplayName?.trim() || null);
           setGiftMessage(data.giftMessage?.trim() || null);
+          if (data.createdAt) {
+            setCreatedAtSec(Math.floor(new Date(data.createdAt).getTime() / 1000));
+          }
         })
         .catch((e) => {
           setStatus(
@@ -291,6 +296,16 @@ function GiftClaimContent() {
       ? "Checking expiry..."
       : formatExpiryRemaining(remainingSeconds);
 
+  const expiryProgressPct = (() => {
+    if (remainingSeconds === null || remainingSeconds <= 0) return 0;
+    if (expiresAtSec && createdAtSec) {
+      const total = expiresAtSec - createdAtSec;
+      if (total > 0) return Math.max(0, Math.min(100, (remainingSeconds / total) * 100));
+    }
+    // Fallback: assume 24h total
+    return Math.max(0, Math.min(100, (remainingSeconds / 86400) * 100));
+  })();
+
   return (
     <AppShell className="flex items-center justify-center px-4 py-8 sm:px-5 sm:py-10">
       <motion.div
@@ -346,6 +361,16 @@ function GiftClaimContent() {
                     ? "Gift expired"
                     : `Expires in ${expiryLabel}`}
               </p>
+              {remainingSeconds !== null && remainingSeconds > 0 && (
+                <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className={`h-full rounded-full transition-all duration-1000 ${
+                      expiryUrgent ? "bg-rose-400" : expiryProgressPct < 30 ? "bg-amber-400" : "bg-emerald-400"
+                    }`}
+                    style={{ width: `${expiryProgressPct}%` }}
+                  />
+                </div>
+              )}
             </motion.div>
           ) : (
             <div className="space-y-2">

@@ -270,6 +270,7 @@ export async function getGiftByHash(input: GiftHashInput) {
     claimed: gift.claimed,
     senderDisplayName: metadata?.senderDisplayName,
     giftMessage: metadata?.giftMessage,
+    createdAt: metadata?.createdAt ?? null,
   };
 }
 

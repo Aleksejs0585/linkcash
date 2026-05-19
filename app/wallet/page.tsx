@@ -139,7 +139,19 @@ function WalletContent() {
             <div className="h-9 w-full rounded-[var(--radius-sm)] bg-white/8" />
           </div>
         ) : !authenticated ? (
-          <div className="space-y-2">
+          <div className="space-y-4">
+            <div className="space-y-2.5 rounded-xl border border-white/8 bg-white/4 p-4">
+              {[
+                { icon: "⚡", text: "Ready in 10 seconds — no setup" },
+                { icon: "🔑", text: "Created with Google, no seed phrase" },
+                { icon: "💵", text: "Receive and hold USDC on Arc" },
+              ].map(({ icon, text }) => (
+                <div key={text} className="flex items-center gap-3 text-sm text-white/70">
+                  <span className="text-base leading-none">{icon}</span>
+                  <span>{text}</span>
+                </div>
+              ))}
+            </div>
             <button
               type="button"
               onClick={() => void login()}
