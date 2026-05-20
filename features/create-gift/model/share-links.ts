@@ -15,15 +15,16 @@ export type ShareLinkItem = {
   iconColor: string;
 };
 
-export function buildShareLinks(link: string): ShareLinkItem[] {
-  const shareText = "I sent you a USDC gift on LinkCash. Claim it here";
+export function buildShareLinks(link: string, amountUsdc?: string): ShareLinkItem[] {
+  const amount = amountUsdc ? `$${amountUsdc} USDC` : "USDC";
+  const shareText = `🎁 You've got a ${amount} gift! Claim it in under 60 seconds — no wallet needed, just sign in with Google:`;
   const encodedLink = encodeURIComponent(link);
   const encodedText = encodeURIComponent(shareText);
 
   return [
     {
       label: "WhatsApp",
-      href: `https://wa.me/?text=${encodedText}%20${encodedLink}`,
+      href: `https://wa.me/?text=${encodedText}%0A${encodedLink}`,
       icon: FaWhatsapp,
       iconColor: "#25D366",
     },
@@ -36,8 +37,8 @@ export function buildShareLinks(link: string): ShareLinkItem[] {
     {
       label: "Gmail",
       href: `mailto:?subject=${encodeURIComponent(
-        "You received a USDC gift"
-      )}&body=${encodedText}%0A${encodedLink}`,
+        `You've got a ${amount} gift on LinkCash`
+      )}&body=${encodedText}%0A%0A${encodedLink}`,
       icon: SiGmail,
       iconColor: "#EA4335",
     },

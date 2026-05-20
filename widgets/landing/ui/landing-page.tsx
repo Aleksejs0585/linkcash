@@ -33,7 +33,7 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
         <Link href="/" className="landing-nav-logo">
           <LinkCashLogo />
         </Link>
-        <span className="landing-nav-badge">Arc Testnet</span>
+        <span className="landing-nav-badge">🧪 Testnet — no real funds</span>
         <div className="landing-nav-actions">
           <a href="#how" className="landing-btn-ghost">
             How it works
@@ -51,21 +51,21 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
 
         <div className="landing-hero-label">
           <span className="landing-hero-label-dot" aria-hidden />
-          Social-first crypto onboarding
+          Built on Arc Testnet · Powered by Circle Wallets
         </div>
 
         <h1>
-          Send money
+          Want to send $10
           <br />
-          <span className="accent">like a message.</span>
+          <span className="accent">to a friend?</span>
           <br />
-          <span className="dim">No wallet needed.</span>
+          <span className="dim">They don&apos;t need a wallet.</span>
         </h1>
 
         <p className="landing-hero-sub">
-          Share a link. Recipient signs in with <strong>Google</strong>, gets a
-          Circle wallet, claims USDC — <strong>under 60 seconds</strong>, zero
-          gas, zero setup.
+          Share a link. They sign in with <strong>Google</strong>, get a wallet
+          instantly, and claim USDC — <strong>under 60 seconds</strong>, zero
+          gas, zero setup. No seed phrases. No confusion.
         </p>
 
         <div className="landing-hero-cta">

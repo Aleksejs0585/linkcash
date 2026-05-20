@@ -106,7 +106,7 @@ export function useCreateGift() {
   const giftContractAddress = useMemo(() => getPublicGiftContractAddress(), []);
   const hasGiftContractConfig = Boolean(giftContractAddress);
 
-  const shareLinks = useMemo(() => buildShareLinks(link), [link]);
+  const shareLinks = useMemo(() => buildShareLinks(link, amount), [link, amount]);
   const statusLink = useMemo(
     () => (paymentIdHash ? generateStatusLink(paymentIdHash) : ""),
     [paymentIdHash]

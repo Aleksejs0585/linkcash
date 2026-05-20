@@ -1,127 +1,135 @@
-# Arc Gift App
+# LinkCash — Send USDC like a message
 
-Next.js app for funding, sharing, claiming, and reclaiming time-limited USDC gifts on Arc Testnet.
+**Live demo:** [linkcash.app](https://linkcash.app) · **Testnet:** Arc L1 · **Stack:** Next.js, Circle Wallets, Solidity
 
-## Auth and wallets (Circle)
+---
 
-This app uses **Circle user-controlled wallets** with **Google** sign-in (Programmable Wallets Web SDK). Configure Circle Console (User Controlled → Configurator) with your Google OAuth Web client id, and add env vars below.
+## The Problem
 
-## Setup
+Sending crypto to someone who doesn't have a wallet is broken.
 
-1. Install dependencies:
+You have to tell them: *"Install MetaMask, write down your seed phrase, add the Arc network, get some gas..."* — by that point they've given up.
+
+## The Solution
+
+LinkCash turns a crypto transfer into a link.
+
+1. **Sender** creates a gift link in 30 seconds (Google sign-in, no seed phrase)
+2. **Link** is shared via WhatsApp, Telegram, or any messenger
+3. **Recipient** clicks the link, signs in with Google, gets a wallet instantly, and claims USDC — all in under 60 seconds
+
+No seed phrases. No gas fees for the recipient. No crypto knowledge required.
+
+---
+
+## Architecture
+
+```
+Sender (Circle SCA wallet)
+  │
+  ├─ approve USDC + fundGift() ──► VibeLinkGift.sol (Arc Testnet)
+  │                                       │
+  └─ shares link with secret hash         │
+                                          │
+Recipient opens link                      │
+  │                                       │
+  ├─ Google OAuth → Circle wallet         │
+  └─ claim(hash, recipientAddress) ───────┘
+        (relayer pays gas)
+```
+
+**Key insight:** The gift secret is in the URL fragment (`#secret`) — it never hits the server. Only the `keccak256(secret)` is stored on-chain. The link IS the key.
+
+---
+
+## Smart Contract
+
+`VibeLinkGift.sol` — deployed at `0x93fEF97173Af2Da909Fe83961421199B9dB17111` on Arc Testnet
+
+```solidity
+fundGift(bytes32 paymentIdHash, uint256 amount, address refundAddress, uint64 expiresAt)
+claim(bytes32 paymentIdHash, address recipient)
+reclaimExpiredGift(bytes32 paymentIdHash)
+```
+
+- **Gasless for recipient** — relayer calls `claim()` on behalf of recipient
+- **Self-custodial** — USDC pulled directly from sender's Circle SCA wallet
+- **Time-limited** — sender can reclaim if unclaimed after expiry
+- **CEI pattern** — re-entrancy safe
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | Next.js 15, Tailwind CSS, Framer Motion |
+| Wallets | Circle Programmable Wallets (User-Controlled, SCA) |
+| Auth | Google OAuth via Circle SDK |
+| Blockchain | Arc L1 Testnet (EVM-compatible) |
+| Token | USDC (native on Arc) |
+| Smart Contract | Solidity 0.8.x, no external dependencies |
+| Relayer | Server-side ethers.js wallet pays gas |
+| Storage | JSONL logs + optional Upstash Redis |
+
+---
+
+## Running Locally
 
 ```bash
 npm install
-```
-
-2. Create local env file from template:
-
-```bash
 cp .env.example .env.local
-```
-
-3. Fill required secrets and addresses in `.env.local`.
-
-4. Run locally:
-
-```bash
+# fill in .env.local
 npm run dev
 ```
 
-5. Optional local Redis:
+### Required env vars
 
-```bash
-docker compose up -d redis
+```env
+NEXT_PUBLIC_CIRCLE_APP_ID=        # Circle App ID (Configurator)
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=     # Google OAuth Web client ID
+CIRCLE_API_KEY=                   # Circle Standard API key
+RPC_URL=https://rpc.testnet.arc.network
+PRIVATE_KEY=                      # Relayer wallet private key
+CONTRACT_ADDRESS=0x93fEF97173Af2Da909Fe83961421199B9dB17111
+NEXT_PUBLIC_CONTRACT_ADDRESS=0x93fEF97173Af2Da909Fe83961421199B9dB17111
+ADMIN_DASHBOARD_PASSWORD=         # Admin dashboard access
 ```
 
-## Environment variables
+---
 
-### Required in most environments
+## Key Features
 
-- `NEXT_PUBLIC_CIRCLE_APP_ID`: Circle User Controlled **App ID** (Configurator).
-- `NEXT_PUBLIC_GOOGLE_CLIENT_ID`: Google OAuth **Web** client id (authorized redirect URIs must include your app origin, e.g. `http://localhost:3000`).
-- `CIRCLE_API_KEY`: Circle **Standard** API key (server only; used by `/api/circle`).
-- `RPC_URL`: Arc RPC endpoint.
-- `PRIVATE_KEY`: Relayer private key used by server API routes.
-- `CONTRACT_ADDRESS`: Deployed gift contract address.
-- `NEXT_PUBLIC_CONTRACT_ADDRESS`: **Same** gift contract address as `CONTRACT_ADDRESS`, exposed to the browser so the sender can **approve USDC** for that contract before creating a gift.
-- `ADMIN_DASHBOARD_PASSWORD`: Password for admin dashboard login.
+- **One-click onboarding** — recipient goes from zero to funded wallet in &lt;60s
+- **No gas for recipient** — relayer covers all transaction fees
+- **Link-based security** — secret in URL fragment, hash on-chain
+- **Expiry + reclaim** — sender gets USDC back if unclaimed
+- **PWA** — installable on mobile, works offline
+- **OG images** — dynamic per-gift previews for social sharing
+- **Admin dashboard** — funnel analytics, claim audit log
 
-**Gift funding model:** USDC is pulled **from the sender’s Circle wallet** (`transferFrom` on the gift contract). The relayer (`PRIVATE_KEY`) **only pays gas** for `fundGift` / reclaim / claim relayed calls. You must **redeploy** the gift contract from the updated `VibeLinkGift.sol` so on-chain logic matches this model.
+---
 
-### Optional
+## API Endpoints
 
-- `NEXT_PUBLIC_CIRCLE_BASE_URL`: Override Circle API base (default `https://api.circle.com`).
-- `NEXT_PUBLIC_FACEBOOK_APP_ID`: Enables Messenger share link.
-- `USDC_CONTRACT_ADDRESS`: Defaults to Arc testnet USDC address.
-- `CLAIM_RATE_LIMIT_PER_MINUTE`: Claim API rate limit (default `12`).
-- `CLAIM_AUDIT_LOG_PATH`: Path for claim audit log file.
-- `SENDER_GIFT_LOG_PATH`: Path for sender gifts audit log file.
-- `ADMIN_AUDIT_LOG_PATH`: Path for admin auth audit log file.
-- `PRODUCT_ANALYTICS_LOG_PATH`: Path for funnel analytics events log file.
-- `ALERT_WEBHOOK_URL`: Optional Slack/Telegram-compatible webhook for funnel alerts.
-- `ALERT_WEBHOOK_COOLDOWN_MINUTES`: Alert repeat cooldown (default `30`).
-- `ADMIN_SESSION_SECRET`: Overrides admin session signing secret.
-- `UPSTASH_REDIS_REST_URL`: Enables persistent claim rate-limit/idempotency storage.
-- `UPSTASH_REDIS_REST_TOKEN`: Auth token for Upstash REST API.
+| Endpoint | Description |
+|----------|-------------|
+| `POST /api/create-gift` | Fund gift + persist metadata |
+| `POST /api/claim-gift` | Relay claim transaction |
+| `POST /api/reclaim-gift` | Relay reclaim for expired gift |
+| `GET /api/gift/[hash]` | Get gift details |
+| `GET /api/sender-gifts` | Sender dashboard data |
+| `GET /api/received-gifts` | Received gifts history |
+| `GET /api/health` | RPC + env health check |
+
+---
 
 ## Scripts
 
-- `npm run dev`: start Next.js dev server.
-- `npm run build`: build production bundle.
-- `npm run start`: start production server.
-- `npm run lint`: run ESLint with zero warnings policy.
-- `npm run test`: run integration tests for critical gift and claim flows.
-- `npm run logs:rotate`: archive and rotate local audit/telemetry logs.
-
-## Operational checks
-
-- Health endpoint: `GET /api/health`
-- Expected HTTP `200` in healthy state, `503` when RPC/env checks fail.
-- If Upstash env vars are missing, app still works with in-memory fallback but health response marks redis check as degraded.
-
-## Funnel telemetry
-
-- Events are ingested through `POST /api/analytics`.
-- Stored in JSONL format at `PRODUCT_ANALYTICS_LOG_PATH` (default `.logs/product-analytics.log`).
-- Tracked events:
-  - `create_open`
-  - `gift_funded`
-  - `status_open`
-  - `claim_success`
-- Enrichment fields:
-  - `source` (from `utm_source`)
-  - `campaign` (from `utm_campaign`)
-  - `referrer` (from browser referrer)
-  - `variant` (A/B experiment variant)
-- Additional quality/retention events:
-  - `wallet_open`
-  - `claim_error`
-  - `reclaim_click`
-
-## Funnel runbook
-
-- Open `/admin` and review:
-  - `Funnel (24h / 7d)`
-  - `Top sources (24h)`
-  - `Cohorts by source + campaign + day (7d)`
-  - `Quality signals (24h)`
-  - `Alerts` section for drop-off warnings.
-- Suggested thresholds:
-  - Investigate if `fund rate < 25%` with at least 20 opens/day.
-  - Investigate if `claim rate < 35%` with at least 15 funded/day.
-- Log retention:
-  - Rotate `.logs/product-analytics.log` periodically (daily/weekly) based on traffic.
-  - Archive rotated logs before cleanup if long-term trend analysis is needed.
-  - Use `npm run logs:rotate` for local/manual rotation.
-- Optional outbound alerts:
-  - Set `ALERT_WEBHOOK_URL` to send funnel drop alerts externally.
-  - `ALERT_WEBHOOK_COOLDOWN_MINUTES` prevents duplicate spam.
-
-## Deploy runbook
-
-- Verify env values are set in target environment.
-- Call `GET /api/health` before opening traffic.
-- Confirm claim logs in `.logs/claim-audit.log`, admin logs in `.logs/admin-audit.log`, and funnel logs in `.logs/product-analytics.log`.
-- For production scale, use Upstash Redis to persist claim idempotency and rate limit state across restarts.
-
+```bash
+npm run dev          # dev server
+npm run build        # production build
+npm run test         # integration tests
+npm run logs:rotate  # rotate audit logs
+node scripts/deploy-vibelink-gift.mjs  # deploy contract
+```
