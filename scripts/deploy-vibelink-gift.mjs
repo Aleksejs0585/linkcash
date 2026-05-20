@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs";
-import solc from "solc";
+import { createRequire } from "node:module";
 import { ethers } from "ethers";
+
+const require = createRequire(import.meta.url);
 
 const RPC_URL = process.env.RPC_URL;
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
@@ -11,6 +13,22 @@ const USDC_CONTRACT_ADDRESS =
 if (!RPC_URL || !PRIVATE_KEY) {
   throw new Error("Missing RPC_URL or PRIVATE_KEY in environment.");
 }
+
+// Load solc 0.8.28 via solc-js wrapper so Blockscout can verify the contract.
+// v0.8.28+commit.7893614a is available on Blockscout/arcscan.
+function loadSolc028() {
+  return new Promise((resolve, reject) => {
+    const solcjs = require("solc");
+    solcjs.loadRemoteVersion("v0.8.28+commit.7893614a", (err, compiler) => {
+      if (err) reject(err);
+      else resolve(compiler);
+    });
+  });
+}
+
+console.log("Loading solc v0.8.28...");
+const solc = await loadSolc028();
+console.log("Compiler loaded.");
 
 const source = readFileSync("contracts/VibeLinkGift.sol", "utf8");
 const input = {
@@ -51,4 +69,8 @@ const contract = await factory.deploy(USDC_CONTRACT_ADDRESS);
 console.log(`Deploy tx: ${contract.deploymentTransaction()?.hash ?? "n/a"}`);
 await contract.waitForDeployment();
 const contractAddress = await contract.getAddress();
-console.log(`Contract deployed at: ${contractAddress}`);
+console.log(`\nContract deployed at: ${contractAddress}`);
+console.log(`\nVerification settings:`);
+console.log(`  Compiler:     v0.8.28+commit.7893614a`);
+console.log(`  Optimization: No`);
+console.log(`  EVM Version:  default`);

@@ -11,6 +11,7 @@ import { getArcExplorerTxUrl } from "@/utils";
 import LinkCashLogo from "@/components/ui/linkcash-logo";
 import { HelpTrigger } from "@/components/ui/help-manual";
 import LandingFaq from "./landing-faq";
+import DemoFlow from "./demo-flow";
 
 export type { LandingTxExample };
 
@@ -74,6 +75,11 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
           <a href="#how" className="landing-btn-outline">
             See how it works
           </a>
+        </div>
+
+        {/* Demo flow */}
+        <div className="mt-10 flex justify-center">
+          <DemoFlow />
         </div>
 
         <div className="landing-stats">
