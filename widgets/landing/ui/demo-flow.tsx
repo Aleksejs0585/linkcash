@@ -38,11 +38,39 @@ const STEPS = [
           <p className="mt-1 text-sm font-bold text-white">Share the link</p>
         </div>
         <div className="w-24 h-24 rounded-xl bg-white p-2 flex items-center justify-center">
-          <div className="w-full h-full grid grid-cols-5 gap-px">
-            {Array.from({ length: 25 }).map((_, i) => (
-              <div key={i} className={`rounded-[1px] ${[0,1,2,3,4,5,9,10,14,15,19,20,21,22,23,24,7,12,17].includes(i) ? "bg-black" : "bg-white"}`} />
+          <svg viewBox="0 0 21 21" className="w-full h-full" shapeRendering="crispEdges">
+            {/* Top-left finder */}
+            <rect x="0" y="0" width="7" height="7" fill="black"/>
+            <rect x="1" y="1" width="5" height="5" fill="white"/>
+            <rect x="2" y="2" width="3" height="3" fill="black"/>
+            {/* Top-right finder */}
+            <rect x="14" y="0" width="7" height="7" fill="black"/>
+            <rect x="15" y="1" width="5" height="5" fill="white"/>
+            <rect x="16" y="2" width="3" height="3" fill="black"/>
+            {/* Bottom-left finder */}
+            <rect x="0" y="14" width="7" height="7" fill="black"/>
+            <rect x="1" y="15" width="5" height="5" fill="white"/>
+            <rect x="2" y="16" width="3" height="3" fill="black"/>
+            {/* Data modules */}
+            {[
+              [8,0],[10,0],[12,0],[9,1],[11,1],[8,2],[12,2],[9,3],[10,3],
+              [8,4],[11,4],[9,5],[12,5],[8,6],[10,6],[11,6],
+              [0,8],[2,8],[4,8],[6,8],[8,8],[10,8],[12,8],[14,8],[16,8],[18,8],[20,8],
+              [1,9],[5,9],[9,9],[13,9],[17,9],
+              [0,10],[3,10],[6,10],[8,10],[11,10],[14,10],[17,10],[20,10],
+              [2,11],[4,11],[9,11],[12,11],[15,11],[18,11],
+              [0,12],[5,12],[8,12],[10,12],[13,12],[16,12],[19,12],
+              [8,14],[10,14],[12,14],[15,14],[17,14],[20,14],
+              [9,15],[11,15],[14,15],[18,15],
+              [8,16],[12,16],[16,16],[19,16],
+              [10,17],[13,17],[15,17],[20,17],
+              [8,18],[9,18],[11,18],[14,18],[17,18],
+              [10,19],[12,19],[16,19],[19,19],
+              [8,20],[11,20],[13,20],[15,20],[18,20],[20,20],
+            ].map(([x, y]) => (
+              <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill="black"/>
             ))}
-          </div>
+          </svg>
         </div>
         <div className="w-full rounded-xl bg-white/6 border border-white/8 px-3 py-2">
           <p className="text-[10px] text-white/40 font-mono truncate">linkcash.app/gift/0x4f2a…#secret</p>

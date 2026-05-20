@@ -27,22 +27,28 @@ export const LANDING_STEPS = [
 
 export const LANDING_USE_CASES = [
   {
-    icon: "🎁",
-    title: "Gifts & Payments",
-    text: "Send money to friends and family for birthdays, travel, or splitting bills — no bank account required.",
+    icon: "🎂",
+    title: "Birthday gift",
+    text: "Send $25 to a friend. They get a link, tap it, sign in with Google — money in their wallet in 30 seconds. No crypto knowledge needed.",
     tag: "Personal",
   },
   {
-    icon: "🚀",
-    title: "Growth Campaigns",
-    text: "Reward referrals, activate new users, or run social campaigns — distribute USDC at scale via links.",
-    tag: "Marketing",
+    icon: "🍕",
+    title: "Split a bill",
+    text: "Paid for the whole dinner? Send everyone a \"pay me back\" link. They claim USDC directly to their wallet, no Venmo account required.",
+    tag: "Personal",
   },
   {
     icon: "💼",
-    title: "Creator Payouts",
-    text: "Pay contributors, freelancers, or community moderators globally — they claim when ready, no wallet setup.",
+    title: "Pay a freelancer",
+    text: "Your contractor doesn't have a crypto wallet? Just send a link. They claim $500 USDC with one Google sign-in, no setup, no exchange.",
     tag: "Business",
+  },
+  {
+    icon: "🏆",
+    title: "Reward community",
+    text: "Run a giveaway or reward top contributors. Distribute 100 gift links at once — each person claims independently, no spreadsheets.",
+    tag: "Web3",
   },
 ] as const;
 
@@ -67,6 +73,10 @@ export const LANDING_CLAIM_FEATURES = [
 
 export const LANDING_FAQ = [
   {
+    q: "Is this safe? Where do my funds go?",
+    a: "USDC is locked in a verified smart contract on Arc — not held by us. The contract code is open source. Only the recipient (who has the secret link) can claim. If unclaimed, you get it back after expiry. We never touch your funds.",
+  },
+  {
     q: "What happens if the recipient never claims?",
     a: "After the expiry time you set (in hours), the gift contract allows you to reclaim your USDC directly from the sender dashboard. Funds never get stuck.",
   },
@@ -79,8 +89,8 @@ export const LANDING_FAQ = [
     a: "A relayer covers the gas on behalf of the recipient. Since Arc uses USDC as gas and fees are around $0.01, this is sustainable. The recipient pays absolutely nothing.",
   },
   {
-    q: "Can the recipient export their wallet?",
-    a: "Yes. Circle's embedded wallets are non-custodial. Recipients can export their private key from the wallet page at any time and import it into MetaMask or any other EVM-compatible wallet.",
+    q: "Can someone steal my gift link?",
+    a: "The claim secret lives only in the URL fragment (#) — it never reaches our servers and is not stored anywhere. Only someone with the exact full link can claim. Treat it like cash.",
   },
   {
     q: "Is this on mainnet?",
