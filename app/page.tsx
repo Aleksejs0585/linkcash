@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { unstable_cache } from "next/cache";
 import "./landing.css";
 import { loadLiveTxExamples } from "@/lib/server/load-live-tx-examples";
+import { loadOnChainStats } from "@/lib/server/on-chain-stats";
 import LandingPage from "@/widgets/landing/ui/landing-page";
 
 export const metadata: Metadata = {
@@ -18,7 +19,16 @@ const getCachedLiveTxExamples = unstable_cache(
   { revalidate: 30 }
 );
 
+const getCachedOnChainStats = unstable_cache(
+  async () => loadOnChainStats(),
+  ["landing-onchain-stats-v1"],
+  { revalidate: 300 }
+);
+
 export default async function HomePage() {
-  const txExamples = await getCachedLiveTxExamples();
-  return <LandingPage txExamples={txExamples} />;
+  const [txExamples, stats] = await Promise.all([
+    getCachedLiveTxExamples(),
+    getCachedOnChainStats(),
+  ]);
+  return <LandingPage txExamples={txExamples} stats={stats} />;
 }

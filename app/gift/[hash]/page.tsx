@@ -96,6 +96,7 @@ function GiftClaimContent() {
   const [expiresAtSec, setExpiresAtSec] = useState<number | null>(null);
   const [createdAtSec, setCreatedAtSec] = useState<number | null>(null);
   const [giftLoading, setGiftLoading] = useState(true);
+  const [giftNotFound, setGiftNotFound] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [successTxHash, setSuccessTxHash] = useState<string | null>(null);
@@ -140,11 +141,12 @@ function GiftClaimContent() {
           }
         })
         .catch((e) => {
-          setStatus(
-            e instanceof Error
-              ? e.message
-              : "Failed to load gift amount. Try refreshing."
-          );
+          const msg = e instanceof Error ? e.message : "";
+          if (msg.toLowerCase().includes("not found") || msg.toLowerCase().includes("404")) {
+            setGiftNotFound(true);
+          } else {
+            setStatus(msg || "Failed to load gift amount. Try refreshing.");
+          }
         })
         .finally(() => setGiftLoading(false));
     }, 0);
@@ -305,6 +307,40 @@ function GiftClaimContent() {
     // Fallback: assume 24h total
     return Math.max(0, Math.min(100, (remainingSeconds / 86400) * 100));
   })();
+
+  if (giftNotFound) {
+    return (
+      <AppShell className="flex items-center justify-center px-4 py-8 sm:px-5 sm:py-10">
+        <GlassCard className="relative z-[1] w-full max-w-[420px] space-y-6 p-8 text-center">
+          <div className="flex justify-start">
+            <MainMenu />
+          </div>
+          <div className="space-y-3">
+            <p className="text-5xl">🎁</p>
+            <h1 className="app-heading text-2xl">Gift not found</h1>
+            <p className="soft-text text-sm">
+              This gift link is invalid, already claimed, or has expired.
+              Make sure you&apos;re using the full link from the sender.
+            </p>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Link
+              href="/create"
+              className="accent-gradient inline-flex w-full items-center justify-center rounded-[var(--radius)] px-5 py-3 text-sm font-medium"
+            >
+              Send a gift →
+            </Link>
+            <Link
+              href="/"
+              className="app-btn-secondary inline-flex w-full items-center justify-center px-5 py-2.5 text-sm"
+            >
+              Go home
+            </Link>
+          </div>
+        </GlassCard>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell className="flex items-center justify-center px-4 py-8 sm:px-5 sm:py-10">

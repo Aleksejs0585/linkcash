@@ -6,6 +6,7 @@ import {
 } from "../model/content";
 import { shortTxHash, txRowIcon, txStatusLabel } from "../lib/tx-display";
 import type { LandingTxExample } from "@/lib/server/load-live-tx-examples";
+import type { OnChainStats } from "@/lib/server/on-chain-stats";
 import { getArcExplorerTxUrl } from "@/utils";
 import LinkCashLogo from "@/components/ui/linkcash-logo";
 import { HelpTrigger } from "@/components/ui/help-manual";
@@ -15,9 +16,16 @@ export type { LandingTxExample };
 
 type LandingPageProps = {
   txExamples: LandingTxExample[];
+  stats: OnChainStats;
 };
 
-export default function LandingPage({ txExamples }: LandingPageProps) {
+function formatUsdcStat(raw: string): string {
+  const n = parseFloat(raw);
+  if (n >= 1000) return `$${(n / 1000).toFixed(1)}K`;
+  return `$${Math.round(n)}`;
+}
+
+export default function LandingPage({ txExamples, stats }: LandingPageProps) {
   return (
     <div className="landing-page">
       <nav className="landing-nav">
@@ -80,13 +88,17 @@ export default function LandingPage({ txExamples }: LandingPageProps) {
           </div>
           <div className="landing-stat-divider" aria-hidden />
           <div>
-            <span className="landing-stat-num">0</span>
-            <span className="landing-stat-label">Steps to set up wallet</span>
+            <span className="landing-stat-num">
+              {stats.totalClaimed > 0 ? stats.totalClaimed.toLocaleString() : "—"}
+            </span>
+            <span className="landing-stat-label">Gifts claimed</span>
           </div>
           <div className="landing-stat-divider" aria-hidden />
           <div>
-            <span className="landing-stat-num">USDC</span>
-            <span className="landing-stat-label">On Arc Testnet</span>
+            <span className="landing-stat-num">
+              {parseFloat(stats.totalUsdcClaimed) > 0 ? formatUsdcStat(stats.totalUsdcClaimed) : "—"}
+            </span>
+            <span className="landing-stat-label">USDC gifted</span>
           </div>
         </div>
       </section>
