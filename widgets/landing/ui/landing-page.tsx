@@ -33,7 +33,7 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
         <Link href="/" className="landing-nav-logo">
           <LinkCashLogo />
         </Link>
-        <span className="landing-nav-badge">🧪 Testnet — no real funds</span>
+        <span className="landing-nav-badge">Arc Testnet</span>
         <div className="landing-nav-actions">
           <a href="#how" className="landing-btn-ghost">
             How it works
@@ -173,36 +173,25 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
               <div className="landing-phone-frame">
                 <div className="landing-phone-glow" aria-hidden />
                 <div className="landing-claim-card">
-                  <div className="landing-claim-avatar" aria-hidden>
-                    🎁
-                  </div>
+                  <div className="landing-claim-avatar" aria-hidden>🎁</div>
                   <div className="landing-claim-from">Gift from</div>
                   <div className="landing-claim-name">Alex K.</div>
-                  <div className="landing-claim-msg">
-                    &quot;Happy birthday! 🎉&quot;
-                  </div>
+                  <div className="landing-claim-msg">&quot;Happy birthday! 🎉&quot;</div>
                   <div className="landing-claim-amount">25.00</div>
                   <div className="landing-claim-token">USDC · Arc Testnet</div>
-                  <div className="landing-claim-expiry">
-                    ⏱ Expires in 23h 41m
-                  </div>
+                  <div className="landing-claim-expiry">⏱ Expires in 23h 41m</div>
                   <div className="landing-claim-btn">Claim with Google →</div>
-                  <div className="landing-claim-login">
-                    No wallet or account needed
-                  </div>
+                  <div className="landing-claim-login">No wallet or account needed</div>
                 </div>
               </div>
             </div>
-
             <div className="landing-claim-info">
               <div className="landing-section-label">Recipient experience</div>
               <h2>The smoothest onboarding in crypto.</h2>
               <ul className="landing-claim-features">
                 {LANDING_CLAIM_FEATURES.map((feature) => (
                   <li key={feature.title} className="landing-claim-feature">
-                    <div className="landing-feature-check" aria-hidden>
-                      ✓
-                    </div>
+                    <div className="landing-feature-check" aria-hidden>✓</div>
                     <div className="landing-feature-text">
                       <strong>{feature.title}</strong>
                       <span>{feature.text}</span>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const STEPS = [
   {
@@ -149,16 +149,22 @@ const STEP_DURATION = 3000;
 export default function DemoFlow() {
   const [step, setStep] = useState(0);
   const [animating, setAnimating] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
+  const startTimer = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
       setAnimating(true);
       setTimeout(() => {
         setStep((s) => (s + 1) % STEPS.length);
         setAnimating(false);
       }, 300);
     }, STEP_DURATION);
-    return () => clearInterval(timer);
+  };
+
+  useEffect(() => {
+    startTimer();
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, []);
 
   return (
