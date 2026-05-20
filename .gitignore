@@ -33,3 +33,4 @@ coverage
 dist
 .logs
 
+contracts/out/
