@@ -142,12 +142,13 @@ function WalletContent() {
           <div className="space-y-4">
             <div className="space-y-2.5 rounded-xl border border-white/8 bg-white/4 p-4">
               {[
-                { icon: "⚡", text: "Ready in 10 seconds — no setup" },
-                { icon: "🔑", text: "Created with Google, no seed phrase" },
-                { icon: "💵", text: "Receive and hold USDC on Arc" },
+                { icon: "⚡", text: "Ready in seconds — no setup, no seed phrase" },
+                { icon: "🔑", text: "Tied to your Google account — recover anytime by signing in again" },
+                { icon: "💵", text: "Receive USDC from any wallet, including MetaMask" },
+                { icon: "🔒", text: "Private key stays in Circle's secure enclave — never exported" },
               ].map(({ icon, text }) => (
-                <div key={text} className="flex items-center gap-3 text-sm text-white/70">
-                  <span className="text-base leading-none">{icon}</span>
+                <div key={text} className="flex items-start gap-3 text-sm text-white/70">
+                  <span className="mt-0.5 shrink-0 text-base leading-none">{icon}</span>
                   <span>{text}</span>
                 </div>
               ))}
@@ -182,32 +183,38 @@ function WalletContent() {
         ) : (
           <div className="space-y-4">
             <WalletBackupWarning variant="inlineExportHint" />
+
+            {/* Address + receive */}
             <div className="app-panel p-4">
               <p className="text-xs uppercase tracking-[0.15em] text-white/60">
-                Wallet address
+                Your wallet address
               </p>
-              <p className="mt-2 break-all text-sm text-white/90">
+              <p className="mt-2 break-all font-mono text-xs text-white/90">
                 {walletAddressResolved}
               </p>
-              <div className="mt-3 flex gap-2">
+              <div className="mt-3 flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={() => void onCopy()}
                   className="app-btn-secondary px-3 py-1.5 text-xs"
                 >
-                  {copied ? "Copied" : "Copy address"}
+                  {copied ? "Copied ✓" : "Copy address"}
                 </button>
                 <a
                   href={getArcExplorerAddressUrl(walletAddressResolved)}
                   target="_blank"
                   rel="noreferrer"
-                  className="app-btn-secondary px-3 py-1.5 text-xs app-link"
+                  className="app-btn-secondary px-3 py-1.5 text-xs"
                 >
-                  View on explorer
+                  View on explorer ↗
                 </a>
               </div>
+              <p className="mt-3 text-xs text-white/45">
+                Send USDC to this address from MetaMask or any other wallet on Arc Testnet.
+              </p>
             </div>
 
+            {/* Balance */}
             <div className="app-panel p-4">
               <p className="text-xs uppercase tracking-[0.15em] text-white/60">
                 USDC balance
@@ -232,6 +239,13 @@ function WalletContent() {
               >
                 Refresh
               </button>
+            </div>
+
+            {/* No export notice */}
+            <div className="rounded-xl border border-white/8 bg-white/3 px-4 py-3 text-xs text-white/45">
+              <span className="font-medium text-white/60">No private key export.</span>{" "}
+              This is a smart contract wallet — it cannot be imported into MetaMask.
+              To recover access, sign in with the same Google account.
             </div>
 
             <Link

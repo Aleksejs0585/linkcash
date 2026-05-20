@@ -9,7 +9,8 @@
       "Bash(curl -s \"https://developers.circle.com/api-reference/w3s/smart-contract-platform/refresh-user-token\")",
       "Bash(node --input-type=module --eval \"import\\('./scripts/seed-stats.mjs'\\).catch\\(\\(\\)=>{}\\)\")",
       "Bash(node -e ' *)",
-      "Bash(CONTRACT_ADDRESS=0x93fEF97173Af2Da909Fe83961421199B9dB17111 node scripts/seed-multi.mjs)"
+      "Bash(CONTRACT_ADDRESS=0x93fEF97173Af2Da909Fe83961421199B9dB17111 node scripts/seed-multi.mjs)",
+      "WebFetch(domain:developers.circle.com)"
     ]
   }
 }
