@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAddress, Interface, isAddress, isHexString, parseUnits } from "ethers";
 import { getArcReadEnv } from "@/lib/server/env";
+import { rateLimitedCheck } from "@/lib/server/simple-rate-limiter";
 
 const CIRCLE_BASE_URL =
   process.env.NEXT_PUBLIC_CIRCLE_BASE_URL ?? "https://api.circle.com";
@@ -60,6 +61,24 @@ async function fetchCircleWallets(userToken: string): Promise<unknown[]> {
   return inner?.wallets ?? [];
 }
 
+const ACTION_LIMITS: Record<string, number> = {
+  createDeviceToken: 10,
+  initializeUser: 5,
+  giftFundingBatchChallenge: 8,
+  refreshUserToken: 20,
+  listWallets: 30,
+  contractExecutionChallenge: 8,
+};
+
+const USDC_MAX_AMOUNT = 10_000;
+
+function getClientIp(request: Request): string {
+  return (
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    "unknown"
+  );
+}
+
 export async function POST(request: Request) {
   if (!CIRCLE_API_KEY) {
     return NextResponse.json(
@@ -68,15 +87,32 @@ export async function POST(request: Request) {
     );
   }
 
+  let body: Record<string, unknown>;
   try {
-    const body = (await request.json()) as Record<string, unknown>;
-    const action = body.action as string | undefined;
+    body = (await request.json()) as Record<string, unknown>;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+  }
+
+  const action = (body.action as string | undefined)?.trim();
+  if (!action) {
+    return NextResponse.json({ error: "Missing action." }, { status: 400 });
+  }
+
+  // Rate limit per IP+action
+  const ip = getClientIp(request);
+  const limit = ACTION_LIMITS[action] ?? 15;
+  const rl = rateLimitedCheck(`circle:${ip}:${action}`, limit);
+  if (rl.limited) {
+    return NextResponse.json(
+      { error: "Too many requests. Please wait before trying again." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
+    );
+  }
+
+  try {
     const params = { ...body };
     delete params.action;
-
-    if (!action) {
-      return NextResponse.json({ error: "Missing action" }, { status: 400 });
-    }
 
     switch (action) {
       case "createDeviceToken": {
@@ -336,6 +372,12 @@ export async function POST(request: Request) {
             { status: 400 }
           );
         }
+        if (amountNum > USDC_MAX_AMOUNT) {
+          return NextResponse.json(
+            { error: `amountUsdc cannot exceed ${USDC_MAX_AMOUNT} USDC.` },
+            { status: 400 }
+          );
+        }
 
         let arc: { contractAddress: string; usdcAddress: string };
         try {
@@ -490,9 +532,11 @@ export async function POST(request: Request) {
         );
     }
   } catch (error) {
-    console.error("Error in /api/circle:", error);
+    const msg = error instanceof Error ? error.message : "Unexpected error.";
+    const isCircleError = msg.includes("Circle") || msg.includes("circle");
+    console.error("Error in /api/circle:", msg);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: isCircleError ? msg : "Failed to process wallet request. Please try again." },
       { status: 500 }
     );
   }
