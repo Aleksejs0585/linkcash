@@ -808,10 +808,22 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
       if (!userToken || !encryptionKey) {
         throw new Error("You must be signed in.");
       }
-      await executeChallengePromise(sdk, challengeId, {
-        userToken,
-        encryptionKey,
-      });
+      try {
+        await executeChallengePromise(sdk, challengeId, {
+          userToken,
+          encryptionKey,
+        });
+      } catch (e) {
+        const raw = e instanceof Error ? e.message : String(e);
+        if (shouldResetCircleDeviceBinding(raw)) {
+          clearCircleSession();
+          setUserToken(null);
+          setEncryptionKey(null);
+          setWallets([]);
+          setDeviceIdResetKey((k) => k + 1);
+        }
+        throw e;
+      }
     },
     [userToken, encryptionKey]
   );

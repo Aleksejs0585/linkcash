@@ -1,4 +1,16 @@
+export function isDeviceBindingError(message: string): boolean {
+  return (
+    /device id is not found/i.test(message) ||
+    /provided device id is not found/i.test(message) ||
+    /device token is invalid/i.test(message)
+  );
+}
+
 export function formatGiftTxError(message: string): string {
+  if (isDeviceBindingError(message)) {
+    return "Wallet session expired. Please sign out and sign in with Google again.";
+  }
+
   if (/gift active/i.test(message)) {
     return "This gift is still active. You can reclaim USDC only after the expiry time.";
   }
