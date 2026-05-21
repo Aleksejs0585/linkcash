@@ -164,7 +164,7 @@ export function GiftLinkModal({
                   type="button"
                   onClick={onReclaim}
                   disabled={reclaiming}
-                  className="app-btn-secondary mt-4 w-full px-4 py-2 text-sm font-medium disabled:opacity-65"
+                  className="app-btn-secondary mt-4 w-full px-4 py-2 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {reclaiming ? "Reclaiming..." : "Reclaim expired gift"}
                 </button>

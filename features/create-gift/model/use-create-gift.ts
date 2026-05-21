@@ -326,7 +326,7 @@ export function useCreateGift() {
       await navigator.clipboard.writeText(link);
       setCopied(true);
       toast("Link copied!", "success");
-      setTimeout(() => setCopied(false), 1800);
+      setTimeout(() => setCopied(false), 1200);
     } catch {
       toast("Could not copy — please copy the link manually.", "info");
     }

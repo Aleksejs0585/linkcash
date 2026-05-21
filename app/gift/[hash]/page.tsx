@@ -454,7 +454,7 @@ function GiftClaimContent() {
                 }
                 whileHover={{ scale: loading ? 1 : 1.03 }}
                 whileTap={{ scale: 0.98 }}
-                className="accent-gradient w-full rounded-[var(--radius)] px-5 py-3.5 text-base disabled:cursor-not-allowed disabled:opacity-65 sm:px-6 sm:py-4 sm:text-lg"
+                className="accent-gradient w-full rounded-[var(--radius)] px-5 py-3.5 text-base disabled:cursor-not-allowed disabled:opacity-60 disabled:cursor-not-allowed sm:px-6 sm:py-4 sm:text-lg"
               >
                 {walletSyncing
                   ? "Preparing wallet..."

@@ -13,7 +13,9 @@
       "WebFetch(domain:developers.circle.com)",
       "Bash(RPC_URL=https://rpc.testnet.arc.network PRIVATE_KEY=0xd756141c630903b51908708909b49aca8b134a020bc826629562e10b7055ed2a node scripts/deploy-vibelink-gift.mjs)",
       "Bash(Get-ChildItem -Path \"c:\\\\Arc\" -Recurse -Directory -Depth 2)",
-      "Bash(Select-Object -ExpandProperty FullName)"
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Arc\" -Directory)",
+      "Bash(Select-Object Name)"
     ]
   }
 }

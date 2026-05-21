@@ -246,7 +246,7 @@ function WalletContent() {
                 type="button"
                 onClick={() => loadBalance().catch(() => undefined)}
                 disabled={loadingBalance}
-                className="app-btn-secondary mt-3 px-3 py-1.5 text-xs disabled:opacity-50"
+                className="app-btn-secondary mt-3 px-3 py-1.5 text-xs disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 Refresh
               </button>

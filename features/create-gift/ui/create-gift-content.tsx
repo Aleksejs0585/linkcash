@@ -108,9 +108,9 @@ export function CreateGiftContent() {
                 maxLength={40}
                 value={senderDisplayName}
                 onChange={(event) => setSenderDisplayName(event.target.value)}
-                placeholder="you@example.com"
+                placeholder="Your name or email"
                 className="app-input"
-                autoComplete="email"
+                autoComplete="name"
               />
               <p className="mt-2 text-xs text-white/55">
                 Prefilled with your Google email — you can change it before sending.
@@ -287,7 +287,7 @@ export function CreateGiftContent() {
               }
               whileHover={{ scale: creating ? 1 : 1.03 }}
               whileTap={{ scale: 0.98 }}
-              className="accent-gradient w-full rounded-[var(--radius)] px-5 py-3.5 text-base disabled:opacity-65 sm:px-6 sm:py-4 sm:text-lg"
+              className="accent-gradient w-full rounded-[var(--radius)] px-5 py-3.5 text-base disabled:opacity-60 disabled:cursor-not-allowed sm:px-6 sm:py-4 sm:text-lg"
             >
               {creating
                 ? "Funding gift..."
