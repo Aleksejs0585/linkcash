@@ -214,6 +214,33 @@ export function CreateGiftContent() {
           </p>
         )}
 
+        {/* Live preview */}
+        {authenticated && (
+          <motion.div
+            {...FADE_IN}
+            transition={{ ...FIELD_TRANSITION, delay: 0.15 }}
+            className="app-panel p-4 text-left"
+          >
+            <p className="app-section-label mb-3">Preview for recipient</p>
+            <div className="rounded-xl border border-white/8 bg-white/4 p-4 text-center space-y-1.5">
+              <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-lg">
+                🎁
+              </div>
+              <p className="text-xs text-white/50">Gift from</p>
+              <p className="text-sm font-semibold text-white/90 truncate">
+                {senderDisplayName || <span className="text-white/30">Your name</span>}
+              </p>
+              {giftMessage ? (
+                <p className="text-xs italic text-white/55 line-clamp-2">&quot;{giftMessage}&quot;</p>
+              ) : null}
+              <p className="text-2xl font-bold tracking-tight">
+                {amount || "0"} <span className="text-base font-normal text-white/50">USDC</span>
+              </p>
+              <p className="text-xs text-white/35">{ARC_TESTNET.chainName} · expires in {expiresInHours}h</p>
+            </div>
+          </motion.div>
+        )}
+
         {/* Action area */}
         {!ready ? (
           <p className="text-sm text-white/70">Loading wallet...</p>

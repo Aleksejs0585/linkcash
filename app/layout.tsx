@@ -5,6 +5,7 @@ import "./globals.css";
 import Providers from "./providers";
 import HelpManual from "@/components/ui/help-manual";
 import ToastContainer from "@/components/ui/toast-container";
+import PwaInstallPrompt from "@/components/ui/pwa-install-prompt";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
@@ -54,6 +55,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <Providers>{children}</Providers>
         <HelpManual />
         <ToastContainer />
+        <PwaInstallPrompt />
       </body>
     </html>
   );

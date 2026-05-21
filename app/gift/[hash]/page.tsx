@@ -472,6 +472,17 @@ function GiftClaimContent() {
                       No wallet or account needed
                     </p>
                   ) : null}
+                  <details className="text-left">
+                    <summary className="cursor-pointer text-xs text-white/35 hover:text-white/55 transition list-none flex items-center justify-center gap-1">
+                      <span>What is USDC?</span>
+                      <span aria-hidden>↓</span>
+                    </summary>
+                    <div className="mt-2 rounded-xl border border-white/8 bg-white/4 p-3 text-xs text-white/55 space-y-1.5">
+                      <p>USDC is digital money — 1 USDC = $1 USD, always. It lives on a blockchain instead of a bank.</p>
+                      <p>When you claim, a wallet is created for you automatically. No setup, no seed phrases. Just Google sign-in.</p>
+                      <p className="text-white/35">You can withdraw to a bank or spend it later.</p>
+                    </div>
+                  </details>
                   <OAuthNavHint />
                   {authError && (
                     <p className="text-xs text-rose-400">{authError}</p>
