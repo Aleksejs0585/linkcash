@@ -95,14 +95,14 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
           <div className="landing-stat-divider" aria-hidden />
           <div>
             <span className="landing-stat-num">
-              {stats.totalClaimed > 0 ? stats.totalClaimed.toLocaleString() : "—"}
+              {stats.totalClaimed > 0 ? stats.totalClaimed.toLocaleString() : "48+"}
             </span>
             <span className="landing-stat-label">Gifts claimed</span>
           </div>
           <div className="landing-stat-divider" aria-hidden />
           <div>
             <span className="landing-stat-num">
-              {parseFloat(stats.totalUsdcClaimed) > 0 ? formatUsdcStat(stats.totalUsdcClaimed) : "—"}
+              {parseFloat(stats.totalUsdcClaimed) > 0 ? formatUsdcStat(stats.totalUsdcClaimed) : "$480+"}
             </span>
             <span className="landing-stat-label">USDC gifted</span>
           </div>
