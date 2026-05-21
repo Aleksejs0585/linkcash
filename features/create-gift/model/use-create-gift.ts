@@ -165,17 +165,17 @@ export function useCreateGift() {
   }, [giftExpiresAt, reclaimAvailable, reclaimTick]);
 
   const onCreate = async () => {
-    if (!ready) return;
+    if (!ready || creating) return;
     if (!authenticated) {
       void login();
       return;
     }
+    if (walletSyncing) {
+      setStatus("Wallet is still setting up. Please wait a moment and try again.");
+      return;
+    }
     if (!senderWalletAddress) {
-      setStatus(
-        walletSyncing
-          ? "Preparing your Circle wallet on Arc Testnet..."
-          : "No sender wallet yet. Finish Google sign-in and wallet setup, then try again."
-      );
+      setStatus("No sender wallet yet. Finish Google sign-in and wallet setup, then try again.");
       return;
     }
     if (!giftContractAddress) {

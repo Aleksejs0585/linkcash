@@ -144,8 +144,10 @@ function GiftClaimContent() {
           const msg = e instanceof Error ? e.message : "";
           if (msg.toLowerCase().includes("not found") || msg.toLowerCase().includes("404")) {
             setGiftNotFound(true);
+          } else if (!msg || msg.toLowerCase().includes("failed to fetch") || msg.toLowerCase().includes("network")) {
+            setStatus("Network error — check your connection and refresh.");
           } else {
-            setStatus(msg || "Failed to load gift amount. Try refreshing.");
+            setStatus(msg || "Failed to load gift. Try refreshing.");
           }
         })
         .finally(() => setGiftLoading(false));
@@ -361,9 +363,9 @@ function GiftClaimContent() {
             </p>
           )}
           {!giftLoading && !hasSecret && (
-            <div className="rounded-xl border border-amber-500/30 bg-amber-950/30 px-4 py-3 text-sm text-amber-300">
-              This link is missing the claim secret. Make sure you opened the
-              full gift link — not the status link.
+            <div className="rounded-xl border border-amber-500/30 bg-amber-950/30 px-4 py-3 text-sm text-amber-300 space-y-2">
+              <p>This link is missing the claim secret — it looks like a status link, not the full gift link.</p>
+              <p className="text-xs text-amber-400/80">Ask the sender to share the original gift link (it contains a <code>#</code> at the end).</p>
             </div>
           )}
           {giftLoading ? (

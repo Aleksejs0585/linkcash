@@ -82,12 +82,13 @@ export default function GiftStatusPage() {
     [result?.status]
   );
 
-  const loadStatus = useCallback(async () => {
+  const loadStatus = useCallback(async (signal?: AbortSignal) => {
     if (!hash) return;
     try {
-      const response = await fetch(`/api/status/${hash}`, { method: "GET" });
+      const response = await fetch(`/api/status/${hash}`, { method: "GET", signal });
+      if (signal?.aborted) return;
       const data = (await response.json()) as PublicStatusResponse;
-      if (!data) return;
+      if (signal?.aborted || !data) return;
       setResult(data);
       setLastUpdated(new Date().toISOString());
 
@@ -113,7 +114,9 @@ export default function GiftStatusPage() {
   }, [hash]);
 
   useEffect(() => {
-    void loadStatus();
+    const controller = new AbortController();
+    void loadStatus(controller.signal);
+    return () => controller.abort();
   }, [loadStatus]);
 
   useEffect(() => {
@@ -126,11 +129,15 @@ export default function GiftStatusPage() {
 
   const onCopyStatusLink = async () => {
     if (!hash) return;
-    await navigator.clipboard.writeText(
-      `${window.location.origin}/status/${hash}`
-    );
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1200);
+    try {
+      await navigator.clipboard.writeText(
+        `${window.location.origin}/status/${hash}`
+      );
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1200);
+    } catch {
+      /* clipboard unavailable — user can copy manually */
+    }
   };
 
   const visibleHash = hash || "unknown";
