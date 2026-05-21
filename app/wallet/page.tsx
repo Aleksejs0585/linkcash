@@ -103,9 +103,13 @@ function WalletContent() {
 
   const onCopy = async () => {
     if (!walletAddressResolved) return;
-    await navigator.clipboard.writeText(walletAddressResolved);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1200);
+    try {
+      await navigator.clipboard.writeText(walletAddressResolved);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1200);
+    } catch {
+      setError("Could not copy — please copy the address manually.");
+    }
   };
 
   return (
@@ -170,8 +174,15 @@ function WalletContent() {
             <p className="rounded-xl border border-white/10 bg-black/30 p-3 text-sm text-amber-300">
               {walletSyncing
                 ? "Finishing Circle wallet setup..."
-                : "No Arc wallet yet. Sign out and sign in with Google again, or wait a few seconds and refresh."}
+                : "No Arc wallet yet. Wait a few seconds and refresh, or sign out and sign in again."}
             </p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="accent-gradient w-full px-4 py-2.5 text-sm"
+            >
+              Refresh
+            </button>
             <button
               type="button"
               onClick={logout}

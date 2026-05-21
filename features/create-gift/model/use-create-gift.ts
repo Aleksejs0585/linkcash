@@ -120,6 +120,15 @@ export function useCreateGift() {
     });
   }, [createCopyVariant]);
 
+  // Reset transient state when user logs out
+  useEffect(() => {
+    if (!authenticated) {
+      setStatus(null);
+      setCreating(false);
+      setReclaiming(false);
+    }
+  }, [authenticated]);
+
   const suggestedSenderName = useMemo(
     () =>
       resolveDefaultSenderLabel(
@@ -278,7 +287,7 @@ export function useCreateGift() {
   };
 
   const onReclaim = async () => {
-    if (!paymentIdHash) return;
+    if (!paymentIdHash || reclaiming) return;
     setReclaiming(true);
     setStatus(null);
     trackEvent({
@@ -313,10 +322,14 @@ export function useCreateGift() {
 
   const onCopy = async () => {
     if (!link) return;
-    await navigator.clipboard.writeText(link);
-    setCopied(true);
-    toast("Link copied!", "success");
-    setTimeout(() => setCopied(false), 1800);
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+      toast("Link copied!", "success");
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      toast("Could not copy — please copy the link manually.", "info");
+    }
   };
 
   const onShareClick = (label: string, href: string | null) => {

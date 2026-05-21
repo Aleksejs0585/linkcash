@@ -224,6 +224,7 @@ function GiftClaimContent() {
   );
 
   const runClaim = useCallback(async () => {
+    if (loading) return;
     if (!receiverAddress) {
       setStatus(
         walletSyncing

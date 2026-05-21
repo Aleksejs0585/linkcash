@@ -234,11 +234,20 @@ function SenderDashboardContent() {
               {authError && <p className="text-sm text-rose-400">{authError}</p>}
             </div>
           ) : !senderWalletAddress ? (
-            <p className="rounded-xl border border-white/10 bg-black/30 p-3 text-sm text-amber-300">
-              {walletSyncing
-                ? "Circle wallet is finishing setup..."
-                : "No wallet address for this session yet."}
-            </p>
+            <div className="space-y-2">
+              <p className="rounded-xl border border-white/10 bg-black/30 p-3 text-sm text-amber-300">
+                {walletSyncing
+                  ? "Circle wallet is finishing setup..."
+                  : "No wallet address for this session yet."}
+              </p>
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="app-btn-secondary w-full px-3 py-2 text-sm"
+              >
+                Refresh
+              </button>
+            </div>
           ) : (
             <p className="break-all text-xs text-white/40">
               {senderWalletAddress}
@@ -300,6 +309,13 @@ function SenderDashboardContent() {
               <div className="py-8 text-center">
                 <p className="text-2xl">📭</p>
                 <p className="mt-2 text-sm text-white/60">No received gifts yet.</p>
+                <p className="mt-1 text-xs text-white/35">Ask someone to send you a gift link!</p>
+                <Link
+                  href="/create"
+                  className="mt-3 inline-block text-sm text-[var(--accent)] underline-offset-2 hover:underline"
+                >
+                  Send a gift →
+                </Link>
               </div>
             ) : (
               <div className="space-y-3">
