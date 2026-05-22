@@ -94,7 +94,11 @@ export function useCreateGift() {
     () =>
       resolveDefaultSenderLabel(readGoogleEmail(), readGoogleDisplayName()) ?? ""
   );
-  const [giftMessage, setGiftMessage] = useState("");
+  const [giftMessage, setGiftMessage] = useState(() => {
+    if (typeof window === "undefined") return "";
+    const msg = new URLSearchParams(window.location.search).get("msg");
+    return msg ? msg.slice(0, 200) : "";
+  });
   const [creating, setCreating] = useState(false);
   const [reclaiming, setReclaiming] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
