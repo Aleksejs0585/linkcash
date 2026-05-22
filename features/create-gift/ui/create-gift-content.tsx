@@ -190,8 +190,8 @@ export function CreateGiftContent() {
                 className="app-input"
               />
               {senderWalletAddress ? (
-                <p className="mt-2 break-all text-xs text-white/60">
-                  Refund wallet: {senderWalletAddress}
+                <p className="mt-2 text-xs text-white/40">
+                  Refund wallet: {senderWalletAddress.slice(0, 6)}…{senderWalletAddress.slice(-4)}
                 </p>
               ) : (
                 <p className="mt-2 text-xs text-amber-300">
@@ -221,7 +221,7 @@ export function CreateGiftContent() {
             transition={{ ...FIELD_TRANSITION, delay: 0.15 }}
             className="app-panel p-4 text-left"
           >
-            <p className="app-section-label mb-3">Preview for recipient</p>
+            <p className="mb-3 text-xs font-medium uppercase tracking-[0.12em] text-white/35">Preview</p>
             <div className="rounded-xl border border-white/8 bg-white/4 p-4 text-center space-y-1.5">
               <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-lg">
                 🎁

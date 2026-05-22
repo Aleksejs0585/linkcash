@@ -347,7 +347,7 @@
 .landing-section {
   position: relative;
   z-index: 1;
-  padding: 100px 24px;
+  padding: 72px 24px;
 }
 
 .landing-container {
@@ -385,7 +385,7 @@
 /* Tech strip */
 .landing-tech {
   border-top: 1px solid var(--lp-border);
-  padding: 40px 24px;
+  padding: 24px 24px;
   position: relative;
   z-index: 1;
 }

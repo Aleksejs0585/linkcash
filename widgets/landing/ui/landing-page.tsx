@@ -79,7 +79,10 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
 
         {/* Demo flow */}
         <div className="mt-10 flex justify-center">
-          <DemoFlow />
+          <div className="relative">
+            <div className="absolute inset-0 -z-10 blur-3xl opacity-30 rounded-full" style={{ background: "radial-gradient(ellipse at center, #7c3aed 0%, #06b6d4 60%, transparent 100%)" }} aria-hidden />
+            <DemoFlow />
+          </div>
         </div>
 
         <div className="landing-stats">
@@ -228,6 +231,7 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
         </div>
       </section>
 
+      {txExamples.length > 0 && (
       <section className="landing-section" style={{ paddingTop: 0 }}>
         <div className="landing-container">
           <div className="landing-section-label">Live transactions</div>
@@ -237,44 +241,36 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
           </p>
 
           <div className="landing-tx-panel">
-            {txExamples.length === 0 ? (
-              <p className="landing-tx-empty">
-                No recent onchain activity yet. New gifts and claims appear here
-                within about a minute after they confirm on Arc.
-              </p>
-            ) : (
-              txExamples.map((item) => (
-                <a
-                  key={`${item.txHash}-${item.timestamp}`}
-                  href={getArcExplorerTxUrl(item.txHash)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="landing-tx-row"
-                >
-                  <div className="landing-tx-icon" aria-hidden>
-                    {txRowIcon(item.label)}
+            {txExamples.map((item) => (
+              <a
+                key={`${item.txHash}-${item.timestamp}`}
+                href={getArcExplorerTxUrl(item.txHash)}
+                target="_blank"
+                rel="noreferrer"
+                className="landing-tx-row"
+              >
+                <div className="landing-tx-icon" aria-hidden>
+                  {txRowIcon(item.label)}
+                </div>
+                <div className="landing-tx-info">
+                  <div className="landing-tx-title">{item.label}</div>
+                  <div className="landing-tx-hash">
+                    {shortTxHash(item.txHash)}
                   </div>
-                  <div className="landing-tx-info">
-                    <div className="landing-tx-title">{item.label}</div>
-                    <div className="landing-tx-hash">
-                      {shortTxHash(item.txHash)}
-                    </div>
-                  </div>
-                  <span className="landing-tx-status">
-                    {txStatusLabel(item.label)}
-                  </span>
-                </a>
-              ))
-            )}
+                </div>
+                <span className="landing-tx-status">
+                  {txStatusLabel(item.label)}
+                </span>
+              </a>
+            ))}
           </div>
-          {txExamples.length > 0 ? (
-            <p className="landing-tx-note">
-              Last 10 onchain events (gifts, claims, reclaims), newest first.
-              Refreshes every 30 seconds.
-            </p>
-          ) : null}
+          <p className="landing-tx-note">
+            Last 10 onchain events (gifts, claims, reclaims), newest first.
+            Refreshes every 30 seconds.
+          </p>
         </div>
       </section>
+      )}
 
       <section className="landing-section landing-faq-section">
         <div className="landing-container">
