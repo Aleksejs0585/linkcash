@@ -8,7 +8,7 @@ const ABI = [
 ];
 
 const LOG_CHUNK = 8_000;
-const MAX_CHUNKS = 20;
+const MAX_CHUNKS = 500;
 
 export type OnChainStats = {
   totalClaimed: number;
