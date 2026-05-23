@@ -43,7 +43,7 @@ export async function waitForClientFundedGift(params: {
   /** Called each attempt so the UI does not look frozen */
   onProgress?: (attempt: number, max: number, detail: string) => void;
 }): Promise<OnChainGiftRow> {
-  const max = params.maxAttempts ?? 90;
+  const max = params.maxAttempts ?? 180;
   const hashSegment = encodeURIComponent(params.paymentIdHash);
   const started = Date.now();
 
@@ -89,8 +89,8 @@ export async function waitForClientFundedGift(params: {
       if (res.status === 404 || (!res.ok && "ok" in data && data.ok === false)) {
         const sec = Math.floor((Date.now() - started) / 1000);
         const hint =
-          attempt > 28
-            ? "Still waiting—tx may be slow, or CONTRACT_ADDRESS / NEXT_PUBLIC_CONTRACT_ADDRESS mismatch on the server."
+          attempt > 60
+            ? "Arc is taking longer than usual — still watching the chain…"
             : "Waiting for your transaction to appear onchain…";
         params.onProgress?.(attempt, max, `${hint} (${sec}s)`);
       } else {
