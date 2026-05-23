@@ -145,10 +145,19 @@ function SenderDashboardContent() {
       ]);
       const sentData = (await sentRes.json()) as SenderGiftsResponse;
       const receivedData = (await receivedRes.json()) as ReceivedGiftsResponse;
-      if (!sentRes.ok || !sentData.ok) throw new Error(sentData.ok ? "Failed to load sent gifts." : sentData.error);
-      if (!receivedRes.ok || !receivedData.ok) throw new Error(receivedData.ok ? "Failed to load received gifts." : receivedData.error);
-      setGifts(sentData.gifts);
-      setReceivedGifts(receivedData.gifts);
+
+      if (sentData.ok) setGifts(sentData.gifts);
+      if (receivedData.ok) {
+        setReceivedGifts(receivedData.gifts);
+        if (receivedData.gifts.length > 0 && (!sentData.ok || sentData.gifts.length === 0)) {
+          setTab("received");
+        }
+      }
+
+      const errs: string[] = [];
+      if (!sentRes.ok || !sentData.ok) errs.push(!sentData.ok ? sentData.error : "Failed to load sent gifts.");
+      if (!receivedRes.ok || !receivedData.ok) errs.push(!receivedData.ok ? receivedData.error : "Failed to load received gifts.");
+      if (errs.length) setError(errs.join(" "));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load gifts.");
     } finally {
