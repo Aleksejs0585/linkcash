@@ -243,7 +243,12 @@ export function CreateGiftContent() {
 
         {/* Action area */}
         {!ready ? (
-          <p className="text-sm text-white/70">Loading wallet...</p>
+          <div className="flex flex-col items-center gap-3 py-4">
+            <div className="h-7 w-7 animate-spin rounded-full border-2 border-white/15 border-t-white/60" />
+            <p className="text-sm text-white/50">
+              {authError?.includes("Refreshing") ? "Reconnecting wallet…" : "Loading wallet…"}
+            </p>
+          </div>
         ) : !authenticated ? (
           <motion.div className="space-y-2">
             <motion.button

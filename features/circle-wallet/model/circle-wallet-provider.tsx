@@ -280,10 +280,24 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
       setAuthError(null);
 
       try {
-        let current = await postCircle<{ wallets: CircleChainWallet[] }>({
-          action: "listWallets",
-          userToken: token,
-        }).then((d) => d.wallets ?? []);
+        // Retry listWallets — a freshly-issued OAuth token can transiently
+        // return "invalid credentials" before Circle's backend registers it.
+        let current: CircleChainWallet[] = [];
+        let listErr: Error | null = null;
+        for (let attempt = 0; attempt < 3; attempt++) {
+          try {
+            current = await postCircle<{ wallets: CircleChainWallet[] }>({
+              action: "listWallets",
+              userToken: token,
+            }).then((d) => d.wallets ?? []);
+            listErr = null;
+            break;
+          } catch (e) {
+            listErr = e instanceof Error ? e : new Error("Failed to list wallets.");
+            if (attempt < 2) await new Promise((r) => setTimeout(r, 1200));
+          }
+        }
+        if (listErr) throw listErr;
 
         if (current.length > 0) {
           setWallets(current);
