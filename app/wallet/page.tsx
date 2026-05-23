@@ -148,7 +148,7 @@ function WalletContent() {
               {[
                 { icon: "⚡", text: "Ready in seconds — no setup, no seed phrase" },
                 { icon: "🔑", text: "Tied to your Google account — recover anytime by signing in again" },
-                { icon: "💵", text: "Receive USDC from any wallet, including MetaMask" },
+                { icon: "💵", text: "Receive USDC from any wallet or exchange" },
                 { icon: "🔒", text: "Private key stays in Circle's secure enclave — never exported" },
               ].map(({ icon, text }) => (
                 <div key={text} className="flex items-start gap-3 text-sm text-white/70">
@@ -221,7 +221,7 @@ function WalletContent() {
                 </a>
               </div>
               <p className="mt-3 text-xs text-white/45">
-                Send USDC to this address from MetaMask or any other wallet on Arc Testnet.
+                Send USDC to this address from any wallet on Arc Testnet.
               </p>
             </div>
 
@@ -255,7 +255,7 @@ function WalletContent() {
             {/* No export notice */}
             <div className="rounded-xl border border-white/8 bg-white/3 px-4 py-3 text-xs text-white/45">
               <span className="font-medium text-white/60">No private key export.</span>{" "}
-              This is a smart contract wallet — it cannot be imported into MetaMask.
+              This is a non-custodial smart contract wallet — no private key to export.
               To recover access, sign in with the same Google account.
             </div>
 
