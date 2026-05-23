@@ -271,7 +271,9 @@ function SenderDashboardContent() {
           )}
 
           {status && <p className="break-all text-sm text-emerald-300">{status}</p>}
-          {error && <p className="text-sm text-rose-400">{error}</p>}
+          {error && gifts.length === 0 && receivedGifts.length === 0 && (
+            <p className="text-sm text-rose-400">{error}</p>
+          )}
         </GlassCard>
 
         {/* Gifts list */}

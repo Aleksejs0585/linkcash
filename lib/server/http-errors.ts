@@ -16,6 +16,17 @@ export class HttpError extends Error {
 }
 
 export function errorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error ? error.message : fallback;
+  const msg = error instanceof Error ? error.message : fallback;
+  // Suppress raw ethers/RPC noise — rate limit, coalesce errors, etc.
+  if (
+    msg.includes("could not coalesce") ||
+    msg.includes("request limit reached") ||
+    msg.includes("rate limit") ||
+    msg.includes("-32007") ||
+    msg.includes("UNKNOWN_ERROR")
+  ) {
+    return fallback;
+  }
+  return msg;
 }
 
