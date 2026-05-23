@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getAddress, Interface, isAddress, isHexString, parseUnits } from "ethers";
+import { Contract, formatUnits, getAddress, Interface, isAddress, isHexString, JsonRpcProvider, parseUnits } from "ethers";
+import { ARC_TESTNET } from "@/utils";
 import { getArcReadEnv } from "@/lib/server/env";
 import { rateLimitedCheck } from "@/lib/server/simple-rate-limiter";
 
@@ -379,7 +380,7 @@ export async function POST(request: Request) {
           );
         }
 
-        let arc: { contractAddress: string; usdcAddress: string };
+        let arc: { rpcUrl: string; contractAddress: string; usdcAddress: string };
         try {
           arc = getArcReadEnv();
         } catch {
@@ -425,6 +426,32 @@ export async function POST(request: Request) {
             { error: "Invalid USDC amount format." },
             { status: 400 }
           );
+        }
+
+        try {
+          const balanceProvider = new JsonRpcProvider(arc.rpcUrl, ARC_TESTNET.chainId);
+          const usdcRead = new Contract(
+            arc.usdcAddress,
+            ["function balanceOf(address) view returns (uint256)"],
+            balanceProvider
+          );
+          const balance = await Promise.race([
+            usdcRead.balanceOf(scaAddress) as Promise<bigint>,
+            new Promise<never>((_, reject) =>
+              setTimeout(() => reject(new Error("timeout")), 5_000)
+            ),
+          ]);
+          if (balance < amountRaw) {
+            const has = formatUnits(balance, 6);
+            return NextResponse.json(
+              {
+                error: `Insufficient USDC balance. Your wallet has ${has} USDC but the gift requires ${amountUsdc} USDC. Top up at the faucet and try again.`,
+              },
+              { status: 400 }
+            );
+          }
+        } catch {
+          // RPC error or timeout — let the chain decide if truly insufficient
         }
 
         const expiresAt = BigInt(

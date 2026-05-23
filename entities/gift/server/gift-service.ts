@@ -106,7 +106,7 @@ async function findFundGiftTxHash(
 ): Promise<string | null> {
   try {
     const filter = gift.filters.GiftFunded(paymentIdHash);
-    const window = 80_000;
+    const window = 9_000;
     let to = latestBlock;
     for (let wave = 0; wave < 8; wave++) {
       const from = Math.max(0, to - window);
@@ -364,8 +364,8 @@ export async function getReceivedGifts(input: ReceiverGiftsInput) {
   const latestBlock = await provider.getBlockNumber();
   const filter = contract.filters.GiftClaimed(null, input.receiverAddress);
 
-  const LOG_CHUNK = 80_000;
-  const MAX_CHUNKS = 8;
+  const LOG_CHUNK = 9_000;
+  const MAX_CHUNKS = 80;
   let toBlock = latestBlock;
   const logs: EventLog[] = [];
 
