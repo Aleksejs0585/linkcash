@@ -24,25 +24,16 @@ export default function LinkCashLogo({
           <stop offset="0%" stopColor="#22c55e" />
           <stop offset="100%" stopColor="#16a34a" />
         </linearGradient>
-        {/* Ring 1 (front) blocks Ring 2 at crossing; Ring 2 stays visible through Ring 1's hole */}
-        <mask id="lc-m">
-          <rect width="100" height="100" fill="white" />
-          <rect x="-33" y="-19" width="66" height="38" rx="19"
-            fill="black" transform="translate(63 37) rotate(-45)" />
-          <rect x="-20" y="-6" width="40" height="12" rx="6"
-            fill="white" transform="translate(63 37) rotate(-45)" />
-        </mask>
       </defs>
 
       <rect width="100" height="100" rx="24" fill="url(#lc-g)" />
 
-      {/* Ring 2 — lower-left, behind Ring 1 */}
+      {/* Ring 2 — lower-left, reads as behind via lower opacity */}
       <rect
         x="-26" y="-12" width="52" height="24" rx="12"
         fill="none" stroke="white" strokeWidth="13"
-        strokeOpacity="0.72"
+        strokeOpacity="0.55"
         transform="translate(37 63) rotate(-45)"
-        mask="url(#lc-m)"
       />
 
       {/* Ring 1 — upper-right, in front */}
