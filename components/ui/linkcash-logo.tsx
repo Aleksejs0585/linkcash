@@ -20,7 +20,6 @@ export default function LinkCashLogo({
       style={{ flexShrink: 0 }}
     >
       <defs>
-        {/* userSpaceOnUse so the fill on Ring 1's body matches the background exactly */}
         <linearGradient id="lc-g" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#22c55e" />
           <stop offset="100%" stopColor="#16a34a" />
@@ -29,26 +28,25 @@ export default function LinkCashLogo({
 
       <rect width="100" height="100" rx="24" fill="url(#lc-g)" />
 
-      {/* Ring 2 — lower-left, drawn first (behind) */}
+      {/* Ring B — "/"  diagonal (−45°), behind, slightly lower-left */}
       <rect
-        x="-26" y="-12" width="52" height="24" rx="12"
-        fill="none" stroke="white" strokeWidth="13"
-        transform="translate(37 63) rotate(-45)"
+        x="-28" y="-14" width="56" height="28" rx="14"
+        fill="none" stroke="white" strokeWidth="11" strokeOpacity="0.55"
+        transform="translate(46 54) rotate(-45)"
       />
 
-      {/* Seamless cut: fill Ring 1's body with the background gradient,
-          erasing Ring 2 wherever Ring 1 passes in front */}
+      {/* Seamless cut: Ring A's body filled with background erases Ring B at crossing */}
       <rect
-        x="-26" y="-12" width="52" height="24" rx="12"
+        x="-28" y="-14" width="56" height="28" rx="14"
         fill="url(#lc-g)"
-        transform="translate(63 37) rotate(-45)"
+        transform="translate(54 46) rotate(45)"
       />
 
-      {/* Ring 1 — upper-right, stroke drawn on top */}
+      {/* Ring A — "\"  diagonal (+45°), in front, slightly upper-right */}
       <rect
-        x="-26" y="-12" width="52" height="24" rx="12"
-        fill="none" stroke="white" strokeWidth="13"
-        transform="translate(63 37) rotate(-45)"
+        x="-28" y="-14" width="56" height="28" rx="14"
+        fill="none" stroke="white" strokeWidth="11"
+        transform="translate(54 46) rotate(45)"
       />
     </svg>
   );
