@@ -1,5 +1,6 @@
 import { appendFile, mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
+import { getUpstashClient } from "./upstash-client";
 
 export type ProductAnalyticsEvent = {
   event:
@@ -22,18 +23,21 @@ export type ProductAnalyticsEvent = {
   detail?: string;
 };
 
+const REDIS_KEY = "linkcash:analytics";
+const MAX_EVENTS = 10_000;
+
 function resolveProductAnalyticsLogPath() {
   const configured = process.env.PRODUCT_ANALYTICS_LOG_PATH?.trim();
   const cwd = /* turbopackIgnore: true */ process.cwd();
   if (configured) {
     return path.isAbsolute(configured) ? configured : path.join(cwd, configured);
   }
-
   return path.join(cwd, ".logs", "product-analytics.log");
 }
 
 class ProductAnalyticsStore {
   private readonly logPath = resolveProductAnalyticsLogPath();
+  private readonly upstash = getUpstashClient();
   private initialized = false;
 
   private async ensureDirectory() {
@@ -43,6 +47,17 @@ class ProductAnalyticsStore {
   }
 
   async write(event: ProductAnalyticsEvent) {
+    if (this.upstash) {
+      try {
+        const payload = JSON.stringify(event);
+        await this.upstash.command(["RPUSH", REDIS_KEY, payload]);
+        await this.upstash.command(["LTRIM", REDIS_KEY, -MAX_EVENTS, -1]);
+      } catch {
+        // Analytics should never break product flows.
+      }
+      return;
+    }
+
     try {
       await this.ensureDirectory();
       await appendFile(this.logPath, JSON.stringify(event) + "\n", "utf8");
@@ -52,6 +67,29 @@ class ProductAnalyticsStore {
   }
 
   async readRecent(limit = 1000): Promise<ProductAnalyticsEvent[]> {
+    if (this.upstash) {
+      try {
+        const raw = await this.upstash.command<string[]>([
+          "LRANGE",
+          REDIS_KEY,
+          -Math.max(1, limit),
+          -1,
+        ]);
+        if (!raw?.length) return [];
+        return raw
+          .map((line) => {
+            try {
+              return JSON.parse(line) as ProductAnalyticsEvent;
+            } catch {
+              return null;
+            }
+          })
+          .filter((e): e is ProductAnalyticsEvent => e !== null);
+      } catch {
+        return [];
+      }
+    }
+
     try {
       const content = await readFile(this.logPath, "utf8");
       if (!content.trim()) return [];
@@ -79,4 +117,3 @@ class ProductAnalyticsStore {
 }
 
 export const productAnalyticsStore = new ProductAnalyticsStore();
-

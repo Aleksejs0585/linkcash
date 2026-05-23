@@ -71,6 +71,47 @@ export const LANDING_CLAIM_FEATURES = [
   },
 ] as const;
 
+export const LANDING_ROADMAP = [
+  {
+    phase: "Phase 1",
+    title: "Foundation",
+    status: "done" as const,
+    date: "Shipped · May 2026",
+    items: [
+      "Smart contract on Arc Testnet",
+      "Circle Wallets + Google sign-in",
+      "Gasless relayer for recipients",
+      "48+ gifts claimed, $480+ USDC gifted",
+      "Admin funnel analytics dashboard",
+    ],
+  },
+  {
+    phase: "Phase 2",
+    title: "Production",
+    status: "active" as const,
+    date: "Q3–Q4 2026",
+    items: [
+      "Batch gift creation (multi-recipient)",
+      "Mobile PWA — offline-first experience",
+      "CCTP cross-chain gifts (testnet)",
+      "Public API for developer integrations",
+    ],
+  },
+  {
+    phase: "Phase 3",
+    title: "Ecosystem",
+    status: "planned" as const,
+    date: "Planned",
+    items: [
+      "Arc mainnet launch with real USDC",
+      "Embeddable widget for third-party apps",
+      "Community campaigns (bulk distribution)",
+      "Fiat on-ramp via Circle integration",
+      "SDK open-source release",
+    ],
+  },
+] as const;
+
 export const LANDING_FAQ = [
   {
     q: "Is this safe? Where do my funds go?",

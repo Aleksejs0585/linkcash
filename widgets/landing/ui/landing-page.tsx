@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   LANDING_CLAIM_FEATURES,
+  LANDING_ROADMAP,
   LANDING_STEPS,
   LANDING_USE_CASES,
 } from "../model/content";
@@ -37,6 +38,9 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
         <div className="landing-nav-actions">
           <a href="#how" className="landing-btn-ghost">
             How it works
+          </a>
+          <a href="#roadmap" className="landing-btn-ghost">
+            Roadmap
           </a>
           <Link href="/create" className="landing-btn-primary">
             Send USDC →
@@ -225,6 +229,52 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
                 <h3>{card.title}</h3>
                 <p>{card.text}</p>
                 <span className="landing-use-tag">{card.tag}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="roadmap" className="landing-section landing-roadmap-section">
+        <div className="landing-container">
+          <div className="landing-section-label">Roadmap</div>
+          <h2>Where we&apos;re going.</h2>
+          <p className="landing-section-sub">
+            From testnet proof to mainnet infrastructure — a clear path to
+            production USDC gifting on Arc.
+          </p>
+
+          <div className="landing-roadmap">
+            {LANDING_ROADMAP.map((phase) => (
+              <div
+                key={phase.phase}
+                className={`landing-roadmap-phase landing-roadmap-phase--${phase.status}`}
+              >
+                <div className="landing-roadmap-phase-header">
+                  <span className="landing-roadmap-phase-tag">{phase.phase}</span>
+                  {phase.status === "done" && (
+                    <span className="landing-roadmap-badge landing-roadmap-badge--done">Done</span>
+                  )}
+                  {phase.status === "active" && (
+                    <span className="landing-roadmap-badge landing-roadmap-badge--active">
+                      <span className="landing-roadmap-badge-dot" aria-hidden />
+                      In progress
+                    </span>
+                  )}
+                  {phase.status === "planned" && (
+                    <span className="landing-roadmap-badge landing-roadmap-badge--planned">Planned</span>
+                  )}
+                </div>
+                <h3 className="landing-roadmap-phase-title">{phase.title}</h3>
+                <div className="landing-roadmap-date">{phase.date}</div>
+                <ul className="landing-roadmap-items">
+                  {phase.items.map((item) => (
+                    <li key={item} className="landing-roadmap-item">
+                      <span className="landing-roadmap-item-dot" aria-hidden />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
               </div>
             ))}
           </div>
