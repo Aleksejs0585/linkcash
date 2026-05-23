@@ -250,12 +250,17 @@ export async function getGiftByHash(input: GiftHashInput) {
   const { rpcUrl, contractAddress } = getArcReadEnv();
   const provider = await createArcProviderWithContractCheck(rpcUrl, contractAddress);
   const contract = new Contract(contractAddress, GIFT_ABI, provider);
-  const gift = (await contract.gifts(input.hash)) as {
-    amount: bigint;
-    refundAddress: string;
-    expiresAt: bigint;
-    claimed: boolean;
-  };
+  const gift = await Promise.race([
+    contract.gifts(input.hash) as Promise<{
+      amount: bigint;
+      refundAddress: string;
+      expiresAt: bigint;
+      claimed: boolean;
+    }>,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("Arc RPC timeout")), 8_000)
+    ),
+  ]);
 
   if (gift.amount <= BigInt(0)) {
     return { ok: false as const, error: "Gift not found.", status: 404 };

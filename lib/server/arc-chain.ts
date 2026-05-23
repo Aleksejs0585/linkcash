@@ -13,13 +13,8 @@ const globalState = globalThis as typeof globalThis & {
 };
 
 export async function createArcProvider(rpcUrl: string): Promise<JsonRpcProvider> {
-  const provider = new JsonRpcProvider(rpcUrl);
-  const network = await provider.getNetwork();
-
-  if (Number(network.chainId) !== ARC_TESTNET.chainId) {
-    throw new Error(`RPC_URL must point to Arc Testnet (${ARC_TESTNET.chainId}).`);
-  }
-
+  // Pass chainId statically to skip getNetwork() RPC call on every cold start.
+  const provider = new JsonRpcProvider(rpcUrl, ARC_TESTNET.chainId);
   return provider;
 }
 
