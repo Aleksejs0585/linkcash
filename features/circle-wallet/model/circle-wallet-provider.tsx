@@ -25,7 +25,6 @@ import {
 import {
   clearAutoClaimAfterAuth,
   clearOAuthFlowState,
-  resumeOAuthReturnTarget,
   saveOAuthReturnTarget,
 } from "@/lib/client/oauth-return";
 import {
@@ -509,7 +508,7 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
           void (async () => {
             try {
               await ensureWalletReady(result.userToken, result.encryptionKey);
-              resumeOAuthReturnTarget();
+              // Navigation handled by OAuthReturnResume (router.push, no page reload).
             } catch (e) {
               clearAutoClaimAfterAuth();
               const raw =
