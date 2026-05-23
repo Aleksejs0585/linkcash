@@ -13,6 +13,7 @@ import LinkCashLogo from "@/components/ui/linkcash-logo";
 import { HelpTrigger } from "@/components/ui/help-manual";
 import LandingFaq from "./landing-faq";
 import DemoFlow from "./demo-flow";
+import LiveStats from "./live-stats";
 
 export type { LandingTxExample };
 
@@ -21,11 +22,6 @@ type LandingPageProps = {
   stats: OnChainStats;
 };
 
-function formatUsdcStat(raw: string): string {
-  const n = parseFloat(raw);
-  if (n >= 1000) return `$${(n / 1000).toFixed(1)}K`;
-  return `$${Math.round(n)}`;
-}
 
 export default function LandingPage({ txExamples, stats }: LandingPageProps) {
   return (
@@ -100,19 +96,7 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
             <span className="landing-stat-label">Gas for recipient</span>
           </div>
           <div className="landing-stat-divider" aria-hidden />
-          <div>
-            <span className="landing-stat-num">
-              {stats.totalClaimed > 0 ? stats.totalClaimed.toLocaleString() : "48+"}
-            </span>
-            <span className="landing-stat-label">Gifts claimed</span>
-          </div>
-          <div className="landing-stat-divider" aria-hidden />
-          <div>
-            <span className="landing-stat-num">
-              {parseFloat(stats.totalUsdcClaimed) > 0 ? formatUsdcStat(stats.totalUsdcClaimed) : "$480+"}
-            </span>
-            <span className="landing-stat-label">USDC gifted</span>
-          </div>
+          <LiveStats initial={stats} />
         </div>
       </section>
 
