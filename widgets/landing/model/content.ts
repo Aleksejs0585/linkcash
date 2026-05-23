@@ -82,7 +82,6 @@ export const LANDING_ROADMAP = [
       "Circle Wallets + Google sign-in",
       "Gasless relayer for recipients",
       "48+ gifts claimed, $480+ USDC gifted",
-      "Admin funnel analytics dashboard",
     ],
   },
   {
