@@ -20,7 +20,8 @@ export default function LinkCashLogo({
       style={{ flexShrink: 0 }}
     >
       <defs>
-        <linearGradient id="lc-g" x1="0%" y1="0%" x2="100%" y2="100%">
+        {/* userSpaceOnUse so the fill on Ring 1's body matches the background exactly */}
+        <linearGradient id="lc-g" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#22c55e" />
           <stop offset="100%" stopColor="#16a34a" />
         </linearGradient>
@@ -28,15 +29,22 @@ export default function LinkCashLogo({
 
       <rect width="100" height="100" rx="24" fill="url(#lc-g)" />
 
-      {/* Ring 2 — lower-left, reads as behind via lower opacity */}
+      {/* Ring 2 — lower-left, drawn first (behind) */}
       <rect
         x="-26" y="-12" width="52" height="24" rx="12"
         fill="none" stroke="white" strokeWidth="13"
-        strokeOpacity="0.55"
         transform="translate(37 63) rotate(-45)"
       />
 
-      {/* Ring 1 — upper-right, in front */}
+      {/* Seamless cut: fill Ring 1's body with the background gradient,
+          erasing Ring 2 wherever Ring 1 passes in front */}
+      <rect
+        x="-26" y="-12" width="52" height="24" rx="12"
+        fill="url(#lc-g)"
+        transform="translate(63 37) rotate(-45)"
+      />
+
+      {/* Ring 1 — upper-right, stroke drawn on top */}
       <rect
         x="-26" y="-12" width="52" height="24" rx="12"
         fill="none" stroke="white" strokeWidth="13"
