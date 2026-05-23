@@ -330,12 +330,20 @@ export async function getSenderGifts(input: SenderGiftsInput) {
           expiresAt: bigint;
           claimed: boolean;
         };
-        const expiresAt = Number(state.expiresAt);
+        // After reclaimExpiredGift the contract may zero the struct (gas refund).
+        // Trust the Redis reclaim record over on-chain state for status + display.
         const reclaimedTxHash = reclaimByHash.get(entry.paymentIdHash);
+        const expiresAt = Number(state.expiresAt) || Number(entry.expiresAt) || 0;
+        const amountUsdc =
+          reclaimedTxHash && state.amount === BigInt(0) && entry.amountRaw
+            ? formatUnits(BigInt(entry.amountRaw), 6)
+            : formatUnits(state.amount, 6);
 
         let status: SenderGiftStatus = "active";
-        if (state.claimed) {
-          status = reclaimedTxHash ? "reclaimed" : "claimed";
+        if (reclaimedTxHash) {
+          status = "reclaimed";
+        } else if (state.claimed) {
+          status = "claimed";
         } else if (nowSec >= expiresAt) {
           status = "expired";
         }
@@ -343,8 +351,8 @@ export async function getSenderGifts(input: SenderGiftsInput) {
         return {
           paymentIdHash: entry.paymentIdHash,
           status,
-          amountUsdc: formatUnits(state.amount, 6),
-          refundAddress: state.refundAddress,
+          amountUsdc,
+          refundAddress: state.refundAddress || entry.refundAddress,
           expiresAt,
           createdAt: entry.timestamp,
           fundedTxHash: entry.txHash,
@@ -401,15 +409,22 @@ export async function getSenderGifts(input: SenderGiftsInput) {
         }>,
         provider.getBlock(log.blockNumber),
       ]);
-      const expiresAt = Number(state.expiresAt);
       const reclaimedTxHash = reclaimByHash.get(paymentIdHash);
+      // Fallback to event args if contract struct was zeroed after reclaim.
+      const expiresAt = Number(state.expiresAt) || Number(log.args[4] as bigint) || 0;
+      const amountUsdc =
+        reclaimedTxHash && state.amount === BigInt(0)
+          ? formatUnits(log.args[3] as bigint, 6)
+          : formatUnits(state.amount, 6);
       const createdAt = block?.timestamp
         ? new Date(block.timestamp * 1000).toISOString()
         : new Date().toISOString();
 
       let status: SenderGiftStatus = "active";
-      if (state.claimed) {
-        status = reclaimedTxHash ? "reclaimed" : "claimed";
+      if (reclaimedTxHash) {
+        status = "reclaimed";
+      } else if (state.claimed) {
+        status = "claimed";
       } else if (nowSec >= expiresAt) {
         status = "expired";
       }
@@ -417,8 +432,8 @@ export async function getSenderGifts(input: SenderGiftsInput) {
       return {
         paymentIdHash,
         status,
-        amountUsdc: formatUnits(state.amount, 6),
-        refundAddress: state.refundAddress,
+        amountUsdc,
+        refundAddress: state.refundAddress || (log.args[2] as string),
         expiresAt,
         createdAt,
         fundedTxHash: log.transactionHash,
