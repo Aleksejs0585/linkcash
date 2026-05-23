@@ -247,6 +247,10 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
   const [authError, setAuthError] = useState<string | null>(null);
   const [bootstrapError, setBootstrapError] = useState<string | null>(null);
   const [walletSyncing, setWalletSyncing] = useState(false);
+  const [sessionHydrating, setSessionHydrating] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return readCircleSession() !== null;
+  });
   const [googleDisplayName, setGoogleDisplayName] = useState<string | null>(
     () => readGoogleDisplayName()
   );
@@ -709,6 +713,8 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
           setWallets([]);
         }
         setAuthError(formatCircleAuthError(raw));
+      } finally {
+        setSessionHydrating(false);
       }
     })();
   }, [
@@ -726,7 +732,8 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
     Boolean(deviceId) &&
     Boolean(deviceToken) &&
     Boolean(deviceEncryptionKey) &&
-    !bootstrapError;
+    !bootstrapError &&
+    !sessionHydrating;
 
   useEffect(() => {
     if (!deviceRebindRetryPendingRef.current || loginAutoRetryUsedRef.current) {
@@ -780,6 +787,7 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
     deviceRebindRetryPendingRef.current = false;
     loginAutoRetryUsedRef.current = false;
     sessionHydrateAttemptedRef.current = false;
+    setSessionHydrating(false);
     clearOAuthFlowState();
     clearCircleSession();
     clearGoogleDisplayName();
