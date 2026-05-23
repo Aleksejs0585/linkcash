@@ -9,10 +9,9 @@ export default function LinkCashLogo({
   iconOnly = false,
   size = 28,
 }: LinkCashLogoProps) {
-  // Two pill-shaped rings, coaxial at -45°, centered at (62,38) and (38,62).
-  // Ring1 (upper) is in front — SVG mask hides Ring2 where Ring1's stroke
-  // overlaps, but keeps Ring2 visible through Ring1's inner hole so the
-  // interlocking chain-link effect is clear.
+  // Horizontal chain link: Ring L (left, in front) + Ring R (right, passes through L).
+  // SVG mask hides Ring R where Ring L's stroke is on top,
+  // but reveals Ring R inside Ring L's opening — true interlocking effect.
   const icon = (
     <svg
       width={size}
@@ -28,39 +27,40 @@ export default function LinkCashLogo({
           <stop offset="0%" stopColor="#5b47f5" />
           <stop offset="100%" stopColor="#00c48c" />
         </linearGradient>
-        {/* Mask: hide Ring2 where Ring1's stroke is; show Ring2 through Ring1's hole */}
+        {/* Mask: hide Ring R behind Ring L's stroke, show Ring R through Ring L's hole */}
         <mask id="lc-m">
           <rect width="100" height="100" fill="white" />
-          {/* Ring1 outer boundary — black = Ring1 stroke blocks Ring2 */}
+          {/* Ring L outer boundary → black = Ring L stroke blocks Ring R */}
           <rect
-            x="-32" y="-18" width="64" height="36" rx="18"
+            x="-30" y="-20" width="60" height="40" rx="20"
             fill="black"
-            transform="translate(62 38) rotate(-45)"
+            transform="translate(33 50)"
           />
-          {/* Ring1 inner hole — white = Ring2 peeks through */}
+          {/* Ring L inner hole → white = Ring R peeks through */}
           <rect
-            x="-20" y="-6" width="40" height="12" rx="6"
+            x="-19" y="-9" width="38" height="18" rx="9"
             fill="white"
-            transform="translate(62 38) rotate(-45)"
+            transform="translate(33 50)"
           />
         </mask>
       </defs>
 
       <rect width="100" height="100" rx="22" fill="url(#lc-bg)" />
 
-      {/* Ring 2 — lower-left, behind at crossing */}
+      {/* Ring R — right link, behind Ring L at crossing */}
       <rect
-        x="-26" y="-12" width="52" height="24" rx="12"
-        fill="none" stroke="white" strokeWidth="12"
-        transform="translate(38 62) rotate(-45)"
+        x="-24" y="-14" width="48" height="28" rx="14"
+        fill="none" stroke="white" strokeWidth="11"
+        strokeOpacity="0.75"
+        transform="translate(67 50)"
         mask="url(#lc-m)"
       />
 
-      {/* Ring 1 — upper-right, in front */}
+      {/* Ring L — left link, in front */}
       <rect
-        x="-26" y="-12" width="52" height="24" rx="12"
-        fill="none" stroke="white" strokeWidth="12"
-        transform="translate(62 38) rotate(-45)"
+        x="-24" y="-14" width="48" height="28" rx="14"
+        fill="none" stroke="white" strokeWidth="11"
+        transform="translate(33 50)"
       />
     </svg>
   );
