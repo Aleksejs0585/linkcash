@@ -280,6 +280,11 @@ export async function getGiftByHash(input: GiftHashInput) {
   };
 }
 
+const GIFT_FUNDED_ABI = [
+  ...GIFT_ABI,
+  "event GiftFunded(bytes32 indexed paymentIdHash, address indexed funder, address indexed refundAddress, uint256 amount, uint64 expiresAt)",
+] as const;
+
 export async function getSenderGifts(input: SenderGiftsInput) {
   const { rpcUrl, contractAddress } = getArcReadEnv();
   const normalizedSender = input.senderAddress.toLowerCase();
@@ -294,17 +299,6 @@ export async function getSenderGifts(input: SenderGiftsInput) {
       (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     );
 
-  if (fundedEvents.length === 0) {
-    return { ok: true as const, gifts: [] as SenderGiftItem[] };
-  }
-
-  const latestFundedByHash = new Map<string, (typeof fundedEvents)[number]>();
-  for (const funded of fundedEvents) {
-    if (!latestFundedByHash.has(funded.paymentIdHash)) {
-      latestFundedByHash.set(funded.paymentIdHash, funded);
-    }
-  }
-
   const reclaimByHash = new Map<string, string>();
   for (const entry of events) {
     if (
@@ -317,17 +311,101 @@ export async function getSenderGifts(input: SenderGiftsInput) {
 
   const provider = await createArcProviderWithContractCheck(rpcUrl, contractAddress);
   const contract = new Contract(contractAddress, GIFT_ABI, provider);
+  const nowSec = Math.floor(Date.now() / 1000);
+
+  // Store-based path
+  if (fundedEvents.length > 0) {
+    const latestFundedByHash = new Map<string, (typeof fundedEvents)[number]>();
+    for (const funded of fundedEvents) {
+      if (!latestFundedByHash.has(funded.paymentIdHash)) {
+        latestFundedByHash.set(funded.paymentIdHash, funded);
+      }
+    }
+
+    const gifts = await Promise.all(
+      Array.from(latestFundedByHash.values()).map(async (entry) => {
+        const state = (await contract.gifts(entry.paymentIdHash)) as {
+          amount: bigint;
+          refundAddress: string;
+          expiresAt: bigint;
+          claimed: boolean;
+        };
+        const expiresAt = Number(state.expiresAt);
+        const reclaimedTxHash = reclaimByHash.get(entry.paymentIdHash);
+
+        let status: SenderGiftStatus = "active";
+        if (state.claimed) {
+          status = reclaimedTxHash ? "reclaimed" : "claimed";
+        } else if (nowSec >= expiresAt) {
+          status = "expired";
+        }
+
+        return {
+          paymentIdHash: entry.paymentIdHash,
+          status,
+          amountUsdc: formatUnits(state.amount, 6),
+          refundAddress: state.refundAddress,
+          expiresAt,
+          createdAt: entry.timestamp,
+          fundedTxHash: entry.txHash,
+          reclaimTxHash: reclaimedTxHash,
+        } satisfies SenderGiftItem;
+      })
+    );
+
+    return { ok: true as const, gifts };
+  }
+
+  // Blockchain fallback — store has no entries for this address (pre-Redis gifts)
+  const eventContract = new Contract(contractAddress, GIFT_FUNDED_ABI, provider);
+  const latestBlock = await provider.getBlockNumber();
+  const filter = eventContract.filters.GiftFunded(null, null, input.senderAddress);
+
+  const LOG_CHUNK = 9_000;
+  const MAX_CHUNKS = 80;
+  const allLogs: EventLog[] = [];
+  let toBlock = latestBlock;
+
+  for (let i = 0; i < MAX_CHUNKS && toBlock >= 0; i++) {
+    const fromBlock = Math.max(0, toBlock - LOG_CHUNK);
+    const batch = await eventContract.queryFilter(filter, fromBlock, toBlock);
+    for (const log of batch) {
+      if ((log as EventLog).args) allLogs.push(log as EventLog);
+    }
+    if (fromBlock === 0) break;
+    toBlock = fromBlock - 1;
+  }
+
+  if (allLogs.length === 0) {
+    return { ok: true as const, gifts: [] as SenderGiftItem[] };
+  }
+
+  // Deduplicate — keep first occurrence per paymentIdHash
+  const seenHashes = new Set<string>();
+  const uniqueLogs = allLogs.filter((log) => {
+    const h = log.args[0] as string;
+    if (seenHashes.has(h)) return false;
+    seenHashes.add(h);
+    return true;
+  });
+
   const gifts = await Promise.all(
-    Array.from(latestFundedByHash.values()).map(async (entry) => {
-      const state = (await contract.gifts(entry.paymentIdHash)) as {
-        amount: bigint;
-        refundAddress: string;
-        expiresAt: bigint;
-        claimed: boolean;
-      };
+    uniqueLogs.map(async (log) => {
+      const paymentIdHash = log.args[0] as string;
+      const [state, block] = await Promise.all([
+        contract.gifts(paymentIdHash) as Promise<{
+          amount: bigint;
+          refundAddress: string;
+          expiresAt: bigint;
+          claimed: boolean;
+        }>,
+        provider.getBlock(log.blockNumber),
+      ]);
       const expiresAt = Number(state.expiresAt);
-      const reclaimedTxHash = reclaimByHash.get(entry.paymentIdHash);
-      const nowSec = Math.floor(Date.now() / 1000);
+      const reclaimedTxHash = reclaimByHash.get(paymentIdHash);
+      const createdAt = block?.timestamp
+        ? new Date(block.timestamp * 1000).toISOString()
+        : new Date().toISOString();
 
       let status: SenderGiftStatus = "active";
       if (state.claimed) {
@@ -337,13 +415,13 @@ export async function getSenderGifts(input: SenderGiftsInput) {
       }
 
       return {
-        paymentIdHash: entry.paymentIdHash,
+        paymentIdHash,
         status,
         amountUsdc: formatUnits(state.amount, 6),
         refundAddress: state.refundAddress,
         expiresAt,
-        createdAt: entry.timestamp,
-        fundedTxHash: entry.txHash,
+        createdAt,
+        fundedTxHash: log.transactionHash,
         reclaimTxHash: reclaimedTxHash,
       } satisfies SenderGiftItem;
     })
