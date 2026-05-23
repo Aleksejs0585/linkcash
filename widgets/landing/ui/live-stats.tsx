@@ -29,7 +29,6 @@ function StatNum({ value }: { value: string }) {
         transition: "opacity 0.3s, transform 0.3s",
         opacity: flash ? 0.5 : 1,
         transform: flash ? "scale(1.08)" : "scale(1)",
-        display: "inline-block",
       }}
     >
       {value}
@@ -38,6 +37,8 @@ function StatNum({ value }: { value: string }) {
 }
 
 export default function LiveStats({ initial }: { initial: OnChainStats }) {
+  // Never go below the SSR floor values — ignore API responses returning zeros
+  const floor = useRef(initial);
   const [stats, setStats] = useState(initial);
 
   useEffect(() => {
@@ -46,7 +47,14 @@ export default function LiveStats({ initial }: { initial: OnChainStats }) {
         const res = await fetch("/api/stats");
         if (!res.ok) return;
         const data = (await res.json()) as OnChainStats;
-        setStats(data);
+        // Only update if the new values are at least as large as what we already show
+        if (
+          data.totalClaimed >= floor.current.totalClaimed &&
+          parseFloat(data.totalUsdcClaimed) >= parseFloat(floor.current.totalUsdcClaimed)
+        ) {
+          floor.current = data;
+          setStats(data);
+        }
       } catch { /* ignore network errors */ }
     };
 
