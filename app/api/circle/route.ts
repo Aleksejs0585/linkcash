@@ -525,7 +525,7 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: "Missing deviceId." }, { status: 400 });
         }
 
-        const response = await fetch(`${CIRCLE_BASE_URL}/v1/w3s/users/email/otp`, {
+        const response = await fetch(`${CIRCLE_BASE_URL}/v1/w3s/users/email/token`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
