@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { readLoginMethod } from "@/lib/client/google-display-name";
 import OAuthNavHint from "./oauth-nav-hint";
 
 type LoginPanelProps = {
@@ -25,6 +26,11 @@ export default function LoginPanel({
   const [email, setEmail] = useState("");
   const [emailLoading, setEmailLoading] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
+  const [lastUsed, setLastUsed] = useState<"google" | "email" | null>(null);
+
+  useEffect(() => {
+    setLastUsed(readLoginMethod());
+  }, []);
 
   const sizeClass =
     buttonSize === "large"
@@ -48,14 +54,21 @@ export default function LoginPanel({
 
   return (
     <div className={`space-y-3 ${className ?? ""}`.trim()}>
-      <button
-        type="button"
-        onClick={onGoogleLogin}
-        disabled={disabled || emailLoading}
-        className={`accent-gradient w-full rounded-[var(--radius)] ${sizeClass} disabled:cursor-not-allowed disabled:opacity-60`}
-      >
-        {googleLabel}
-      </button>
+      <div className="relative">
+        <button
+          type="button"
+          onClick={onGoogleLogin}
+          disabled={disabled || emailLoading}
+          className={`accent-gradient w-full rounded-[var(--radius)] ${sizeClass} disabled:cursor-not-allowed disabled:opacity-60`}
+        >
+          {googleLabel}
+        </button>
+        {lastUsed === "google" && (
+          <span className="absolute -top-2 right-3 rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-white/50">
+            last used
+          </span>
+        )}
+      </div>
 
       <OAuthNavHint />
 
@@ -65,26 +78,33 @@ export default function LoginPanel({
         <span className="flex-1 border-t border-white/10" />
       </div>
 
-      <form
-        onSubmit={(e) => void handleEmailSubmit(e)}
-        className="space-y-2"
-      >
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="your@email.com"
-          disabled={disabled || emailLoading}
-          className="w-full rounded-[var(--radius)] border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/30 focus:border-white/30 focus:outline-none disabled:opacity-50"
-        />
-        <button
-          type="submit"
-          disabled={disabled || emailLoading || !email.trim()}
-          className="app-btn-secondary w-full px-4 py-2.5 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+      <div className="relative">
+        <form
+          onSubmit={(e) => void handleEmailSubmit(e)}
+          className="space-y-2"
         >
-          {emailLoading ? "Sending code…" : "Continue with email"}
-        </button>
-      </form>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="your@email.com"
+            disabled={disabled || emailLoading}
+            className="w-full rounded-[var(--radius)] border border-white/10 bg-white/5 px-4 py-3 text-base text-white placeholder-white/30 focus:border-white/30 focus:outline-none disabled:opacity-50"
+          />
+          <button
+            type="submit"
+            disabled={disabled || emailLoading || !email.trim()}
+            className="app-btn-secondary w-full px-4 py-2.5 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {emailLoading ? "Sending code…" : "Continue with email"}
+          </button>
+        </form>
+        {lastUsed === "email" && (
+          <span className="absolute -top-2 right-3 rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-white/50">
+            last used
+          </span>
+        )}
+      </div>
 
       {(authError ?? emailError) ? (
         <p className="text-center text-xs text-rose-400">{authError ?? emailError}</p>

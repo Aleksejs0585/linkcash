@@ -33,6 +33,7 @@ import {
   extractGoogleEmail,
   persistGoogleDisplayName,
   persistGoogleEmail,
+  persistLoginMethod,
   readGoogleDisplayName,
   readGoogleEmail,
 } from "@/lib/client/google-display-name";
@@ -546,6 +547,8 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
           }
 
           setAuthError(null);
+          const isEmailOtp = !result?.oAuthInfo && pendingEmailRef.current !== null;
+          persistLoginMethod(isEmailOtp ? "email" : "google");
           const profileName = extractGoogleDisplayName(result);
           if (profileName) {
             persistGoogleDisplayName(profileName);

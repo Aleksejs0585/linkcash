@@ -1,5 +1,6 @@
 const STORAGE_KEY = "linkcash:google-display-name";
 const EMAIL_STORAGE_KEY = "linkcash:google-email";
+const LOGIN_METHOD_KEY = "linkcash:login-method";
 
 export function persistGoogleDisplayName(name: string): void {
   if (typeof window === "undefined") return;
@@ -18,6 +19,18 @@ export function clearGoogleDisplayName(): void {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(STORAGE_KEY);
   window.localStorage.removeItem(EMAIL_STORAGE_KEY);
+  window.localStorage.removeItem(LOGIN_METHOD_KEY);
+}
+
+export function persistLoginMethod(method: "google" | "email"): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(LOGIN_METHOD_KEY, method);
+}
+
+export function readLoginMethod(): "google" | "email" | null {
+  if (typeof window === "undefined") return null;
+  const v = window.localStorage.getItem(LOGIN_METHOD_KEY);
+  return v === "google" || v === "email" ? v : null;
 }
 
 export function persistGoogleEmail(email: string): void {
