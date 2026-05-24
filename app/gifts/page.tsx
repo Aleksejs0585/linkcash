@@ -7,7 +7,7 @@ import AppShell from "@/components/ui/app-shell";
 import GlassCard from "@/components/ui/glass-card";
 import MainMenu from "@/components/ui/main-menu";
 import { HelpTrigger } from "@/components/ui/help-manual";
-import OAuthNavHint from "@/components/ui/oauth-nav-hint";
+import LoginPanel from "@/components/ui/login-panel";
 import { isCircleWalletConfigured } from "@/features/circle-wallet/config/circle-env";
 import { useCircleWallet } from "@/features/circle-wallet/model/circle-wallet-provider";
 import { ARC_TESTNET, getArcExplorerTxUrl } from "@/utils";
@@ -110,6 +110,7 @@ function SenderDashboardContent() {
     ready,
     authenticated,
     login,
+    loginWithEmail,
     walletAddress: senderWalletAddress,
     authError,
     bootstrapError,
@@ -239,15 +240,12 @@ function SenderDashboardContent() {
             </div>
           ) : !authenticated ? (
             <div className="space-y-2">
-              <button
-                type="button"
-                onClick={() => void login()}
-                className="accent-gradient w-full rounded-[var(--radius-sm)] px-4 py-3 text-sm"
-              >
-                Sign in with Google
-              </button>
-              <OAuthNavHint className="text-left text-xs leading-relaxed text-white/55" />
-              {authError && <p className="text-sm text-rose-400">{authError}</p>}
+              <LoginPanel
+                onGoogleLogin={() => void login()}
+                onEmailLogin={loginWithEmail}
+                googleLabel="Sign in with Google"
+                authError={authError}
+              />
             </div>
           ) : !senderWalletAddress ? (
             <div className="space-y-2">

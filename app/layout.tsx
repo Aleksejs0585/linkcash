@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     template: "%s | LinkCash",
   },
   description:
-    "Share a link. Recipient signs in with Google, gets a Circle wallet, and claims USDC gaslessly on Arc.",
+    "Share a link. Recipient signs in with Google or email, gets a Circle wallet, and claims USDC gaslessly on Arc.",
   openGraph: {
     siteName: "LinkCash",
     type: "website",

@@ -99,7 +99,7 @@ export default function HelpManual() {
                     3) Where funds are received:
                   </span>{" "}
                   Open the gift link and tap unwrap once: if you are not signed
-                  in, Google sign-in runs first, then the claim completes in the
+                  in, sign-in runs first, then the claim completes in the
                   same flow. After sign-in, the recipient has a user-controlled
                   wallet on Arc Testnet and USDC is sent to that address.
                 </p>
@@ -129,14 +129,14 @@ export default function HelpManual() {
                 </p>
                 <p>
                   <span className="font-semibold text-white">
-                    7) Google sign-in and navigation:
+                    7) Sign-in and navigation:
                   </span>{" "}
-                  when the browser navigates to Google for OAuth, the system
-                  Back button only moves within Google&apos;s history. LinkCash
-                  cannot override that. Use{" "}
+                  when signing in with Google, the browser navigates to Google
+                  for OAuth and the system Back button only moves within
+                  Google&apos;s history. Use{" "}
                   <span className="font-medium text-white/90">Cancel</span> on
                   Google, switch back to your LinkCash tab, or complete
-                  sign-in. Use the in-app{" "}
+                  sign-in. Email OTP sign-in stays on the same page. Use the in-app{" "}
                   <span className="font-medium text-white/90">Menu</span>{" "}
                   for Home or the product site link.
                 </p>

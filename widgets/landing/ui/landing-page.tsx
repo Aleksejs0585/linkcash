@@ -63,9 +63,9 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
         </h1>
 
         <p className="landing-hero-sub">
-          Share a link. They sign in with <strong>Google</strong>, get a wallet
-          instantly, and claim USDC — <strong>under 60 seconds</strong>, zero
-          gas, zero setup. No seed phrases. No confusion.
+          Share a link. They sign in with <strong>Google or email</strong>, get
+          a wallet instantly, and claim USDC — <strong>under 60 seconds</strong>,
+          zero gas, zero setup. No seed phrases. No confusion.
         </p>
 
         <div className="landing-hero-cta">
@@ -171,7 +171,7 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
                   <div className="landing-claim-amount">25.00</div>
                   <div className="landing-claim-token">USDC · Arc Testnet</div>
                   <div className="landing-claim-expiry">⏱ Expires in 23h 41m</div>
-                  <div className="landing-claim-btn">Claim with Google →</div>
+                  <div className="landing-claim-btn">Claim with Google or email →</div>
                   <div className="landing-claim-login">No wallet or account needed</div>
                 </div>
               </div>

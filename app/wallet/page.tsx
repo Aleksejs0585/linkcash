@@ -252,7 +252,7 @@ function WalletContent() {
             <div className="rounded-xl border border-white/8 bg-white/3 px-4 py-3 text-xs text-white/45">
               <span className="font-medium text-white/60">No private key export.</span>{" "}
               This is a non-custodial smart contract wallet — no private key to export.
-              To recover access, sign in with the same Google account.
+              To recover access, sign in with the same method you used before.
             </div>
 
             <Link

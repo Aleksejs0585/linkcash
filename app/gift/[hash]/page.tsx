@@ -64,7 +64,7 @@ export default function GiftPage() {
           <p className="soft-text mt-4 text-sm">
             Set <code>NEXT_PUBLIC_CIRCLE_APP_ID</code>,{" "}
             <code>NEXT_PUBLIC_GOOGLE_CLIENT_ID</code>, and server{" "}
-            <code>CIRCLE_API_KEY</code> to enable Google sign-in and claiming.
+            <code>CIRCLE_API_KEY</code> to enable sign-in and claiming.
           </p>
         </GlassCard>
       </AppShell>
@@ -232,7 +232,7 @@ function GiftClaimContent() {
       setStatus(
         walletSyncing
           ? "Preparing your Circle wallet..."
-          : "No wallet address yet. Sign in with Google again."
+          : "No wallet address yet. Sign in again with the same method you used before."
       );
       return;
     }

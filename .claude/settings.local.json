@@ -15,7 +15,15 @@
       "Bash(Get-ChildItem -Path \"c:\\\\Arc\" -Recurse -Directory -Depth 2)",
       "Bash(Select-Object -ExpandProperty FullName)",
       "Bash(Get-ChildItem -Path \"C:\\\\Arc\" -Directory)",
-      "Bash(Select-Object Name)"
+      "Bash(Select-Object Name)",
+      "Bash(RPC_URL=\"\" CONTRACT_ADDRESS=\"\" PRIVATE_KEY=\"\" npm run build)",
+      "Bash(git stash *)",
+      "Bash(node -e \"console.log\\(require\\('./node_modules/next/package.json'\\).version\\)\")",
+      "Bash(mkdir -p /c/Users/aleks/.claude/projects/c--Arc/memory)",
+      "WebFetch(domain:community.arc.io)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\aleks\\.claude\\projects\\c--Arc\\memory"
     ]
   }
 }

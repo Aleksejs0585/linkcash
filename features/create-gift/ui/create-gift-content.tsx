@@ -114,7 +114,7 @@ export function CreateGiftContent() {
                 autoComplete="name"
               />
               <p className="mt-2 text-xs text-white/55">
-                Prefilled with your Google email — you can change it before sending.
+                Prefilled with your account email — you can change it before sending.
               </p>
             </motion.div>
 
@@ -205,7 +205,7 @@ export function CreateGiftContent() {
           </>
         ) : ready ? (
           <p className="soft-text text-sm">
-            Sign in with Google to set amount and create a gift link.
+            Sign in to set amount and create a gift link.
           </p>
         ) : null}
 

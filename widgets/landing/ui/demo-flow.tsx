@@ -95,7 +95,7 @@ const STEPS = [
         <div className="rounded-xl border border-white/8 bg-white/4 p-3 space-y-1.5">
           {[
             { icon: "⚡", text: "Ready in 10 seconds" },
-            { icon: "🔑", text: "Sign in with Google" },
+            { icon: "🔑", text: "Sign in with Google or email" },
             { icon: "$0", text: "Zero gas fees" },
           ].map(({ icon, text }) => (
             <div key={text} className="flex items-center gap-2 text-xs text-white/60">
@@ -105,7 +105,7 @@ const STEPS = [
           ))}
         </div>
         <div className="rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 p-3 text-center text-sm font-semibold text-white">
-          Claim with Google →
+          Claim with Google or email →
         </div>
       </div>
     ),
