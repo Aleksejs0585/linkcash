@@ -7,7 +7,7 @@ import AppShell from "@/components/ui/app-shell";
 import GlassCard from "@/components/ui/glass-card";
 import MainMenu from "@/components/ui/main-menu";
 import { HelpTrigger } from "@/components/ui/help-manual";
-import OAuthNavHint from "@/components/ui/oauth-nav-hint";
+import LoginPanel from "@/components/ui/login-panel";
 import { WalletBackupWarning } from "@/components/ui/wallet-backup-warning";
 import { isCircleWalletConfigured } from "@/features/circle-wallet/config/circle-env";
 import { useCircleWallet } from "@/features/circle-wallet/model/circle-wallet-provider";
@@ -47,6 +47,7 @@ function WalletContent() {
     ready,
     authenticated,
     login,
+    loginWithEmail,
     logout,
     walletAddress,
     authError,
@@ -147,7 +148,7 @@ function WalletContent() {
             <div className="space-y-2.5 rounded-xl border border-white/8 bg-white/4 p-4">
               {[
                 { icon: "⚡", text: "Ready in seconds — no setup, no seed phrase" },
-                { icon: "🔑", text: "Tied to your Google account — recover anytime by signing in again" },
+                { icon: "🔑", text: "Tied to your account — recover anytime by signing in again" },
                 { icon: "💵", text: "Receive USDC from any wallet or exchange" },
                 { icon: "🔒", text: "Private key stays in Circle's secure enclave — never exported" },
               ].map(({ icon, text }) => (
@@ -157,17 +158,12 @@ function WalletContent() {
                 </div>
               ))}
             </div>
-            <button
-              type="button"
-              onClick={() => void login()}
-              className="accent-gradient w-full rounded-[var(--radius)] px-6 py-3.5 text-base"
-            >
-              Sign in with Google
-            </button>
-            <OAuthNavHint />
-            {authError && (
-              <p className="text-center text-sm text-rose-400">{authError}</p>
-            )}
+            <LoginPanel
+              onGoogleLogin={() => void login()}
+              onEmailLogin={loginWithEmail}
+              googleLabel="Sign in with Google"
+              authError={authError}
+            />
           </div>
         ) : !walletAddressResolved ? (
           <div className="space-y-3">

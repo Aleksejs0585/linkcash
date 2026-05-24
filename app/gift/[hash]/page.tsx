@@ -7,7 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import AppShell from "@/components/ui/app-shell";
 import GlassCard from "@/components/ui/glass-card";
 import MainMenu from "@/components/ui/main-menu";
-import OAuthNavHint from "@/components/ui/oauth-nav-hint";
+import LoginPanel from "@/components/ui/login-panel";
 import { isCircleWalletConfigured } from "@/features/circle-wallet/config/circle-env";
 import { useCircleWallet } from "@/features/circle-wallet/model/circle-wallet-provider";
 import { useGift } from "@/hooks/useGift";
@@ -79,6 +79,7 @@ function GiftClaimContent() {
     ready,
     authenticated,
     login,
+    loginWithEmail,
     logout,
     walletAddress,
     authError,
@@ -442,39 +443,27 @@ function GiftClaimContent() {
 
           {!isSuccess && (
             <div className="space-y-3">
-              <motion.button
-                type="button"
-                onClick={() => void onUnwrap()}
-                disabled={
-                  loading ||
-                  !ready ||
-                  giftLoading ||
-                  remainingSeconds === 0 ||
-                  walletSyncing
-                }
-                whileHover={{ scale: loading ? 1 : 1.03 }}
-                whileTap={{ scale: 0.98 }}
-                className="accent-gradient w-full rounded-[var(--radius)] px-5 py-3.5 text-base disabled:cursor-not-allowed disabled:opacity-60 disabled:cursor-not-allowed sm:px-6 sm:py-4 sm:text-lg"
-              >
-                {walletSyncing
-                  ? "Preparing wallet..."
-                  : loading
-                    ? "Opening your gift..."
-                    : !authenticated
-                      ? hasNamedGift
-                        ? "Claim with Google →"
-                        : "Sign in & unwrap"
-                      : claimCopyVariant === "b"
-                        ? "Claim to my wallet"
-                        : "Unwrap your gift"}
-              </motion.button>
-              {!authenticated && (
+              {!authenticated ? (
                 <>
-                  {hasNamedGift ? (
+                  <LoginPanel
+                    disabled={!ready || giftLoading || walletSyncing}
+                    authError={authError}
+                    googleLabel={hasNamedGift ? "Claim with Google →" : "Sign in & unwrap"}
+                    buttonSize="large"
+                    onGoogleLogin={() => {
+                      markAutoClaimAfterAuth();
+                      void login();
+                    }}
+                    onEmailLogin={async (email) => {
+                      markAutoClaimAfterAuth();
+                      await loginWithEmail(email);
+                    }}
+                  />
+                  {hasNamedGift && (
                     <p className="text-xs text-white/55">
                       No wallet or account needed
                     </p>
-                  ) : null}
+                  )}
                   <details className="text-left">
                     <summary className="cursor-pointer text-xs text-white/35 hover:text-white/55 transition list-none flex items-center justify-center gap-1">
                       <span>What is USDC?</span>
@@ -482,28 +471,40 @@ function GiftClaimContent() {
                     </summary>
                     <div className="mt-2 rounded-xl border border-white/8 bg-white/4 p-3 text-xs text-white/55 space-y-1.5">
                       <p>USDC is digital money — 1 USDC = $1 USD, always. It lives on a blockchain instead of a bank.</p>
-                      <p>When you claim, a wallet is created for you automatically. No setup, no seed phrases. Just Google sign-in.</p>
+                      <p>When you claim, a wallet is created for you automatically. No setup, no seed phrases. Just sign in.</p>
                       <p className="text-white/35">You can withdraw to a bank or spend it later.</p>
                     </div>
                   </details>
-                  <OAuthNavHint />
-                  {authError && (
-                    <p className="text-xs text-rose-400">{authError}</p>
-                  )}
                 </>
-              )}
-
-              {authenticated && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    logout();
-                    setStatus("Signed out. Click unwrap to sign in again.");
-                  }}
-                  className="app-btn-secondary w-full px-4 py-2.5 text-sm"
-                >
-                  Use a different account
-                </button>
+              ) : (
+                <>
+                  <motion.button
+                    type="button"
+                    onClick={() => void onUnwrap()}
+                    disabled={loading || !ready || giftLoading || remainingSeconds === 0 || walletSyncing}
+                    whileHover={{ scale: loading ? 1 : 1.03 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="accent-gradient w-full rounded-[var(--radius)] px-5 py-3.5 text-base disabled:cursor-not-allowed disabled:opacity-60 sm:px-6 sm:py-4 sm:text-lg"
+                  >
+                    {walletSyncing
+                      ? "Preparing wallet..."
+                      : loading
+                        ? "Opening your gift..."
+                        : claimCopyVariant === "b"
+                          ? "Claim to my wallet"
+                          : "Unwrap your gift"}
+                  </motion.button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      logout();
+                      setStatus("Signed out. Click unwrap to sign in again.");
+                    }}
+                    className="app-btn-secondary w-full px-4 py-2.5 text-sm"
+                  >
+                    Use a different account
+                  </button>
+                </>
               )}
             </div>
           )}

@@ -69,6 +69,7 @@ const ACTION_LIMITS: Record<string, number> = {
   refreshUserToken: 20,
   listWallets: 30,
   contractExecutionChallenge: 8,
+  sendEmailOtp: 5,
 };
 
 const USDC_MAX_AMOUNT = 10_000;
@@ -511,6 +512,33 @@ export async function POST(request: Request) {
         }
 
         const inner = data.data as { challengeId: string };
+        return NextResponse.json(inner, { status: 200 });
+      }
+
+      case "sendEmailOtp": {
+        const email = (params.email as string | undefined)?.trim().toLowerCase();
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          return NextResponse.json({ error: "Invalid email address." }, { status: 400 });
+        }
+
+        const response = await fetch(`${CIRCLE_BASE_URL}/v1/w3s/users/email/token`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${CIRCLE_API_KEY}`,
+          },
+          body: JSON.stringify({
+            idempotencyKey: crypto.randomUUID(),
+            email,
+          }),
+        });
+
+        const data = (await response.json()) as Record<string, unknown>;
+        if (!response.ok) {
+          return NextResponse.json(data, { status: response.status });
+        }
+
+        const inner = data.data as { otpToken: string };
         return NextResponse.json(inner, { status: 200 });
       }
 

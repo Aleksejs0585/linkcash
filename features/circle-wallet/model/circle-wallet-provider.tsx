@@ -86,6 +86,7 @@ type CircleWalletContextValue = {
   googleDisplayName: string | null;
   googleEmail: string | null;
   login: () => Promise<void>;
+  loginWithEmail: (email: string) => Promise<void>;
   logout: () => void;
   executeChallenge: (challengeId: string) => Promise<void>;
   authError: string | null;
@@ -103,6 +104,9 @@ const unconfiguredValue: CircleWalletContextValue = {
   googleDisplayName: null,
   googleEmail: null,
   login: async () => {
+    /* no-op when Circle env is missing */
+  },
+  loginWithEmail: async () => {
     /* no-op when Circle env is missing */
   },
   logout: () => {
@@ -234,6 +238,7 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
   const deviceRebindRetryPendingRef = useRef(false);
   const loginAutoRetryUsedRef = useRef(false);
   const loginInFlightRef = useRef(false);
+  const pendingEmailRef = useRef<string | null>(null);
   const sessionHydrateAttemptedRef = useRef(false);
   const [sdkReady, setSdkReady] = useState(false);
   const [deviceId, setDeviceId] = useState("");
@@ -438,6 +443,45 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
     }
   }, [applySdkLoginConfigs, createDeviceToken, deviceId]);
 
+  const performEmailLogin = useCallback(
+    async (email: string) => {
+      if (loginInFlightRef.current) {
+        throw new Error("Sign-in is already in progress. Please wait a moment.");
+      }
+      const sdk = sdkRef.current;
+      if (!sdk) {
+        throw new Error("Wallet is still loading. Try again in a moment.");
+      }
+      if (!deviceId || !deviceToken || !deviceEncryptionKey) {
+        throw new Error("Wallet is still loading. Try again in a moment.");
+      }
+
+      loginInFlightRef.current = true;
+      try {
+        const data = await postCircle<{ otpToken: string }>({
+          action: "sendEmailOtp",
+          email,
+        });
+
+        pendingEmailRef.current = email;
+
+        sdk.updateConfigs({
+          appSettings: { appId },
+          loginConfigs: {
+            deviceToken,
+            deviceEncryptionKey,
+            otpToken: data.otpToken,
+          },
+        });
+
+        sdk.verifyOtp();
+      } finally {
+        loginInFlightRef.current = false;
+      }
+    },
+    [deviceId, deviceToken, deviceEncryptionKey]
+  );
+
   useEffect(() => {
     let cancelled = false;
 
@@ -506,10 +550,17 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
             persistGoogleDisplayName(profileName);
             setGoogleDisplayName(profileName);
           }
-          const profileEmail = extractGoogleEmail(result);
+          // For email OTP login oAuthInfo is absent — fall back to the address we sent the code to
+          const profileEmail = extractGoogleEmail(result) ?? pendingEmailRef.current;
+          pendingEmailRef.current = null;
           if (profileEmail) {
             persistGoogleEmail(profileEmail);
             setGoogleEmail(profileEmail);
+            if (!profileName) {
+              const localPart = profileEmail.split("@")[0] ?? profileEmail;
+              persistGoogleDisplayName(localPart);
+              setGoogleDisplayName(localPart);
+            }
           }
           setUserToken(result.userToken);
           setEncryptionKey(result.encryptionKey);
@@ -796,6 +847,23 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
     }
   }, [performGoogleLogin, scheduleDeviceRebindRetry]);
 
+  const loginWithEmail = useCallback(
+    async (email: string) => {
+      setAuthError(null);
+      saveOAuthReturnTarget();
+      loginAutoRetryUsedRef.current = false;
+
+      try {
+        await performEmailLogin(email);
+      } catch (e) {
+        const raw = e instanceof Error ? e.message : "Sign-in failed to start.";
+        pendingEmailRef.current = null;
+        setAuthError(formatCircleAuthError(raw));
+      }
+    },
+    [performEmailLogin]
+  );
+
   const logout = useCallback(() => {
     deviceRebindRetryPendingRef.current = false;
     loginAutoRetryUsedRef.current = false;
@@ -860,6 +928,7 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
       googleDisplayName,
       googleEmail,
       login,
+      loginWithEmail,
       logout,
       executeChallenge,
       authError,
@@ -875,6 +944,7 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
       googleDisplayName,
       googleEmail,
       login,
+      loginWithEmail,
       logout,
       primaryWalletId,
       ready,

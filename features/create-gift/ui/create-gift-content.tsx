@@ -6,7 +6,7 @@ import AppShell from "@/components/ui/app-shell";
 import GlassCard from "@/components/ui/glass-card";
 import MainMenu from "@/components/ui/main-menu";
 import { HelpTrigger } from "@/components/ui/help-manual";
-import OAuthNavHint from "@/components/ui/oauth-nav-hint";
+import LoginPanel from "@/components/ui/login-panel";
 import { WalletBackupWarning } from "@/components/ui/wallet-backup-warning";
 import { ARC_TESTNET } from "@/utils";
 import { useCreateGift } from "../model/use-create-gift";
@@ -20,6 +20,7 @@ export function CreateGiftContent() {
     ready,
     authenticated,
     login,
+    loginWithEmail,
     senderWalletAddress,
     authError,
     bootstrapError,
@@ -251,19 +252,13 @@ export function CreateGiftContent() {
           </div>
         ) : !authenticated ? (
           <motion.div className="space-y-2">
-            <motion.button
-              type="button"
-              onClick={() => void login()}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.98 }}
-              className="accent-gradient w-full rounded-[var(--radius)] px-5 py-3.5 text-base sm:px-6 sm:py-4 sm:text-lg"
-            >
-              Sign in with Google
-            </motion.button>
-            <OAuthNavHint />
-            {authError && (
-              <p className="text-center text-sm text-rose-400">{authError}</p>
-            )}
+            <LoginPanel
+              onGoogleLogin={() => void login()}
+              onEmailLogin={loginWithEmail}
+              googleLabel="Sign in with Google"
+              buttonSize="large"
+              authError={authError}
+            />
           </motion.div>
         ) : (
           <motion.div className="space-y-3">
