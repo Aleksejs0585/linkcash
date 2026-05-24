@@ -461,6 +461,7 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
         const data = await postCircle<{ otpToken: string }>({
           action: "sendEmailOtp",
           email,
+          deviceId,
         });
 
         pendingEmailRef.current = email;

@@ -517,11 +517,15 @@ export async function POST(request: Request) {
 
       case "sendEmailOtp": {
         const email = (params.email as string | undefined)?.trim().toLowerCase();
+        const deviceId = (params.deviceId as string | undefined)?.trim();
         if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
           return NextResponse.json({ error: "Invalid email address." }, { status: 400 });
         }
+        if (!deviceId) {
+          return NextResponse.json({ error: "Missing deviceId." }, { status: 400 });
+        }
 
-        const response = await fetch(`${CIRCLE_BASE_URL}/v1/w3s/users/email/token`, {
+        const response = await fetch(`${CIRCLE_BASE_URL}/v1/w3s/users/email/otp`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -529,6 +533,7 @@ export async function POST(request: Request) {
           },
           body: JSON.stringify({
             idempotencyKey: crypto.randomUUID(),
+            deviceId,
             email,
           }),
         });
