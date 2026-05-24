@@ -15,25 +15,12 @@ export default function MainMenu({ className }: MainMenuProps) {
   const productUrl = getProductSiteUrl();
 
   useEffect(() => {
-    if (!open) {
-      return;
-    }
-    const onDocPointerDown = (e: PointerEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
+    if (!open) return;
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setOpen(false);
-      }
+      if (e.key === "Escape") setOpen(false);
     };
-    document.addEventListener("pointerdown", onDocPointerDown);
     document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", onDocPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
+    return () => document.removeEventListener("keydown", onKeyDown);
   }, [open]);
 
   return (
@@ -50,12 +37,19 @@ export default function MainMenu({ className }: MainMenuProps) {
         Menu
       </button>
       {open ? (
-        <div
-          id="main-app-menu"
-          role="menu"
-          aria-orientation="vertical"
-          className="absolute left-0 top-full z-50 mt-2 min-w-[220px] rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--bg2)] py-1 shadow-xl"
-        >
+        <>
+          {/* Invisible backdrop — closes menu on outside tap/click */}
+          <div
+            className="fixed inset-0 z-40"
+            aria-hidden
+            onClick={() => setOpen(false)}
+          />
+          <div
+            id="main-app-menu"
+            role="menu"
+            aria-orientation="vertical"
+            className="absolute left-0 top-full z-50 mt-2 min-w-[220px] rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--bg2)] py-1 shadow-xl"
+          >
           <Link
             href="/"
             role="menuitem"
@@ -101,7 +95,8 @@ export default function MainMenu({ className }: MainMenuProps) {
               ↗
             </span>
           </a>
-        </div>
+          </div>
+        </>
       ) : null}
     </div>
   );
