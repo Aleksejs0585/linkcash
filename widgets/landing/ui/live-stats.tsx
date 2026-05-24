@@ -37,22 +37,27 @@ function StatNum({ value }: { value: string }) {
 }
 
 export default function LiveStats({ initial }: { initial: OnChainStats }) {
-  // Never go below the SSR floor values — ignore API responses returning zeros
+  // Never go below the SSR floor values — ignore API responses returning zeros.
+  // Floor resets after 5 minutes so a testnet reset is eventually reflected.
   const floor = useRef(initial);
+  const floorSetAt = useRef(Date.now());
   const [stats, setStats] = useState(initial);
 
   useEffect(() => {
+    const FLOOR_TTL_MS = 5 * 60 * 1000;
     const fetchStats = async () => {
       try {
         const res = await fetch("/api/stats");
         if (!res.ok) return;
         const data = (await res.json()) as OnChainStats;
-        // Only update if the new values are at least as large as what we already show
+        const floorExpired = Date.now() - floorSetAt.current > FLOOR_TTL_MS;
         if (
-          data.totalClaimed >= floor.current.totalClaimed &&
-          parseFloat(data.totalUsdcClaimed) >= parseFloat(floor.current.totalUsdcClaimed)
+          floorExpired ||
+          (data.totalClaimed >= floor.current.totalClaimed &&
+            parseFloat(data.totalUsdcClaimed) >= parseFloat(floor.current.totalUsdcClaimed))
         ) {
           floor.current = data;
+          floorSetAt.current = Date.now();
           setStats(data);
         }
       } catch { /* ignore network errors */ }

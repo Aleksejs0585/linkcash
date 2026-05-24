@@ -58,9 +58,9 @@ export function extractGoogleDisplayName(
   result: OAuthLoginPayload | undefined
 ): string | null {
   if (!result?.oAuthInfo) return null;
-  const fromInfo = result.oAuthInfo.name?.trim();
-  const fromSocial = result.oAuthInfo.socialUserInfo?.name?.trim();
-  const name = fromInfo || fromSocial || "";
+  const fromInfo = result.oAuthInfo.name?.trim() || undefined;
+  const fromSocial = result.oAuthInfo.socialUserInfo?.name?.trim() || undefined;
+  const name: string = fromInfo ?? fromSocial ?? "";
   return name.length > 0 ? name.slice(0, 40) : null;
 }
 

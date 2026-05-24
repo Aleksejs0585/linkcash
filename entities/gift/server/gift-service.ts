@@ -411,10 +411,12 @@ export async function getSenderGifts(input: SenderGiftsInput) {
       ]);
       const reclaimedTxHash = reclaimByHash.get(paymentIdHash);
       // Fallback to event args if contract struct was zeroed after reclaim.
-      const expiresAt = Number(state.expiresAt) || Number(log.args[4] as bigint) || 0;
+      const logExpiresAt = typeof log.args[4] === "bigint" ? Number(log.args[4]) : 0;
+      const logAmount = typeof log.args[3] === "bigint" ? log.args[3] : BigInt(0);
+      const expiresAt = Number(state.expiresAt) || logExpiresAt || 0;
       const amountUsdc =
         reclaimedTxHash && state.amount === BigInt(0)
-          ? formatUnits(log.args[3] as bigint, 6)
+          ? formatUnits(logAmount, 6)
           : formatUnits(state.amount, 6);
       const createdAt = block?.timestamp
         ? new Date(block.timestamp * 1000).toISOString()

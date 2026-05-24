@@ -451,8 +451,8 @@ export async function POST(request: Request) {
               { status: 400 }
             );
           }
-        } catch {
-          // RPC error or timeout — let the chain decide if truly insufficient
+        } catch (balanceErr) {
+          console.warn("[createGift] balance pre-check skipped:", balanceErr);
         }
 
         const expiresAt = BigInt(
