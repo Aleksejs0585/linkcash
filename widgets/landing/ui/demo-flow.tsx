@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 
 const STEPS = [
   {
@@ -39,19 +40,15 @@ const STEPS = [
         </div>
         <div className="w-24 h-24 rounded-xl bg-white p-2 flex items-center justify-center">
           <svg viewBox="0 0 21 21" className="w-full h-full" shapeRendering="crispEdges">
-            {/* Top-left finder */}
             <rect x="0" y="0" width="7" height="7" fill="black"/>
             <rect x="1" y="1" width="5" height="5" fill="white"/>
             <rect x="2" y="2" width="3" height="3" fill="black"/>
-            {/* Top-right finder */}
             <rect x="14" y="0" width="7" height="7" fill="black"/>
             <rect x="15" y="1" width="5" height="5" fill="white"/>
             <rect x="16" y="2" width="3" height="3" fill="black"/>
-            {/* Bottom-left finder */}
             <rect x="0" y="14" width="7" height="7" fill="black"/>
             <rect x="1" y="15" width="5" height="5" fill="white"/>
             <rect x="2" y="16" width="3" height="3" fill="black"/>
-            {/* Data modules */}
             {[
               [8,0],[10,0],[12,0],[9,1],[11,1],[8,2],[12,2],[9,3],[10,3],
               [8,4],[11,4],[9,5],[12,5],[8,6],[10,6],[11,6],
@@ -144,34 +141,58 @@ const STEPS = [
   },
 ];
 
-const STEP_DURATION = 3000;
+const STEP_DURATION = 3500;
+
+const variants = {
+  enter: { opacity: 0, y: 20, scale: 0.97 },
+  center: { opacity: 1, y: 0, scale: 1 },
+  exit: { opacity: 0, y: -16, scale: 0.97 },
+};
 
 export default function DemoFlow() {
   const [step, setStep] = useState(0);
-  const [animating, setAnimating] = useState(false);
+  const [direction, setDirection] = useState(1);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const goTo = (next: number) => {
+    setDirection(next > step ? 1 : -1);
+    setStep(next);
+  };
 
   const startTimer = () => {
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
-      setAnimating(true);
-      setTimeout(() => {
-        setStep((s) => (s + 1) % STEPS.length);
-        setAnimating(false);
-      }, 300);
+      setDirection(1);
+      setStep((s) => (s + 1) % STEPS.length);
     }, STEP_DURATION);
   };
 
   useEffect(() => {
     startTimer();
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const currentStep = STEPS[step];
 
   return (
     <div className="relative mx-auto w-[220px]">
+      {/* Ambient glow that shifts with step */}
+      <div
+        className="absolute inset-0 -z-10 rounded-[2rem] blur-2xl transition-all duration-700"
+        style={{
+          background: step === 3
+            ? "radial-gradient(ellipse at 50% 60%, rgba(52,211,153,0.18) 0%, transparent 70%)"
+            : "radial-gradient(ellipse at 50% 60%, rgba(139,92,246,0.18) 0%, transparent 70%)",
+        }}
+        aria-hidden
+      />
+
       {/* Phone frame */}
-      <div className="relative rounded-[2rem] border-2 border-white/15 bg-[#0a0a14] shadow-2xl overflow-hidden"
-           style={{ boxShadow: "0 0 60px rgba(139,92,246,0.15), 0 25px 50px rgba(0,0,0,0.5)" }}>
+      <div
+        className="relative rounded-[2rem] border-2 border-white/15 bg-[#0a0a14] shadow-2xl overflow-hidden"
+        style={{ boxShadow: "0 0 60px rgba(139,92,246,0.15), 0 25px 50px rgba(0,0,0,0.5)" }}
+      >
         {/* Notch */}
         <div className="flex justify-center pt-3 pb-1">
           <div className="w-16 h-1.5 rounded-full bg-white/10" />
@@ -183,18 +204,27 @@ export default function DemoFlow() {
             <button
               key={s.label}
               type="button"
-              onClick={() => setStep(i)}
-              className={`h-1 rounded-full transition-all duration-300 ${i === step ? "w-6 bg-violet-400" : "w-1.5 bg-white/20"}`}
+              onClick={() => { goTo(i); startTimer(); }}
+              className={`h-1 rounded-full transition-all duration-300 ${i === step ? "w-6 bg-violet-400" : "w-1.5 bg-white/20 hover:bg-white/40"}`}
             />
           ))}
         </div>
 
-        {/* Screen content */}
-        <div
-          className="transition-all duration-300 min-h-[320px]"
-          style={{ opacity: animating ? 0 : 1, transform: animating ? "translateY(8px)" : "translateY(0)" }}
-        >
-          {STEPS[step].screen}
+        {/* Screen content — animated */}
+        <div className="min-h-[320px] overflow-hidden">
+          <AnimatePresence mode="popLayout" initial={false} custom={direction}>
+            <motion.div
+              key={step}
+              custom={direction}
+              variants={variants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
+            >
+              {currentStep.screen}
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         {/* Home indicator */}
@@ -205,7 +235,7 @@ export default function DemoFlow() {
 
       {/* Step label */}
       <p className="mt-3 text-center text-xs text-white/40">
-        <span className="text-violet-400">{STEPS[step].label}</span>
+        <span className="text-violet-400">{currentStep.label}</span>
         {" "}· step {step + 1}/{STEPS.length}
       </p>
     </div>

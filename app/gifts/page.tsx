@@ -173,6 +173,15 @@ function SenderDashboardContent() {
     return () => window.clearTimeout(timerId);
   }, [loadGifts]);
 
+  // Auto-refresh every 30 s while authenticated
+  useEffect(() => {
+    if (!authenticated || !senderWalletAddress) return;
+    const id = window.setInterval(() => {
+      loadGifts().catch(() => undefined);
+    }, 30_000);
+    return () => window.clearInterval(id);
+  }, [authenticated, senderWalletAddress, loadGifts]);
+
   const onReclaim = async (paymentIdHash: string) => {
     setReclaimingHash(paymentIdHash);
     setError(null);
@@ -219,8 +228,15 @@ function SenderDashboardContent() {
                 type="button"
                 onClick={() => loadGifts().catch(() => undefined)}
                 disabled={loading}
-                className="app-btn-secondary px-3 py-2 text-sm disabled:opacity-60"
+                className="app-btn-secondary inline-flex items-center gap-1.5 px-3 py-2 text-sm disabled:opacity-60"
               >
+                <svg
+                  className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`}
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}
+                  aria-hidden
+                >
+                  <path strokeLinecap="round" d="M4 12a8 8 0 018-8 8 8 0 018 8" />
+                </svg>
                 {loading ? "Loading…" : "Refresh"}
               </button>
             </div>
