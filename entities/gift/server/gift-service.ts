@@ -364,24 +364,31 @@ export async function getSenderGifts(input: SenderGiftsInput) {
     return { ok: true as const, gifts };
   }
 
-  // Blockchain fallback — store has no entries for this address (pre-Redis gifts)
-  const eventContract = new Contract(contractAddress, GIFT_FUNDED_ABI, provider);
-  const latestBlock = await provider.getBlockNumber();
-  const filter = eventContract.filters.GiftFunded(null, null, input.senderAddress);
+  // Blockchain fallback — store has no entries for this address (pre-store gifts).
+  // Wrap in try/catch: a new user has no on-chain events so RPC errors here
+  // should surface as an empty list, not a 500.
+  let allLogs: EventLog[];
+  try {
+    const eventContract = new Contract(contractAddress, GIFT_FUNDED_ABI, provider);
+    const latestBlock = await provider.getBlockNumber();
+    const filter = eventContract.filters.GiftFunded(null, null, input.senderAddress);
 
-  const LOG_CHUNK = 9_000;
-  const MAX_CHUNKS = 80;
-  const allLogs: EventLog[] = [];
-  let toBlock = latestBlock;
+    const LOG_CHUNK = 9_000;
+    const MAX_CHUNKS = 80;
+    allLogs = [];
+    let toBlock = latestBlock;
 
-  for (let i = 0; i < MAX_CHUNKS && toBlock >= 0; i++) {
-    const fromBlock = Math.max(0, toBlock - LOG_CHUNK);
-    const batch = await eventContract.queryFilter(filter, fromBlock, toBlock);
-    for (const log of batch) {
-      if ((log as EventLog).args) allLogs.push(log as EventLog);
+    for (let i = 0; i < MAX_CHUNKS && toBlock >= 0; i++) {
+      const fromBlock = Math.max(0, toBlock - LOG_CHUNK);
+      const batch = await eventContract.queryFilter(filter, fromBlock, toBlock);
+      for (const log of batch) {
+        if ((log as EventLog).args) allLogs.push(log as EventLog);
+      }
+      if (fromBlock === 0) break;
+      toBlock = fromBlock - 1;
     }
-    if (fromBlock === 0) break;
-    toBlock = fromBlock - 1;
+  } catch {
+    return { ok: true as const, gifts: [] as SenderGiftItem[] };
   }
 
   if (allLogs.length === 0) {
@@ -456,22 +463,27 @@ export async function getReceivedGifts(input: ReceiverGiftsInput) {
   const provider = await createArcProviderWithContractCheck(rpcUrl, contractAddress);
   const contract = new Contract(contractAddress, GIFT_CLAIMED_ABI, provider);
 
-  const latestBlock = await provider.getBlockNumber();
-  const filter = contract.filters.GiftClaimed(null, input.receiverAddress);
+  let logs: EventLog[];
+  try {
+    const latestBlock = await provider.getBlockNumber();
+    const filter = contract.filters.GiftClaimed(null, input.receiverAddress);
 
-  const LOG_CHUNK = 9_000;
-  const MAX_CHUNKS = 80;
-  let toBlock = latestBlock;
-  const logs: EventLog[] = [];
+    const LOG_CHUNK = 9_000;
+    const MAX_CHUNKS = 80;
+    let toBlock = latestBlock;
+    logs = [];
 
-  for (let i = 0; i < MAX_CHUNKS && toBlock >= 0; i++) {
-    const fromBlock = Math.max(0, toBlock - LOG_CHUNK);
-    const batch = await contract.queryFilter(filter, fromBlock, toBlock);
-    for (const log of batch) {
-      if ((log as EventLog).args) logs.push(log as EventLog);
+    for (let i = 0; i < MAX_CHUNKS && toBlock >= 0; i++) {
+      const fromBlock = Math.max(0, toBlock - LOG_CHUNK);
+      const batch = await contract.queryFilter(filter, fromBlock, toBlock);
+      for (const log of batch) {
+        if ((log as EventLog).args) logs.push(log as EventLog);
+      }
+      if (fromBlock === 0) break;
+      toBlock = fromBlock - 1;
     }
-    if (fromBlock === 0) break;
-    toBlock = fromBlock - 1;
+  } catch {
+    return { ok: true as const, gifts: [] };
   }
 
   logs.sort((a, b) => b.blockNumber - a.blockNumber);
