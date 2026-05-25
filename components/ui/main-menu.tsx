@@ -16,12 +16,28 @@ export default function MainMenu({ className }: MainMenuProps) {
 
   useEffect(() => {
     if (!open) return;
-    const onKeyDown = (e: KeyboardEvent) => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
     };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+    document.addEventListener("click", handleOutsideClick);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("click", handleOutsideClick);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, [open]);
+
+  const handleToggle = (e: React.MouseEvent) => {
+    // Prevent the document-level click handler from immediately closing the menu
+    // that was just opened by this button press.
+    e.nativeEvent.stopImmediatePropagation();
+    setOpen((v) => !v);
+  };
 
   return (
     <div ref={rootRef} className={`relative inline-flex ${className ?? ""}`}>
@@ -30,26 +46,19 @@ export default function MainMenu({ className }: MainMenuProps) {
         aria-expanded={open}
         aria-haspopup="menu"
         aria-controls="main-app-menu"
-        onClick={() => setOpen((v) => !v)}
+        onClick={handleToggle}
         className="app-btn-secondary inline-flex items-center gap-2 px-3 py-2 text-sm"
       >
         <HiOutlineMenuAlt2 className="h-5 w-5 shrink-0" aria-hidden />
         Menu
       </button>
       {open ? (
-        <>
-          {/* Invisible backdrop — closes menu on outside tap/click */}
-          <div
-            className="fixed inset-0 z-40"
-            aria-hidden
-            onClick={() => setOpen(false)}
-          />
-          <div
-            id="main-app-menu"
-            role="menu"
-            aria-orientation="vertical"
-            className="absolute left-0 top-full z-50 mt-2 min-w-[220px] rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--bg2)] py-1 shadow-xl"
-          >
+        <div
+          id="main-app-menu"
+          role="menu"
+          aria-orientation="vertical"
+          className="absolute left-0 top-full z-[200] mt-2 min-w-[220px] rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--bg2)] py-1 shadow-xl"
+        >
           <Link
             href="/"
             role="menuitem"
@@ -95,8 +104,7 @@ export default function MainMenu({ className }: MainMenuProps) {
               ↗
             </span>
           </a>
-          </div>
-        </>
+        </div>
       ) : null}
     </div>
   );
