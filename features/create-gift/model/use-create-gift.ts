@@ -128,6 +128,7 @@ export function useCreateGift() {
   // Reset transient state when user logs out
   useEffect(() => {
     if (!authenticated) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStatus(null);
       setCreating(false);
       setReclaiming(false);

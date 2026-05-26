@@ -21,24 +21,28 @@ function detectPlatform(): Platform {
 const DISMISSED_KEY = "pwa_prompt_dismissed";
 
 export default function PwaInstallPrompt() {
-  const [platform, setPlatform] = useState<Platform>(null);
+  const [platform] = useState<Platform>(() => {
+    if (typeof window === "undefined") return null;
+    if (sessionStorage.getItem(DISMISSED_KEY)) return null;
+    return detectPlatform();
+  });
   const [androidPrompt, setAndroidPrompt] = useState<{ prompt: () => void } | null>(null);
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(() => {
+    if (typeof window === "undefined") return false;
+    if (sessionStorage.getItem(DISMISSED_KEY)) return false;
+    return detectPlatform() === "ios";
+  });
 
   useEffect(() => {
-    if (sessionStorage.getItem(DISMISSED_KEY)) return;
-    const p = detectPlatform();
-    setPlatform(p);
-    if (p === "ios") setVisible(true);
-
+    if (!platform || platform !== "android") return;
     const handler = (e: Event) => {
       e.preventDefault();
       setAndroidPrompt(e as unknown as { prompt: () => void });
-      if (p === "android") setVisible(true);
+      setVisible(true);
     };
     window.addEventListener("beforeinstallprompt", handler);
     return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
+  }, [platform]);
 
   const dismiss = () => {
     sessionStorage.setItem(DISMISSED_KEY, "1");

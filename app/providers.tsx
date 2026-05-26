@@ -19,6 +19,8 @@ function OAuthLoadingOverlay() {
   const [hasTarget, setHasTarget] = useState(false);
 
   useEffect(() => {
+    // Reading localStorage to sync state with an external store is a valid effect.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setHasTarget(getOAuthReturnTarget() !== null);
   }, [ready, walletSyncing, authenticated]);
 

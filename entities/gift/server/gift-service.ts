@@ -1,4 +1,4 @@
-import { Contract, type EventLog, type Log, Wallet, formatUnits, getAddress, parseUnits } from "ethers";
+import { Contract, type EventLog, Wallet, formatUnits, getAddress, parseUnits } from "ethers";
 import { createArcProviderWithContractCheck } from "@/lib/server/arc-chain";
 import { getArcReadEnv, getArcRelayerEnv } from "@/lib/server/env";
 import { HttpError } from "@/lib/server/http-errors";

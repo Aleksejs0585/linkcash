@@ -40,7 +40,7 @@ export default function LiveStats({ initial }: { initial: OnChainStats }) {
   // Never go below the SSR floor values — ignore API responses returning zeros.
   // Floor resets after 5 minutes so a testnet reset is eventually reflected.
   const floor = useRef(initial);
-  const floorSetAt = useRef(Date.now());
+  const floorSetAt = useRef<number | null>(null);
   const [stats, setStats] = useState(initial);
 
   useEffect(() => {
@@ -50,14 +50,15 @@ export default function LiveStats({ initial }: { initial: OnChainStats }) {
         const res = await fetch("/api/stats");
         if (!res.ok) return;
         const data = (await res.json()) as OnChainStats;
-        const floorExpired = Date.now() - floorSetAt.current > FLOOR_TTL_MS;
+        const now = Date.now();
+        const floorExpired = floorSetAt.current !== null && now - floorSetAt.current > FLOOR_TTL_MS;
         if (
           floorExpired ||
           (data.totalClaimed >= floor.current.totalClaimed &&
             parseFloat(data.totalUsdcClaimed) >= parseFloat(floor.current.totalUsdcClaimed))
         ) {
           floor.current = data;
-          floorSetAt.current = Date.now();
+          floorSetAt.current = now;
           setStats(data);
         }
       } catch { /* ignore network errors */ }

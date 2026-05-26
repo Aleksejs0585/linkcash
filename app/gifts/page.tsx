@@ -124,13 +124,6 @@ function SenderDashboardContent() {
   const [gifts, setGifts] = useState<SenderGiftItem[]>([]);
   const [receivedGifts, setReceivedGifts] = useState<ReceivedGiftItem[]>([]);
 
-  useEffect(() => {
-    if (!senderWalletAddress) {
-      setGifts([]);
-      setReceivedGifts([]);
-    }
-  }, [senderWalletAddress]);
-
   const loadGifts = useCallback(async () => {
     if (!senderWalletAddress || !isAddress(senderWalletAddress)) {
       setGifts([]);
@@ -368,7 +361,7 @@ function SenderDashboardContent() {
                       </p>
                     )}
                     {gift.giftMessage && (
-                      <p className="mt-1 text-sm italic text-white/55">"{gift.giftMessage}"</p>
+                      <p className="mt-1 text-sm italic text-white/55">&quot;{gift.giftMessage}&quot;</p>
                     )}
                     <div className="mt-3">
                       <a

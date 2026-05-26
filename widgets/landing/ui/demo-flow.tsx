@@ -87,7 +87,7 @@ const STEPS = [
           <div className="mx-auto w-10 h-10 rounded-full bg-violet-500/20 border border-violet-400/30 flex items-center justify-center text-lg">🎁</div>
           <p className="text-xs text-white/50">Alex K. sent you</p>
           <p className="text-2xl font-bold text-white">$10 <span className="text-base font-normal text-white/50">USDC</span></p>
-          <p className="text-xs italic text-white/60">"Happy birthday! 🎉"</p>
+          <p className="text-xs italic text-white/60">&quot;Happy birthday! 🎉&quot;</p>
         </div>
         <div className="rounded-xl border border-white/8 bg-white/4 p-3 space-y-1.5">
           {[
@@ -170,7 +170,6 @@ export default function DemoFlow() {
   useEffect(() => {
     startTimer();
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const currentStep = STEPS[step];

@@ -249,6 +249,7 @@ function GiftClaimContent() {
   }, [
     claimGift,
     completeClaimSuccess,
+    loading,
     receiverAddress,
     remainingSeconds,
     walletSyncing,

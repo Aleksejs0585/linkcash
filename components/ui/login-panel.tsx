@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { readLoginMethod } from "@/lib/client/google-display-name";
 import OAuthNavHint from "./oauth-nav-hint";
 
@@ -26,11 +26,7 @@ export default function LoginPanel({
   const [email, setEmail] = useState("");
   const [emailLoading, setEmailLoading] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
-  const [lastUsed, setLastUsed] = useState<"google" | "email" | null>(null);
-
-  useEffect(() => {
-    setLastUsed(readLoginMethod());
-  }, []);
+  const [lastUsed] = useState<"google" | "email" | null>(() => readLoginMethod());
 
   const sizeClass =
     buttonSize === "large"
