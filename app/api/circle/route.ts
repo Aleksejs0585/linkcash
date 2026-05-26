@@ -174,7 +174,7 @@ export async function POST(request: Request) {
             },
             body: JSON.stringify({
               idempotencyKey: crypto.randomUUID(),
-              accountType: "SCA",
+              accountType: "EOA",
               blockchains: ["ARC-TESTNET"],
             }),
           }
@@ -413,7 +413,7 @@ export async function POST(request: Request) {
           return NextResponse.json(
             {
               error:
-                "ARC-TESTNET wallet not found for this walletId. Ensure the user was initialized as SCA.",
+                "ARC-TESTNET wallet not found for this walletId.",
             },
             { status: 400 }
           );
