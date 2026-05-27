@@ -15,7 +15,7 @@ export const LANDING_STEPS = [
     num: "03",
     icon: "👤",
     title: "Recipient logs in",
-    text: "One click with Google. A Circle embedded wallet is created automatically — no seed phrases.",
+    text: "One click — Google or email. A Circle embedded wallet is created automatically — no seed phrases.",
   },
   {
     num: "04",
@@ -29,7 +29,7 @@ export const LANDING_USE_CASES = [
   {
     icon: "🎂",
     title: "Birthday gift",
-    text: "Send $25 to a friend. They get a link, tap it, sign in with Google — money in their wallet in 30 seconds. No crypto knowledge needed.",
+    text: "Send $25 to a friend. They get a link, tap it, sign in with Google or email — money in their wallet in 30 seconds. No crypto knowledge needed.",
     tag: "Personal",
   },
   {
@@ -41,7 +41,7 @@ export const LANDING_USE_CASES = [
   {
     icon: "💼",
     title: "Pay a freelancer",
-    text: "Your contractor doesn't have a crypto wallet? Just send a link. They claim $500 USDC with one Google sign-in, no setup, no exchange.",
+    text: "Your contractor doesn't have a crypto wallet? Just send a link. They claim $500 USDC with one Google or email sign-in, no setup, no exchange.",
     tag: "Business",
   },
   {
@@ -79,7 +79,7 @@ export const LANDING_ROADMAP = [
     date: "Shipped · May 2026",
     items: [
       "Smart contract on Arc Testnet",
-      "Circle Wallets + Google sign-in",
+      "Circle Wallets + Google & email sign-in",
       "Gasless relayer for recipients",
       "48+ gifts claimed, $480+ USDC gifted",
     ],
@@ -122,7 +122,7 @@ export const LANDING_FAQ = [
   },
   {
     q: "How does the recipient get a wallet without setup?",
-    a: "LinkCash uses Circle User-Controlled Wallets. When a recipient signs in with Google for the first time, a non-custodial wallet is created silently in the background — no seed phrase, no browser extension required.",
+    a: "LinkCash uses Circle User-Controlled Wallets. When a recipient signs in with Google or email for the first time, a non-custodial wallet is created silently in the background — no seed phrase, no browser extension required.",
   },
   {
     q: "Who pays the gas fee for the claim?",
