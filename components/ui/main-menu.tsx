@@ -73,7 +73,15 @@ export default function MainMenu({ className }: MainMenuProps) {
             className="block rounded-lg px-3 py-2.5 text-left text-sm transition hover:bg-[var(--bg3)]"
             onClick={() => setOpen(false)}
           >
-            Create gift
+            Send a gift
+          </Link>
+          <Link
+            href="/request"
+            role="menuitem"
+            className="block rounded-lg px-3 py-2.5 text-left text-sm transition hover:bg-[var(--bg3)]"
+            onClick={() => setOpen(false)}
+          >
+            Request payment
           </Link>
           <Link
             href="/wallet"

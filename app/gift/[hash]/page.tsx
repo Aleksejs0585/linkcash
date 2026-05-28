@@ -446,6 +446,22 @@ function GiftClaimContent() {
             <div className="space-y-3">
               {!authenticated ? (
                 <>
+                  {!giftLoading && giftAmountUsdc && (
+                    <div className="flex items-start gap-3 rounded-xl border border-emerald-500/20 bg-emerald-950/20 px-4 py-3 text-left">
+                      <span className="shrink-0 text-base text-emerald-400" aria-hidden>🔒</span>
+                      <div className="space-y-0.5">
+                        <p className="text-xs font-medium text-emerald-300/90">
+                          Funds locked in Arc smart contract
+                        </p>
+                        <p className="text-xs text-white/50">
+                          {remainingSeconds !== null && remainingSeconds > 0
+                            ? `Auto-returns to sender in ${expiryLabel} if unclaimed.`
+                            : "Held securely on-chain."}{" "}
+                          No wallet setup needed.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                   <LoginPanel
                     disabled={!ready || giftLoading || walletSyncing}
                     authError={authError}
@@ -614,27 +630,28 @@ function GiftClaimContent() {
                   </motion.div>
                 )}
 
-                {/* CTAs */}
+                {/* Viral nudge + CTAs */}
                 <motion.div
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.36 }}
                   className="space-y-2.5"
                 >
+                  <div className="pb-1 text-center">
+                    <p className="text-sm font-medium text-white/80">Now pass it on</p>
+                    <p className="text-xs text-white/45">Someone you know would love a gift like this</p>
+                  </div>
                   <Link
-                    href="/wallet"
+                    href={`/create${giftAmountUsdc ? `?amount=${encodeURIComponent(giftAmountUsdc)}` : ""}`}
                     className="accent-gradient inline-flex w-full items-center justify-center rounded-[var(--radius)] px-6 py-3.5 text-base font-medium transition hover:scale-[1.02]"
                   >
-                    Open my wallet
+                    🎁 Send someone a gift →
                   </Link>
                   <Link
-                    href={senderDisplayName
-                      ? `/create?msg=${encodeURIComponent(`Thanks for the gift, ${senderDisplayName}! 🎁`)}`
-                      : "/create"
-                    }
-                    className="app-btn-secondary inline-flex w-full items-center justify-center gap-1.5 px-6 py-3 text-sm font-medium"
+                    href="/wallet"
+                    className="app-btn-secondary inline-flex w-full items-center justify-center px-6 py-3 text-sm font-medium"
                   >
-                    🎁 {senderDisplayName ? `Send ${senderDisplayName} a gift back` : "Send someone a gift"}
+                    Open my wallet
                   </Link>
                 </motion.div>
 

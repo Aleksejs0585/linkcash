@@ -89,7 +89,15 @@ export function useCreateGift() {
   const [giftExpiresAt, setGiftExpiresAt] = useState<number | null>(null);
   const [reclaimTick, setReclaimTick] = useState(() => Date.now());
   const [copied, setCopied] = useState(false);
-  const [amount, setAmount] = useState("10");
+  const [amount, setAmount] = useState(() => {
+    if (typeof window === "undefined") return "10";
+    const a = new URLSearchParams(window.location.search).get("amount");
+    const num = a ? parseFloat(a) : NaN;
+    if (Number.isFinite(num) && num > 0 && num <= 10_000) {
+      return String(parseFloat(num.toFixed(2)));
+    }
+    return "10";
+  });
   const [expiresInHours, setExpiresInHours] = useState("24");
   const [senderDisplayName, setSenderDisplayName] = useState(
     () =>
@@ -99,6 +107,11 @@ export function useCreateGift() {
     if (typeof window === "undefined") return "";
     const msg = new URLSearchParams(window.location.search).get("msg");
     return msg ? msg.slice(0, 200) : "";
+  });
+  const [recipientHint] = useState(() => {
+    if (typeof window === "undefined") return "";
+    const toName = new URLSearchParams(window.location.search).get("toName");
+    return toName ? toName.slice(0, 40) : "";
   });
   const [creating, setCreating] = useState(false);
   const [reclaiming, setReclaiming] = useState(false);
@@ -380,6 +393,7 @@ export function useCreateGift() {
       setSenderDisplayName(value);
     },
     setGiftMessage,
+    recipientHint,
     onCreate,
     onReclaim,
     onCopy,

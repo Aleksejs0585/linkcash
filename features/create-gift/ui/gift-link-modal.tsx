@@ -16,6 +16,7 @@ type GiftLinkModalProps = {
   reclaiming: boolean;
   reclaimCountdownLabel: string | null;
   shareLinks: ShareLinkItem[];
+  recipientHint?: string;
   onClose: () => void;
   onCopy: () => void;
   onReclaim: () => void;
@@ -32,6 +33,7 @@ export function GiftLinkModal({
   reclaiming,
   reclaimCountdownLabel,
   shareLinks,
+  recipientHint,
   onClose,
   onCopy,
   onReclaim,
@@ -81,7 +83,9 @@ export function GiftLinkModal({
                 Gift link
               </p>
               <p className="mt-2 text-sm text-emerald-300/90">
-                Gift funded — share this link with the recipient.
+                {recipientHint
+                  ? `Gift funded — share this claim link with ${recipientHint}.`
+                  : "Gift funded — share this link with the recipient."}
               </p>
 
               <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">

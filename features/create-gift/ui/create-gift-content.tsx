@@ -41,6 +41,7 @@ export function CreateGiftContent() {
     status,
     createCopyVariant,
     shareLinks,
+    recipientHint,
     setAmount,
     setExpiresInHours,
     setSenderDisplayName,
@@ -66,6 +67,7 @@ export function CreateGiftContent() {
         reclaiming={reclaiming}
         reclaimCountdownLabel={reclaimCountdownLabel}
         shareLinks={shareLinks}
+        recipientHint={recipientHint || undefined}
         onClose={closeGiftLinkModal}
         onCopy={onCopy}
         onReclaim={() => void onReclaim()}
