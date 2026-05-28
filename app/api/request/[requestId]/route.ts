@@ -24,5 +24,6 @@ export async function GET(
     amountUsdc: req.amountUsdc,
     message: req.message ?? null,
     createdAt: req.createdAt,
+    requesterWalletAddress: req.requesterWalletAddress,
   });
 }

@@ -6,6 +6,7 @@ export type PaymentRequest = {
   amountUsdc: string;
   message?: string;
   createdAt: string;
+  requesterWalletAddress: string;
 };
 
 const TTL_SEC = 90 * 24 * 60 * 60;

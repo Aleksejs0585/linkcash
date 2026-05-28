@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { isAddress } from "ethers";
 import { requestStore } from "@/lib/server/request-store";
 import { rateLimitedCheck } from "@/lib/server/simple-rate-limiter";
 import { HttpError, errorMessage } from "@/lib/server/http-errors";
@@ -12,6 +13,7 @@ const schema = z
     displayName: z.string().trim().min(1).max(40),
     amountUsdc: z.string().trim(),
     message: z.string().trim().max(200).optional(),
+    requesterWalletAddress: z.string().trim(),
   })
   .strict();
 
@@ -39,7 +41,7 @@ export async function POST(request: Request) {
       throw new HttpError(400, "Invalid request payload.");
     }
 
-    const { displayName, amountUsdc, message } = parsed.data;
+    const { displayName, amountUsdc, message, requesterWalletAddress } = parsed.data;
 
     const amount = Number(amountUsdc);
     if (!Number.isFinite(amount) || amount <= 0) {
@@ -47,6 +49,9 @@ export async function POST(request: Request) {
     }
     if (amount > 10_000) {
       throw new HttpError(400, "amountUsdc cannot exceed 10000 USDC.");
+    }
+    if (!isAddress(requesterWalletAddress)) {
+      throw new HttpError(400, "requesterWalletAddress must be a valid address.");
     }
 
     const requestId = randomBytes(12).toString("hex");
@@ -57,6 +62,7 @@ export async function POST(request: Request) {
       amountUsdc,
       message: message || undefined,
       createdAt: new Date().toISOString(),
+      requesterWalletAddress,
     });
 
     return NextResponse.json({ requestId });
