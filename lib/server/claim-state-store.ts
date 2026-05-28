@@ -74,10 +74,13 @@ export class ClaimStateStore {
     maxRequests: number
   ): Promise<RateLimitResult> {
     const key = `claim:rate:${clientIp}`;
-    const count = Number(await this.upstash!.command<number>(["INCR", key]));
-    if (count === 1) {
-      await this.upstash!.command(["PEXPIRE", key, RATE_LIMIT_WINDOW_MS]);
-    }
+    // SET NX PX atomically initialises the key with TTL only on first touch,
+    // avoiding the INCR-then-PEXPIRE race where two concurrent requests both
+    // see count===1 and only one sets the TTL, leaving the other key immortal.
+    await this.upstash!.command(["SET", key, "0", "PX", RATE_LIMIT_WINDOW_MS, "NX"]);
+    const raw = await this.upstash!.command<number | string | null>(["INCR", key]);
+    // Treat null (eviction between SET and INCR) as count=1 to fail safe.
+    const count = raw != null ? Number(raw) : 1;
 
     if (count > maxRequests) {
       const ttl = Number(await this.upstash!.command<number>(["PTTL", key]));

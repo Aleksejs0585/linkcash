@@ -24,12 +24,18 @@ class GiftMetadataStore {
   async set(paymentIdHash: string, metadata: GiftMetadata): Promise<void> {
     const key = redisKey(paymentIdHash);
     const payload = JSON.stringify(metadata);
+
+    // Write-once: don't overwrite existing metadata so a second caller who
+    // knows the paymentIdHash + refundAddress cannot replace sender display
+    // name or gift message with arbitrary content.
+    if (memoryMap().has(key)) return;
     memoryMap().set(key, metadata);
 
     if (!this.upstash) return;
 
     try {
-      await this.upstash.command(["SET", key, payload, "EX", TTL_SEC]);
+      // NX = only set if not exists, preserving the write-once guarantee in Redis.
+      await this.upstash.command(["SET", key, payload, "EX", TTL_SEC, "NX"]);
     } catch (error) {
       console.error(
         JSON.stringify({

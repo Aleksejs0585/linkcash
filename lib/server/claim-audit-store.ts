@@ -93,10 +93,11 @@ class ClaimAuditStore {
         .filter((entry): entry is ClaimAuditEvent => entry !== null);
     } catch (error) {
       const nodeError = error as NodeJS.ErrnoException;
-      if (nodeError.code === "ENOENT") {
-        return [];
-      }
-      throw error;
+      if (nodeError.code === "ENOENT") return [];
+      console.error(
+        JSON.stringify({ event: "claim_audit_store_read_error", message: nodeError.message })
+      );
+      return [];
     }
   }
 }

@@ -80,10 +80,11 @@ class SenderGiftStore {
         .filter((entry): entry is SenderGiftEvent => entry !== null);
     } catch (error) {
       const nodeError = error as NodeJS.ErrnoException;
-      if (nodeError.code === "ENOENT") {
-        return [];
-      }
-      throw error;
+      if (nodeError.code === "ENOENT") return [];
+      console.error(
+        JSON.stringify({ event: "sender_gift_store_read_error", message: nodeError.message })
+      );
+      return [];
     }
   }
 }

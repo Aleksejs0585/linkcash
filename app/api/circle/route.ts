@@ -290,6 +290,13 @@ export async function POST(request: Request) {
           );
         }
 
+        if (BigInt(amountRaw) > parseUnits(String(USDC_MAX_AMOUNT), 6)) {
+          return NextResponse.json(
+            { error: `Approve amount cannot exceed ${USDC_MAX_AMOUNT} USDC.` },
+            { status: 400 }
+          );
+        }
+
         if (
           getAddress(spenderRaw).toLowerCase() !==
           getAddress(arc.contractAddress).toLowerCase()

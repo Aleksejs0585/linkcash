@@ -11,6 +11,9 @@ function getAdminPassword(): string {
 function getSessionSecret(): string {
   const configured = process.env.ADMIN_SESSION_SECRET?.trim();
   if (configured) return configured;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("ADMIN_SESSION_SECRET must be set in production.");
+  }
   return getAdminPassword();
 }
 
@@ -47,7 +50,10 @@ export function isAdminConfigured(): boolean {
 export function validateAdminPassword(candidate: string): boolean {
   const password = getAdminPassword();
   if (!password) return false;
-  return candidate === password;
+  const a = Buffer.from(candidate, "utf8");
+  const b = Buffer.from(password, "utf8");
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
 }
 
 export async function createAdminSession() {
