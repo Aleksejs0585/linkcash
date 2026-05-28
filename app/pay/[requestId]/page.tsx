@@ -226,6 +226,24 @@ function PayContent({ request }: { request: RequestDetails }) {
 
   const isProcessing = step === "funding" || step === "claiming";
 
+  if (!request.requesterWalletAddress) {
+    return (
+      <div className="space-y-4 text-center">
+        <p className="text-sm text-amber-300">
+          This request link was created with an older version of the app and
+          can&apos;t be paid directly.
+        </p>
+        <p className="text-xs text-white/50">
+          Ask {request.displayName} to create a new request link at{" "}
+          <Link href="/request" className="app-link">
+            linkcash.app/request
+          </Link>
+          .
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5">
       {bootstrapError && (
