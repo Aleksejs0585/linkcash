@@ -34,7 +34,9 @@ export default function RequestPage() {
   const [copied, setCopied] = useState(false);
 
   const displayName =
-    googleDisplayName?.trim() || googleEmail?.trim() || "Me";
+    googleEmail?.trim() ||
+    googleDisplayName?.trim() ||
+    (walletAddress ? `${walletAddress.slice(0, 6)}…${walletAddress.slice(-4)}` : "My wallet");
 
   const handleSubmit = async () => {
     if (!walletAddress) {
