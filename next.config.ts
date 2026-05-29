@@ -4,12 +4,12 @@ import type { NextConfig } from "next";
 // inline hydration scripts that cannot be nonce-protected without middleware.
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://auth.circle.com",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.circle.com",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://lh3.googleusercontent.com",
   "font-src 'self'",
-  "connect-src 'self' https://api.circle.com https://api.resend.com https://rpc.testnet.arc.network wss://rpc.testnet.arc.network",
-  "frame-src https://auth.circle.com",
+  "connect-src 'self' https://*.circle.com wss://*.circle.com https://rpc.testnet.arc.network wss://rpc.testnet.arc.network",
+  "frame-src https://*.circle.com",
   "form-action 'self'",
   "base-uri 'self'",
   "object-src 'none'",
