@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createGift, syncClientFundedGift } from "@/entities/gift/server/gift-service";
 import { parseCreateGiftInput } from "@/entities/gift/server/gift-validation";
-import { HttpError, errorMessage } from "@/lib/server/http-errors";
+import { HttpError } from "@/lib/server/http-errors";
 import { rateLimitedCheck } from "@/lib/server/simple-rate-limiter";
 
 export const runtime = "nodejs";

@@ -164,7 +164,7 @@ export async function syncClientFundedGift(input: CreateGiftInput) {
   }
 
   try {
-    return await syncClientFundedGiftInner(input, hashKey);
+    return await syncClientFundedGiftInner(input);
   } finally {
     giftSyncInFlight.delete(hashKey);
     if (upstash) {
@@ -173,7 +173,7 @@ export async function syncClientFundedGift(input: CreateGiftInput) {
   }
 }
 
-async function syncClientFundedGiftInner(input: CreateGiftInput, _hashKey: string) {
+async function syncClientFundedGiftInner(input: CreateGiftInput) {
   const { rpcUrl, contractAddress } = getArcReadEnv();
   const provider = await createArcProviderWithContractCheck(rpcUrl, contractAddress);
   const gift = new Contract(contractAddress, GIFT_EVENTS_ABI, provider);
