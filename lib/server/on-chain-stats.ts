@@ -8,8 +8,8 @@ const ABI = [
 ];
 
 const LOG_CHUNK = 8_000;
-const MAX_CHUNKS = 50;
-const STATS_TIMEOUT_MS = 15_000;
+const MAX_CHUNKS = 500;
+const STATS_TIMEOUT_MS = 30_000;
 
 export type OnChainStats = {
   totalClaimed: number;
@@ -24,6 +24,15 @@ async function loadOnChainStatsInner(): Promise<OnChainStats> {
   const latest = await provider.getBlockNumber();
 
   async function fetchAllLogs(filter: ReturnType<Contract["filters"]["GiftFunded"]>) {
+    // Attempt a single full-history query first — most modern RPC nodes support this.
+    try {
+      const all = await contract.queryFilter(filter, 0, latest);
+      if (Array.isArray(all)) return all;
+    } catch {
+      // RPC limits block range → fall through to chunked scanning.
+    }
+
+    // Chunked fallback: scan backward from latest so recent events always appear.
     const logs = [];
     let toBlock = latest;
     for (let i = 0; i < MAX_CHUNKS && toBlock >= 0; i++) {
