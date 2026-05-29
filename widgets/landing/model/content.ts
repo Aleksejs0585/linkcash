@@ -33,10 +33,10 @@ export const LANDING_USE_CASES = [
     tag: "Personal",
   },
   {
-    icon: "🍕",
-    title: "Split a bill",
-    text: "Paid for the whole dinner? Send everyone a \"pay me back\" link. They claim USDC directly to their wallet, no Venmo account required.",
-    tag: "Personal",
+    icon: "🔗",
+    title: "Request payment",
+    text: "Freelancer or selling something? Create a request link — share it, payer opens it, confirms once. USDC lands in your wallet automatically. No invoice, no bank details.",
+    tag: "Personal · Business",
   },
   {
     icon: "💼",
@@ -81,7 +81,8 @@ export const LANDING_ROADMAP = [
       "Smart contract on Arc Testnet",
       "Circle Wallets + Google & email sign-in",
       "Gasless relayer for recipients",
-      "48+ gifts claimed, $480+ USDC gifted",
+      "Payment request links (direct USDC transfer)",
+      "Email notifications on claim",
     ],
   },
   {

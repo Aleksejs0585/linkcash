@@ -38,6 +38,9 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
           <a href="#roadmap" className="landing-btn-ghost">
             Roadmap
           </a>
+          <Link href="/request" className="landing-btn-ghost">
+            Request →
+          </Link>
           <Link href="/create" className="landing-btn-primary">
             Send USDC →
           </Link>
@@ -55,25 +58,31 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
         </div>
 
         <h1>
-          Want to send $10
+          Send or request USDC
           <br />
-          <span className="accent">to a friend?</span>
+          <span className="accent">just share a link.</span>
           <br />
-          <span className="dim">They don&apos;t need a wallet.</span>
+          <span className="dim">No wallet needed on their end.</span>
         </h1>
 
         <p className="landing-hero-sub">
-          Share a link. They sign in with <strong>Google or email</strong>, get
-          a wallet instantly, and claim USDC — <strong>under 60 seconds</strong>,
-          zero gas, zero setup. No seed phrases. No confusion.
+          Gift money to a friend or get paid by a client — one link, one tap.
+          They sign in with <strong>Google or email</strong>, get a wallet
+          instantly, and USDC arrives — <strong>under 60 seconds</strong>,
+          zero gas, zero setup.
         </p>
 
         <div className="landing-hero-cta">
           <Link href="/create" className="landing-btn-primary landing-btn-large">
-            Create a gift link →
+            Send a gift →
           </Link>
-          <a href="#how" className="landing-btn-outline">
-            See how it works
+          <Link href="/request" className="landing-btn-outline landing-btn-large">
+            Request payment →
+          </Link>
+        </div>
+        <div className="mt-4 text-center">
+          <a href="#how" className="text-sm text-white/40 hover:text-white/70 transition">
+            See how it works ↓
           </a>
         </div>
 
@@ -320,18 +329,18 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
         <h2>
           Ready to send
           <br />
-          <span style={{ color: "var(--lp-accent)" }}>your first gift?</span>
+          <span style={{ color: "var(--lp-accent)" }}>or get paid?</span>
         </h2>
         <p>
-          Create a link in 30 seconds. No crypto experience needed on either
+          One link. Under 60 seconds. No crypto experience needed on either
           side.
         </p>
         <div className="landing-hero-cta">
           <Link href="/create" className="landing-btn-primary landing-btn-large">
-            Create gift link →
+            Send a gift →
           </Link>
-          <Link href="/wallet" className="landing-btn-outline">
-            Open my wallet
+          <Link href="/request" className="landing-btn-outline">
+            Request payment →
           </Link>
         </div>
       </section>
