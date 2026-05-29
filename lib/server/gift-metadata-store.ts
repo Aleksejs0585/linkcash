@@ -64,6 +64,12 @@ class GiftMetadataStore {
       ) {
         return null;
       }
+      if (
+        parsed.amountUsdc !== undefined &&
+        (typeof parsed.amountUsdc !== "string" || !/^\d+(\.\d+)?$/.test(parsed.amountUsdc))
+      ) {
+        parsed.amountUsdc = undefined;
+      }
       memoryMap().set(key, parsed);
       return parsed;
     } catch (error) {

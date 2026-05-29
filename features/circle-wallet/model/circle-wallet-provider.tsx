@@ -575,6 +575,7 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
           });
 
           void (async () => {
+            if (cancelled) return;
             try {
               await ensureWalletReady(result.userToken, result.encryptionKey);
               // Navigation handled by OAuthReturnResume (router.push, no page reload).
@@ -648,6 +649,8 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!sdkReady || !sdkRef.current) return;
 
+    let isMounted = true;
+
     const run = async () => {
       try {
         const cached =
@@ -656,21 +659,29 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
             : null;
 
         if (cached) {
-          setDeviceId(cached);
+          if (isMounted) setDeviceId(cached);
           return;
         }
 
         const id = await sdkRef.current!.getDeviceId();
-        setDeviceId(id);
-        window.localStorage.setItem("deviceId", id);
+        if (isMounted) {
+          setDeviceId(id);
+          window.localStorage.setItem("deviceId", id);
+        }
       } catch (e) {
-        setBootstrapError(
-          e instanceof Error ? e.message : "Failed to read device id."
-        );
+        if (isMounted) {
+          setBootstrapError(
+            e instanceof Error ? e.message : "Failed to read device id."
+          );
+        }
       }
     };
 
     void run();
+
+    return () => {
+      isMounted = false;
+    };
   }, [sdkReady, deviceIdResetKey]);
 
   useEffect(() => {

@@ -147,7 +147,8 @@ export async function POST(request: Request) {
         const data = (await response.json()) as Record<string, unknown>;
 
         if (!response.ok) {
-          return NextResponse.json(data, { status: response.status });
+          const msg = typeof data.message === "string" ? data.message : `Request failed (${response.status})`;
+          return NextResponse.json({ error: msg }, { status: response.status });
         }
 
         const inner = data.data as {
@@ -186,7 +187,8 @@ export async function POST(request: Request) {
         const data = (await response.json()) as Record<string, unknown>;
 
         if (!response.ok) {
-          return NextResponse.json(data, { status: response.status });
+          const msg = typeof data.message === "string" ? data.message : `Request failed (${response.status})`;
+          return NextResponse.json({ error: msg }, { status: response.status });
         }
 
         const inner = data.data as { challengeId: string };
@@ -215,7 +217,8 @@ export async function POST(request: Request) {
         const data = (await response.json()) as Record<string, unknown>;
 
         if (!response.ok) {
-          return NextResponse.json(data, { status: response.status });
+          const msg = typeof data.message === "string" ? data.message : `Request failed (${response.status})`;
+          return NextResponse.json({ error: msg }, { status: response.status });
         }
 
         const inner = data.data as { wallets: unknown[] };
@@ -334,7 +337,8 @@ export async function POST(request: Request) {
         const data = (await response.json()) as Record<string, unknown>;
 
         if (!response.ok) {
-          return NextResponse.json(data, { status: response.status });
+          const msg = typeof data.message === "string" ? data.message : `Request failed (${response.status})`;
+          return NextResponse.json({ error: msg }, { status: response.status });
         }
 
         const inner = data.data as { challengeId: string };
@@ -378,9 +382,9 @@ export async function POST(request: Request) {
         }
 
         const amountNum = Number(amountUsdc);
-        if (!Number.isFinite(amountNum) || amountNum <= 0) {
+        if (!Number.isFinite(amountNum) || amountNum < 0.01) {
           return NextResponse.json(
-            { error: "amountUsdc must be a positive number." },
+            { error: "amountUsdc must be at least 0.01 USDC." },
             { status: 400 }
           );
         }
@@ -518,7 +522,8 @@ export async function POST(request: Request) {
         const data = (await response.json()) as Record<string, unknown>;
 
         if (!response.ok) {
-          return NextResponse.json(data, { status: response.status });
+          const msg = typeof data.message === "string" ? data.message : `Request failed (${response.status})`;
+          return NextResponse.json({ error: msg }, { status: response.status });
         }
 
         const inner = data.data as { challengeId: string };
@@ -550,7 +555,8 @@ export async function POST(request: Request) {
 
         const data = (await response.json()) as Record<string, unknown>;
         if (!response.ok) {
-          return NextResponse.json(data, { status: response.status });
+          const msg = typeof data.message === "string" ? data.message : `Request failed (${response.status})`;
+          return NextResponse.json({ error: msg }, { status: response.status });
         }
 
         const inner = data.data as { otpToken: string };
@@ -584,7 +590,8 @@ export async function POST(request: Request) {
         const data = (await response.json()) as Record<string, unknown>;
 
         if (!response.ok) {
-          return NextResponse.json(data, { status: response.status });
+          const msg = typeof data.message === "string" ? data.message : `Request failed (${response.status})`;
+          return NextResponse.json({ error: msg }, { status: response.status });
         }
 
         const inner = data.data as {
@@ -603,10 +610,9 @@ export async function POST(request: Request) {
     }
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unexpected error.";
-    const isCircleError = msg.includes("Circle") || msg.includes("circle");
     console.error("Error in /api/circle:", msg);
     return NextResponse.json(
-      { error: isCircleError ? msg : "Failed to process wallet request. Please try again." },
+      { error: "Failed to process wallet request. Please try again." },
       { status: 500 }
     );
   }

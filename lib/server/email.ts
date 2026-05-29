@@ -30,6 +30,8 @@ export async function sendGiftClaimedEmail({
   ].join("\n");
 
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8_000);
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -37,7 +39,9 @@ export async function sendGiftClaimedEmail({
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ from: FROM_EMAIL, to, subject, text }),
+      signal: controller.signal,
     });
+    clearTimeout(timeoutId);
     if (!res.ok) {
       const body = (await res.text()).slice(0, 200);
       console.error(

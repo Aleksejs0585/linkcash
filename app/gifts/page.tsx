@@ -312,9 +312,13 @@ function SenderDashboardContent() {
             {tab === "sent" && expiredUnclaimed.length > 1 && (
               <button
                 type="button"
-                onClick={() =>
-                  expiredUnclaimed.forEach((g) => void onReclaim(g.paymentIdHash))
-                }
+                onClick={() => {
+                  void (async () => {
+                    for (const g of expiredUnclaimed) {
+                      await onReclaim(g.paymentIdHash);
+                    }
+                  })();
+                }}
                 disabled={reclaimingHash !== null}
                 className="accent-gradient rounded-[var(--radius-sm)] px-3 py-1.5 text-xs font-medium disabled:opacity-60"
               >

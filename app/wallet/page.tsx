@@ -81,9 +81,14 @@ function WalletContent() {
     try {
       const provider = new JsonRpcProvider(ARC_TESTNET.rpcUrl);
       const usdc = new Contract(ARC_TESTNET.usdcErc20Address, ERC20_ABI, provider);
-      const [rawBalance, decimals] = await Promise.all([
-        usdc.balanceOf(walletAddressResolved) as Promise<bigint>,
-        usdc.decimals() as Promise<number>,
+      const [rawBalance, decimals] = await Promise.race([
+        Promise.all([
+          usdc.balanceOf(walletAddressResolved) as Promise<bigint>,
+          usdc.decimals() as Promise<number>,
+        ]),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Balance check timed out.")), 10_000)
+        ),
       ]);
 
       setBalance(formatUnits(rawBalance, decimals));

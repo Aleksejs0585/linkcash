@@ -16,7 +16,6 @@ type ClaimSuccessResponse = {
 };
 
 const CLAIM_ABI = ["function claim(bytes32 paymentIdHash,address receiver)"];
-const ERC20_ABI = ["function balanceOf(address account) view returns (uint256)"];
 const IDEMPOTENCY_PROCESSING_TTL_MS = 2 * 60_000;
 const IDEMPOTENCY_SUCCESS_TTL_MS = 24 * 60 * 60_000;
 
@@ -57,7 +56,7 @@ export async function submitClaim(params: {
     );
   }
 
-  const { rpcUrl, privateKey, contractAddress, usdcAddress } = getArcRelayerEnv();
+  const { rpcUrl, privateKey, contractAddress } = getArcRelayerEnv();
   const idempotencyKey =
     explicitIdempotencyKey?.trim() ||
     buildClaimIdempotencyKey(input.paymentIdHash, input.receiverAddress);
@@ -121,38 +120,17 @@ export async function submitClaim(params: {
     );
   }
 
+  let txConfirmed = false;
+  let txHash = "";
   try {
     const provider = await createArcProviderWithContractCheck(rpcUrl, contractAddress);
     const relayer = new Wallet(privateKey, provider);
     const contract = new Contract(contractAddress, CLAIM_ABI, relayer);
-    const usdc = new Contract(usdcAddress, ERC20_ABI, provider);
-    const receiverBalanceBefore = (await usdc.balanceOf(input.receiverAddress)) as bigint;
 
     const tx = await contract.claim(input.paymentIdHash, input.receiverAddress);
     const receipt = await tx.wait();
-    const txHash = receipt?.hash ?? tx.hash;
-    const receiverBalanceAfter = (await usdc.balanceOf(input.receiverAddress)) as bigint;
-
-    if (receiverBalanceAfter <= receiverBalanceBefore) {
-      await claimStateStore.deleteIdempotency(idempotencyKey);
-      const noTransferMessage =
-        "Claim transaction confirmed, but receiver balance did not increase. Check claim contract payout logic.";
-      await claimAuditStore.write({
-        requestId,
-        timestamp: new Date().toISOString(),
-        event: "claim_error",
-        ip: clientIp,
-        idempotencyKey: idempotencyKey.slice(0, 10),
-        paymentIdHash: input.paymentIdHash,
-        receiverAddress: input.receiverAddress,
-        txHash,
-        errorCode: "RELAY_ERROR",
-        message: noTransferMessage,
-      });
-      throw new HttpError(500, `${noTransferMessage} Tx: ${txHash}`, {
-        code: "RELAY_ERROR",
-      });
-    }
+    txHash = receipt?.hash ?? (tx.hash as string);
+    txConfirmed = true;
 
     await claimStateStore.setSuccess(idempotencyKey, txHash, IDEMPOTENCY_SUCCESS_TTL_MS);
     await claimAuditStore.write({
@@ -168,7 +146,10 @@ export async function submitClaim(params: {
 
     return { ok: true, txHash, idempotencyKey };
   } catch (error) {
-    await claimStateStore.deleteIdempotency(idempotencyKey);
+    // Don't delete the idempotency key if tx already confirmed — prevents double-spend on retry.
+    if (!txConfirmed) {
+      await claimStateStore.deleteIdempotency(idempotencyKey);
+    }
     throw error;
   }
 }
