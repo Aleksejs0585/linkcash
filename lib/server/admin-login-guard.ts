@@ -43,6 +43,17 @@ export function canAttemptAdminLogin(request: Request): LockoutStatus {
   return { allowed: false, retryAfterSeconds };
 }
 
+let writeCounter = 0;
+
+function maybePruneAttempts() {
+  if (++writeCounter < 100) return;
+  writeCounter = 0;
+  const now = Date.now();
+  for (const [ip, state] of attemptsStore) {
+    if (state.blockedUntilMs <= now) attemptsStore.delete(ip);
+  }
+}
+
 export function markAdminLoginFailure(request: Request): void {
   const ip = getIp(request);
   const previous = attemptsStore.get(ip) ?? { failCount: 0, blockedUntilMs: 0 };
@@ -56,6 +67,7 @@ export function markAdminLoginFailure(request: Request): void {
     failCount: nextFailCount,
     blockedUntilMs: Date.now() + backoffSeconds * 1000,
   });
+  maybePruneAttempts();
 }
 
 export function clearAdminLoginFailures(request: Request): void {

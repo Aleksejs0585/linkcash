@@ -379,19 +379,29 @@ export async function getSenderGifts(input: SenderGiftsInput) {
     const filter = eventContract.filters.GiftFunded(null, null, input.senderAddress);
 
     const LOG_CHUNK = 9_000;
-    const MAX_CHUNKS = 80;
-    allLogs = [];
-    let toBlock = latestBlock;
+    const MAX_CHUNKS = 30;
 
-    for (let i = 0; i < MAX_CHUNKS && toBlock >= 0; i++) {
-      const fromBlock = Math.max(0, toBlock - LOG_CHUNK);
-      const batch = await eventContract.queryFilter(filter, fromBlock, toBlock);
-      for (const log of batch) {
-        if ((log as EventLog).args) allLogs.push(log as EventLog);
+    async function fetchFallbackLogs(): Promise<EventLog[]> {
+      const logs: EventLog[] = [];
+      let toBlock = latestBlock;
+      for (let i = 0; i < MAX_CHUNKS && toBlock >= 0; i++) {
+        const fromBlock = Math.max(0, toBlock - LOG_CHUNK);
+        const batch = await eventContract.queryFilter(filter, fromBlock, toBlock);
+        for (const log of batch) {
+          if ((log as EventLog).args) logs.push(log as EventLog);
+        }
+        if (fromBlock === 0) break;
+        toBlock = fromBlock - 1;
       }
-      if (fromBlock === 0) break;
-      toBlock = fromBlock - 1;
+      return logs;
     }
+
+    allLogs = await Promise.race([
+      fetchFallbackLogs(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("blockchain fallback timeout")), 10_000)
+      ),
+    ]);
   } catch {
     return { ok: true as const, gifts: [] as SenderGiftItem[] };
   }

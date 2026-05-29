@@ -116,12 +116,31 @@ export class ClaimStateStore {
     if (this.upstash) {
       const raw = await this.upstash.command<string | null>(["GET", `claim:idem:${key}`]);
       if (!raw) return null;
-      const parsed = JSON.parse(raw) as IdempotencyEntry;
-      if (parsed.expiresAt <= Date.now()) {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        return null;
+      }
+      if (
+        typeof parsed !== "object" ||
+        parsed === null ||
+        !("status" in parsed) ||
+        !("expiresAt" in parsed) ||
+        typeof (parsed as Record<string, unknown>).expiresAt !== "number" ||
+        ((parsed as Record<string, unknown>).status !== "processing" &&
+          (parsed as Record<string, unknown>).status !== "success") ||
+        ((parsed as Record<string, unknown>).status === "success" &&
+          typeof (parsed as Record<string, unknown>).txHash !== "string")
+      ) {
+        return null;
+      }
+      const entry = parsed as IdempotencyEntry;
+      if (entry.expiresAt <= Date.now()) {
         await this.deleteIdempotency(key);
         return null;
       }
-      return parsed;
+      return entry;
     }
 
     const current = idempotencyStore.get(key) ?? null;

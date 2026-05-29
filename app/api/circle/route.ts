@@ -280,6 +280,12 @@ export async function POST(request: Request) {
             { status: 400 }
           );
         }
+        if (JSON.stringify(abiParameters).length > 10_000) {
+          return NextResponse.json(
+            { error: "abiParameters payload too large." },
+            { status: 400 }
+          );
+        }
 
         const spenderRaw = String(abiParameters[0]).trim();
         const amountRaw = String(abiParameters[1]).trim();
