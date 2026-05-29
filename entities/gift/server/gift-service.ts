@@ -222,6 +222,9 @@ export async function reclaimGift(input: ReclaimGiftInput) {
   if (giftState.amount === BigInt(0)) {
     throw new HttpError(404, "No gift found for this payment id.");
   }
+  if (getAddress(giftState.refundAddress) !== getAddress(input.callerAddress)) {
+    throw new HttpError(403, "Only the gift sender can reclaim this gift.");
+  }
   if (giftState.claimed) {
     throw new HttpError(400, "This gift was already claimed or reclaimed.");
   }

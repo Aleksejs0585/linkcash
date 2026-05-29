@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { reclaimGift } from "@/entities/gift/server/gift-service";
 import { parseReclaimGiftInput } from "@/entities/gift/server/gift-validation";
-import { HttpError, errorMessage } from "@/lib/server/http-errors";
+import { HttpError } from "@/lib/server/http-errors";
 import { rateLimitedCheck } from "@/lib/server/simple-rate-limiter";
 
 export const runtime = "nodejs";
@@ -31,8 +31,14 @@ export async function POST(request: Request) {
     if (error instanceof HttpError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
+    console.error(
+      JSON.stringify({
+        event: "reclaim_gift_error",
+        message: error instanceof Error ? error.message : "unknown",
+      })
+    );
     return NextResponse.json(
-      { error: errorMessage(error, "Failed to reclaim expired gift.") },
+      { error: "Failed to reclaim expired gift." },
       { status: 500 }
     );
   }

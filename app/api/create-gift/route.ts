@@ -34,9 +34,12 @@ export async function POST(request: Request) {
     if (error instanceof HttpError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    return NextResponse.json(
-      { error: errorMessage(error, "Failed to fund gift.") },
-      { status: 500 }
+    console.error(
+      JSON.stringify({
+        event: "create_gift_error",
+        message: error instanceof Error ? error.message : "unknown",
+      })
     );
+    return NextResponse.json({ error: "Failed to fund gift." }, { status: 500 });
   }
 }

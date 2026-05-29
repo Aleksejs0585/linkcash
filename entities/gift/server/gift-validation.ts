@@ -23,6 +23,7 @@ export type CreateGiftParsed = CreateGiftInput & {
 
 export type ReclaimGiftInput = {
   paymentIdHash: string;
+  callerAddress: string;
 };
 
 export type GiftHashInput = {
@@ -49,6 +50,7 @@ const createGiftSchema = z
 const reclaimGiftSchema = z
   .object({
     paymentIdHash: z.string().trim(),
+    callerAddress: z.string().trim(),
   })
   .strict();
 
@@ -109,11 +111,14 @@ export function parseReclaimGiftInput(body: unknown): ReclaimGiftInput {
   if (!parsed.success) {
     throw new HttpError(400, "Invalid reclaim payload.");
   }
-  const { paymentIdHash } = parsed.data;
+  const { paymentIdHash, callerAddress } = parsed.data;
   if (!isHexString(paymentIdHash, 32)) {
     throw new HttpError(400, "paymentIdHash must be a bytes32 hex string.");
   }
-  return { paymentIdHash };
+  if (!isAddress(callerAddress)) {
+    throw new HttpError(400, "callerAddress must be a valid address.");
+  }
+  return { paymentIdHash, callerAddress };
 }
 
 export function parseGiftHashInput(hash: string): GiftHashInput {

@@ -183,7 +183,7 @@ function SenderDashboardContent() {
       const response = await fetch("/api/reclaim-gift", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paymentIdHash }),
+        body: JSON.stringify({ paymentIdHash, callerAddress: senderWalletAddress }),
       });
       const data = (await response.json()) as
         | { ok: true; txHash: string }

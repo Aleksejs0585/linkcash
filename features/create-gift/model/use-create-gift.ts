@@ -321,7 +321,7 @@ export function useCreateGift() {
       const response = await fetch("/api/reclaim-gift", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paymentIdHash }),
+        body: JSON.stringify({ paymentIdHash, callerAddress: senderWalletAddress }),
       });
       const data = (await response.json()) as ReclaimGiftSuccess | ApiError;
       if (!response.ok || !("txHash" in data)) {
