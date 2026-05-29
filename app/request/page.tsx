@@ -7,6 +7,7 @@ import AppShell from "@/components/ui/app-shell";
 import GlassCard from "@/components/ui/glass-card";
 import MainMenu from "@/components/ui/main-menu";
 import LoginPanel from "@/components/ui/login-panel";
+import { QRCodeSVG } from "qrcode.react";
 import { useCircleWallet } from "@/features/circle-wallet/model/circle-wallet-provider";
 import { toast } from "@/lib/client/toast";
 
@@ -109,6 +110,21 @@ export default function RequestPage() {
 
             <div className="rounded-xl border border-white/10 bg-white/5 p-3">
               <p className="break-all text-xs text-white/70">{requestLink}</p>
+            </div>
+
+            <div className="flex justify-center">
+              <div className="rounded-xl bg-white p-3">
+                <QRCodeSVG
+                  value={requestLink}
+                  size={148}
+                  imageSettings={{
+                    src: "/linkcash-icon-512.png",
+                    height: 28,
+                    width: 28,
+                    excavate: true,
+                  }}
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
