@@ -5,6 +5,15 @@ import { HttpError } from "@/lib/server/http-errors";
 import { giftMetadataStore } from "@/lib/server/gift-metadata-store";
 import { buildGiftMetadata } from "@/lib/server/gift-metadata";
 import { senderGiftStore } from "@/lib/server/sender-gift-store";
+import { getUpstashClient } from "@/lib/server/upstash-client";
+
+// In-process guard: prevents the race within the same serverless instance.
+const globalState = globalThis as typeof globalThis & {
+  __giftSyncInFlight?: Set<string>;
+};
+const giftSyncInFlight: Set<string> =
+  globalState.__giftSyncInFlight ?? new Set();
+globalState.__giftSyncInFlight = giftSyncInFlight;
 import type {
   CreateGiftInput,
   GiftHashInput,
@@ -127,6 +136,44 @@ async function findFundGiftTxHash(
 }
 
 export async function syncClientFundedGift(input: CreateGiftInput) {
+  const hashKey = input.paymentIdHash.toLowerCase();
+
+  // Acquire in-process lock first (prevents race within the same instance).
+  if (giftSyncInFlight.has(hashKey)) {
+    throw new HttpError(409, "Gift sync already in progress. Please retry in a moment.");
+  }
+  giftSyncInFlight.add(hashKey);
+
+  // Acquire cross-instance Redis lock (prevents race across serverless instances).
+  const upstash = getUpstashClient();
+  const lockKey = `linkcash:gift-sync-lock:${hashKey}`;
+  if (upstash) {
+    try {
+      const acquired = await upstash.command<string | null>([
+        "SET", lockKey, "1", "EX", 300, "NX",
+      ]);
+      if (acquired !== "OK") {
+        giftSyncInFlight.delete(hashKey);
+        throw new HttpError(409, "Gift sync already in progress. Please retry in a moment.");
+      }
+    } catch (e) {
+      giftSyncInFlight.delete(hashKey);
+      if (e instanceof HttpError) throw e;
+      // Upstash error — proceed without Redis lock (in-process guard still active).
+    }
+  }
+
+  try {
+    return await syncClientFundedGiftInner(input, hashKey);
+  } finally {
+    giftSyncInFlight.delete(hashKey);
+    if (upstash) {
+      upstash.command(["DEL", lockKey]).catch(() => undefined);
+    }
+  }
+}
+
+async function syncClientFundedGiftInner(input: CreateGiftInput, _hashKey: string) {
   const { rpcUrl, contractAddress } = getArcReadEnv();
   const provider = await createArcProviderWithContractCheck(rpcUrl, contractAddress);
   const gift = new Contract(contractAddress, GIFT_EVENTS_ABI, provider);

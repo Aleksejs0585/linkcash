@@ -24,6 +24,13 @@ export function getOAuthReturnTarget(): string | null {
   return sessionStorage.getItem(OAUTH_RETURN_KEY);
 }
 
+const ALLOWED_RETURN_PREFIXES = ["/gift/", "/status/", "/create", "/wallet", "/pay/"];
+
+function isSafeReturnPath(path: string): boolean {
+  if (!path.startsWith("/")) return false;
+  return ALLOWED_RETURN_PREFIXES.some((prefix) => path.startsWith(prefix));
+}
+
 /**
  * Navigate back to the saved gift/app URL after OAuth lands on site origin (/).
  * Returns true if a redirect was started.
@@ -32,15 +39,12 @@ export function resumeOAuthReturnTarget(): boolean {
   if (typeof window === "undefined") return false;
 
   const saved = getOAuthReturnTarget();
-  if (!saved) return false;
+  clearOAuthReturnTarget();
+  if (!saved || !isSafeReturnPath(saved)) return false;
 
   const current = getCurrentAppPath();
-  if (current === saved) {
-    clearOAuthReturnTarget();
-    return false;
-  }
+  if (current === saved) return false;
 
-  clearOAuthReturnTarget();
   window.location.assign(saved);
   return true;
 }

@@ -8,13 +8,15 @@ function getAdminPassword(): string {
   return process.env.ADMIN_DASHBOARD_PASSWORD?.trim() ?? "";
 }
 
+const DEV_SESSION_SECRET = "dev-only-admin-session-secret-not-for-production";
+
 function getSessionSecret(): string {
   const configured = process.env.ADMIN_SESSION_SECRET?.trim();
   if (configured) return configured;
   if (process.env.NODE_ENV === "production") {
     throw new Error("ADMIN_SESSION_SECRET must be set in production.");
   }
-  return getAdminPassword();
+  return DEV_SESSION_SECRET;
 }
 
 function signPayload(payload: string): string {

@@ -80,15 +80,25 @@ export async function POST(request: Request) {
     currentIdempotencyKey = result.idempotencyKey;
 
     if (!result.cached) {
-      void giftMetadataStore.get(input.paymentIdHash).then((meta) => {
-        if (meta?.senderEmail) {
-          void sendGiftClaimedEmail({
-            to: meta.senderEmail,
-            senderDisplayName: meta.senderDisplayName,
-            amountUsdc: meta.amountUsdc,
-          });
-        }
-      });
+      void giftMetadataStore
+        .get(input.paymentIdHash)
+        .then((meta) => {
+          if (meta?.senderEmail) {
+            return sendGiftClaimedEmail({
+              to: meta.senderEmail,
+              senderDisplayName: meta.senderDisplayName,
+              amountUsdc: meta.amountUsdc,
+            });
+          }
+        })
+        .catch((err: unknown) => {
+          console.error(
+            JSON.stringify({
+              event: "claim_email_error",
+              message: err instanceof Error ? err.message : "unknown",
+            })
+          );
+        });
     }
 
     const response: ClaimSuccessResponse = { ok: true, txHash: result.txHash };
