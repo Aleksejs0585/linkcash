@@ -38,7 +38,9 @@ type SenderGiftItem = {
 async function persistGiftMetadata(input: CreateGiftInput): Promise<void> {
   const metadata = buildGiftMetadata(
     input.senderDisplayName,
-    input.giftMessage
+    input.giftMessage,
+    input.senderEmail,
+    input.amountUsdc
   );
   await giftMetadataStore.set(input.paymentIdHash, metadata);
 }

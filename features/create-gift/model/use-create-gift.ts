@@ -272,6 +272,7 @@ export function useCreateGift() {
           expiresInHours: hoursNum,
           senderDisplayName: trimmedName,
           giftMessage: trimmedMessage || undefined,
+          senderEmail: googleEmail || undefined,
           syncClientFunding: true,
         }),
       });

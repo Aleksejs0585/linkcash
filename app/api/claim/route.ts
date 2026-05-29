@@ -3,6 +3,8 @@ import { parseClaimInput } from "@/entities/claim/server/claim-validation";
 import { getClientIp, submitClaim } from "@/entities/claim/server/claim-service";
 import { claimAuditStore } from "@/lib/server/claim-audit-store";
 import { HttpError, errorMessage } from "@/lib/server/http-errors";
+import { giftMetadataStore } from "@/lib/server/gift-metadata-store";
+import { sendGiftClaimedEmail } from "@/lib/server/email";
 
 export const runtime = "nodejs";
 
@@ -76,6 +78,19 @@ export async function POST(request: Request) {
       explicitIdempotencyKey: idempotencyKey,
     });
     currentIdempotencyKey = result.idempotencyKey;
+
+    if (!result.cached) {
+      void giftMetadataStore.get(input.paymentIdHash).then((meta) => {
+        if (meta?.senderEmail) {
+          void sendGiftClaimedEmail({
+            to: meta.senderEmail,
+            senderDisplayName: meta.senderDisplayName,
+            amountUsdc: meta.amountUsdc,
+          });
+        }
+      });
+    }
+
     const response: ClaimSuccessResponse = { ok: true, txHash: result.txHash };
     if (result.cached) response.cached = true;
     return NextResponse.json(response, {

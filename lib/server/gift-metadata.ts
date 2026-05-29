@@ -10,6 +10,8 @@ export type GiftMetadata = {
   senderDisplayName: string;
   giftMessage?: string;
   createdAt: string;
+  senderEmail?: string;
+  amountUsdc?: string;
 };
 
 function stripControls(value: string): string {
@@ -39,11 +41,15 @@ export function sanitizeGiftMessage(raw: unknown): string | undefined {
 
 export function buildGiftMetadata(
   senderDisplayName: unknown,
-  giftMessage: unknown
+  giftMessage: unknown,
+  senderEmail?: string,
+  amountUsdc?: string
 ): GiftMetadata {
   return {
     senderDisplayName: sanitizeSenderDisplayName(senderDisplayName),
     giftMessage: sanitizeGiftMessage(giftMessage),
     createdAt: new Date().toISOString(),
+    senderEmail: senderEmail || undefined,
+    amountUsdc: amountUsdc || undefined,
   };
 }

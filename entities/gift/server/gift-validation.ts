@@ -13,6 +13,7 @@ export type CreateGiftInput = {
   expiresInHours: number;
   senderDisplayName: string;
   giftMessage?: string;
+  senderEmail?: string;
 };
 
 /** Parsed POST /api/create-gift body (optional on-chain sync path). */
@@ -40,6 +41,7 @@ const createGiftSchema = z
     expiresInHours: z.coerce.number().default(24),
     senderDisplayName: z.string().trim(),
     giftMessage: z.string().trim().optional(),
+    senderEmail: z.string().trim().email().optional(),
     syncClientFunding: z.literal(true).optional(),
   })
   .strict();
@@ -62,6 +64,7 @@ export function parseCreateGiftInput(body: unknown): CreateGiftParsed {
     expiresInHours,
     senderDisplayName,
     giftMessage,
+    senderEmail,
     syncClientFunding,
   } = parsed.data;
 
@@ -93,6 +96,7 @@ export function parseCreateGiftInput(body: unknown): CreateGiftParsed {
     expiresInHours,
     senderDisplayName: sanitizeSenderDisplayName(senderDisplayName),
     giftMessage: sanitizeGiftMessage(giftMessage),
+    senderEmail: senderEmail || undefined,
   };
   if (syncClientFunding === true) {
     return { ...base, syncClientFunding: true };

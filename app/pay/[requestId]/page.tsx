@@ -128,6 +128,7 @@ function PayContent({ request }: { request: RequestDetails }) {
           expiresInHours: 24,
           senderDisplayName: payerName,
           giftMessage: request.message || undefined,
+          senderEmail: googleEmail || undefined,
           syncClientFunding: true,
         }),
       });
