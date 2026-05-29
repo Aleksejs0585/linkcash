@@ -1,6 +1,12 @@
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const FROM_EMAIL = process.env.EMAIL_FROM ?? "LinkCash <noreply@linkcash.app>";
 
+if (!RESEND_API_KEY) {
+  console.warn("[email] RESEND_API_KEY is not set — claim notifications will be skipped.");
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export async function sendGiftClaimedEmail({
   to,
   senderDisplayName,
@@ -11,6 +17,7 @@ export async function sendGiftClaimedEmail({
   amountUsdc?: string;
 }): Promise<void> {
   if (!RESEND_API_KEY) return;
+  if (!EMAIL_RE.test(to)) return;
 
   const amount = amountUsdc ? `${amountUsdc} USDC` : "Your gift";
   const subject = `${amount} was claimed ✓`;

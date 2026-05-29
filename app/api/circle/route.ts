@@ -100,11 +100,14 @@ export async function POST(request: Request) {
   if (!action) {
     return NextResponse.json({ error: "Missing action." }, { status: 400 });
   }
+  if (!Object.prototype.hasOwnProperty.call(ACTION_LIMITS, action)) {
+    return NextResponse.json({ error: "Unknown action." }, { status: 400 });
+  }
 
   // Rate limit per IP+action
   const ip = getClientIp(request);
-  const limit = ACTION_LIMITS[action] ?? 15;
-  const rl = rateLimitedCheck(`circle:${ip}:${action}`, limit);
+  const limit = ACTION_LIMITS[action];
+  const rl = await rateLimitedCheck(`circle:${ip}:${action}`, limit);
   if (rl.limited) {
     return NextResponse.json(
       { error: "Too many requests. Please wait before trying again." },

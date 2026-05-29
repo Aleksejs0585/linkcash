@@ -19,7 +19,7 @@ function getClientIp(request: Request): string {
 
 export async function GET(request: Request) {
   const ip = getClientIp(request);
-  const rl = rateLimitedCheck(`stats:${ip}`, 60, 60_000);
+  const rl = await rateLimitedCheck(`stats:${ip}`, 60, 60_000);
   if (rl.limited) {
     return NextResponse.json(
       { error: "Too many requests." },

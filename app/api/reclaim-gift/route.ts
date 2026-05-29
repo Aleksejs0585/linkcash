@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 export async function POST(request: Request) {
   const ip =
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  const rl = rateLimitedCheck(`reclaim-gift:${ip}`, 5, 60_000);
+  const rl = await rateLimitedCheck(`reclaim-gift:${ip}`, 5, 60_000);
   if (rl.limited) {
     return NextResponse.json(
       { error: "Too many requests. Please wait before trying again." },

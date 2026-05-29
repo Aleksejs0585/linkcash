@@ -38,7 +38,7 @@ class RequestStore {
     if (!this.upstash) return;
 
     try {
-      await this.upstash.command(["SET", key, payload, "EX", TTL_SEC]);
+      await this.upstash.command(["SET", key, payload, "EX", TTL_SEC, "NX"]);
     } catch (error) {
       console.error(
         JSON.stringify({

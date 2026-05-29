@@ -20,7 +20,7 @@ const schema = z
 export async function POST(request: Request) {
   const ip =
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  const rl = rateLimitedCheck(`create-request:${ip}`, 5);
+  const rl = await rateLimitedCheck(`create-request:${ip}`, 5);
   if (rl.limited) {
     return NextResponse.json(
       { error: "Too many requests. Please wait before trying again." },
@@ -46,6 +46,9 @@ export async function POST(request: Request) {
     const amount = Number(amountUsdc);
     if (!Number.isFinite(amount) || amount <= 0) {
       throw new HttpError(400, "amountUsdc must be a positive number.");
+    }
+    if (amount < 0.01) {
+      throw new HttpError(400, "amountUsdc must be at least 0.01 USDC.");
     }
     if (amount > 10_000) {
       throw new HttpError(400, "amountUsdc cannot exceed 10000 USDC.");

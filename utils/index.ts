@@ -21,11 +21,11 @@ export function generateHash(secret: string): string {
 }
 
 export function buildClaimIdempotencyKey(
-  secret: string,
+  paymentIdHash: string,
   receiverAddress: string
 ): string {
   const normalized = receiverAddress.toLowerCase();
-  return keccak256(toUtf8Bytes(`${secret}:${normalized}`));
+  return keccak256(toUtf8Bytes(`${paymentIdHash}:${normalized}`));
 }
 
 export function generateLink(hash: string, secret: string): string {

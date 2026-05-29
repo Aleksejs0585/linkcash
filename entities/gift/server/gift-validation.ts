@@ -77,6 +77,9 @@ export function parseCreateGiftInput(body: unknown): CreateGiftParsed {
   if (!Number.isFinite(amount) || amount <= 0) {
     throw new HttpError(400, "amountUsdc must be a positive number.");
   }
+  if (amount < 0.01) {
+    throw new HttpError(400, "amountUsdc must be at least 0.01 USDC.");
+  }
   if (amount > 10_000) {
     throw new HttpError(400, "amountUsdc cannot exceed 10000 USDC.");
   }

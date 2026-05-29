@@ -101,7 +101,25 @@ export async function submitClaim(params: {
     };
   }
 
-  await claimStateStore.setProcessing(idempotencyKey, IDEMPOTENCY_PROCESSING_TTL_MS);
+  const acquired = await claimStateStore.setProcessing(idempotencyKey, IDEMPOTENCY_PROCESSING_TTL_MS);
+  if (!acquired) {
+    await claimAuditStore.write({
+      requestId,
+      timestamp: new Date().toISOString(),
+      event: "claim_in_progress",
+      ip: clientIp,
+      idempotencyKey: idempotencyKey.slice(0, 10),
+      paymentIdHash: input.paymentIdHash,
+      receiverAddress: input.receiverAddress,
+      errorCode: "IN_PROGRESS",
+      message: "Claim is already processing (race).",
+    });
+    throw new HttpError(
+      409,
+      "Claim is already being processed. Retry in a few seconds.",
+      { code: "IN_PROGRESS", retryable: true }
+    );
+  }
 
   try {
     const provider = await createArcProviderWithContractCheck(rpcUrl, contractAddress);

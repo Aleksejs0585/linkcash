@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
@@ -67,6 +67,7 @@ function PayContent({ request }: { request: RequestDetails }) {
     googleEmail,
   } = useCircleWallet();
 
+  const inFlightRef = useRef(false);
   const [step, setStep] = useState<PayStep>("idle");
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -84,7 +85,8 @@ function PayContent({ request }: { request: RequestDetails }) {
   }, [step]);
 
   const handlePay = async () => {
-    if (!walletAddress || !primaryWalletId || !userToken) return;
+    if (inFlightRef.current || !walletAddress || !primaryWalletId || !userToken) return;
+    inFlightRef.current = true;
 
     const secret = generateSecret();
     const hash = generateHash(secret);
@@ -118,7 +120,7 @@ function PayContent({ request }: { request: RequestDetails }) {
           setStatusMsg(`Waiting for Arc… ${detail}`),
       });
 
-      await fetch("/api/create-gift", {
+      const createRes = await fetch("/api/create-gift", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -132,6 +134,10 @@ function PayContent({ request }: { request: RequestDetails }) {
           syncClientFunding: true,
         }),
       });
+      if (!createRes.ok) {
+        const createData = (await createRes.json()) as { error?: string };
+        throw new Error(createData.error ?? "Failed to register payment.");
+      }
 
       setStep("claiming");
       setStatusMsg(`Sending to ${request.displayName}…`);
@@ -163,6 +169,8 @@ function PayContent({ request }: { request: RequestDetails }) {
       const raw = err instanceof Error ? err.message : "Payment failed.";
       setErrorMsg(formatGiftTxError(raw));
       setStep("error");
+    } finally {
+      inFlightRef.current = false;
     }
   };
 

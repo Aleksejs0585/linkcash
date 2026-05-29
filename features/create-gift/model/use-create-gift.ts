@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useCircleWallet } from "@/features/circle-wallet/model/circle-wallet-provider";
 import {
   GIFT_MESSAGE_MAX,
@@ -113,6 +113,7 @@ export function useCreateGift() {
     const toName = new URLSearchParams(window.location.search).get("toName");
     return toName ? toName.slice(0, 40) : "";
   });
+  const creatingRef = useRef(false);
   const [creating, setCreating] = useState(false);
   const [reclaiming, setReclaiming] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
@@ -184,7 +185,8 @@ export function useCreateGift() {
   }, [giftExpiresAt, reclaimAvailable, reclaimTick]);
 
   const onCreate = async () => {
-    if (!ready || creating) return;
+    if (!ready || creating || creatingRef.current) return;
+    creatingRef.current = true;
     if (!authenticated) {
       void login();
       return;
@@ -302,6 +304,7 @@ export function useCreateGift() {
         error instanceof Error ? error.message : "Failed to create and fund gift.";
       setStatus(formatGiftTxError(raw));
     } finally {
+      creatingRef.current = false;
       setCreating(false);
     }
   };

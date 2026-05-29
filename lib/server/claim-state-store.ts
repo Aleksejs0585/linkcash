@@ -132,12 +132,26 @@ export class ClaimStateStore {
     return current;
   }
 
-  async setProcessing(key: string, ttlMs: number): Promise<void> {
+  /** Returns true if the lock was acquired, false if already processing (race lost). */
+  async setProcessing(key: string, ttlMs: number): Promise<boolean> {
     const entry: IdempotencyEntry = {
       status: "processing",
       expiresAt: Date.now() + ttlMs,
     };
-    await this.writeIdempotency(key, entry, ttlMs);
+    if (this.upstash) {
+      const result = await this.upstash.command<string | null>([
+        "SET",
+        `claim:idem:${key}`,
+        JSON.stringify(entry),
+        "PX",
+        ttlMs,
+        "NX",
+      ]);
+      return result === "OK";
+    }
+    if (idempotencyStore.has(key)) return false;
+    idempotencyStore.set(key, entry);
+    return true;
   }
 
   async setSuccess(key: string, txHash: string, ttlMs: number): Promise<void> {
