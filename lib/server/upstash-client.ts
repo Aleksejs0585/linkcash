@@ -26,6 +26,9 @@ class UpstashClient {
     if (payload.error) {
       throw new Error(payload.error);
     }
+    if (payload.result === undefined) {
+      throw new Error("Upstash returned empty result.");
+    }
     return payload.result as T;
   }
 }

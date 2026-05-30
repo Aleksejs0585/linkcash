@@ -52,9 +52,11 @@ export function isAdminConfigured(): boolean {
 export function validateAdminPassword(candidate: string): boolean {
   const password = getAdminPassword();
   if (!password) return false;
-  const a = Buffer.from(candidate, "utf8");
-  const b = Buffer.from(password, "utf8");
-  if (a.length !== b.length) return false;
+  // Hash both sides with HMAC so they're always the same length before
+  // timingSafeEqual — early-exit on length difference leaks password length.
+  const key = Buffer.from("pw-compare");
+  const a = createHmac("sha256", key).update(candidate).digest();
+  const b = createHmac("sha256", key).update(password).digest();
   return timingSafeEqual(a, b);
 }
 

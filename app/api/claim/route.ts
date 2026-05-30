@@ -69,7 +69,14 @@ export async function POST(request: Request) {
 
     const input = parseClaimInput(rawBody);
     currentPaymentIdHash = input.paymentIdHash;
-    const idempotencyKey = request.headers.get("x-idempotency-key")?.trim() ?? null;
+    const rawIdempotencyKey = request.headers.get("x-idempotency-key")?.trim() ?? null;
+    if (rawIdempotencyKey && rawIdempotencyKey.length > 256) {
+      throw new HttpError(400, "x-idempotency-key must not exceed 256 characters.", {
+        code: "BAD_REQUEST",
+        retryable: false,
+      });
+    }
+    const idempotencyKey = rawIdempotencyKey;
     currentIdempotencyKey = idempotencyKey;
     const result = await submitClaim({
       input,

@@ -28,6 +28,7 @@ const ALLOWED_RETURN_PREFIXES = ["/gift/", "/status/", "/create", "/wallet", "/p
 
 function isSafeReturnPath(path: string): boolean {
   if (!path.startsWith("/")) return false;
+  if (path.includes("..")) return false;
   return ALLOWED_RETURN_PREFIXES.some((prefix) => path.startsWith(prefix));
 }
 
