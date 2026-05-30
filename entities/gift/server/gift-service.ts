@@ -460,15 +460,15 @@ export async function getSenderGifts(input: SenderGiftsInput) {
   // Deduplicate — keep first occurrence per paymentIdHash
   const seenHashes = new Set<string>();
   const uniqueLogs = allLogs.filter((log) => {
-    const h = log.args[0] as string;
-    if (seenHashes.has(h)) return false;
+    const h = log.args?.[0] as string | undefined;
+    if (!h || seenHashes.has(h)) return false;
     seenHashes.add(h);
     return true;
   });
 
   const gifts = await Promise.all(
     uniqueLogs.map(async (log) => {
-      const paymentIdHash = log.args[0] as string;
+      const paymentIdHash = log.args?.[0] as string;
       const [state, block] = await Promise.all([
         contract.gifts(paymentIdHash) as Promise<{
           amount: bigint;
@@ -480,8 +480,8 @@ export async function getSenderGifts(input: SenderGiftsInput) {
       ]);
       const reclaimedTxHash = reclaimByHash.get(paymentIdHash);
       // Fallback to event args if contract struct was zeroed after reclaim.
-      const logExpiresAt = typeof log.args[4] === "bigint" ? Number(log.args[4]) : 0;
-      const logAmount = typeof log.args[3] === "bigint" ? log.args[3] : BigInt(0);
+      const logExpiresAt = typeof log.args?.[4] === "bigint" ? Number(log.args[4]) : 0;
+      const logAmount = typeof log.args?.[3] === "bigint" ? log.args[3] : BigInt(0);
       const expiresAt = Number(state.expiresAt) || logExpiresAt || 0;
       const amountUsdc =
         reclaimedTxHash && state.amount === BigInt(0)
@@ -504,7 +504,7 @@ export async function getSenderGifts(input: SenderGiftsInput) {
         paymentIdHash,
         status,
         amountUsdc,
-        refundAddress: state.refundAddress || (log.args[2] as string),
+        refundAddress: state.refundAddress || (log.args?.[2] as string | undefined) || "",
         expiresAt,
         createdAt,
         fundedTxHash: log.transactionHash,

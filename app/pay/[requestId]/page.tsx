@@ -15,7 +15,6 @@ import { displayNameInitials } from "@/lib/client/google-display-name";
 import {
   generateSecret,
   generateHash,
-  buildClaimIdempotencyKey,
 } from "@/utils";
 
 type RequestDetails = {
@@ -142,12 +141,10 @@ function PayContent({ request }: { request: RequestDetails }) {
       setStep("claiming");
       setStatusMsg(`Sending to ${request.displayName}…`);
 
-      const idempotencyKey = buildClaimIdempotencyKey(hash, request.requesterWalletAddress);
       const claimRes = await fetch("/api/claim", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-idempotency-key": idempotencyKey,
         },
         body: JSON.stringify({
           secret,

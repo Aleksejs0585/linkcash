@@ -7,6 +7,15 @@ import { rateLimitedCheck } from "@/lib/server/simple-rate-limiter";
 const CIRCLE_BASE_URL =
   process.env.NEXT_PUBLIC_CIRCLE_BASE_URL ?? "https://api.circle.com";
 const CIRCLE_API_KEY = process.env.CIRCLE_API_KEY;
+const CIRCLE_FETCH_TIMEOUT_MS = 10_000;
+
+function circleFetch(url: string, init: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const tid = setTimeout(() => controller.abort(), CIRCLE_FETCH_TIMEOUT_MS);
+  return fetch(url, { ...init, signal: controller.signal }).finally(() =>
+    clearTimeout(tid)
+  );
+}
 
 type CircleWalletRow = {
   id?: string;
@@ -41,7 +50,7 @@ function parseCircleWalletRow(row: unknown): {
 }
 
 async function fetchCircleWallets(userToken: string): Promise<unknown[]> {
-  const response = await fetch(`${CIRCLE_BASE_URL}/v1/w3s/wallets`, {
+  const response = await circleFetch(`${CIRCLE_BASE_URL}/v1/w3s/wallets`, {
     method: "GET",
     headers: {
       accept: "application/json",
@@ -129,7 +138,7 @@ export async function POST(request: Request) {
           );
         }
 
-        const response = await fetch(
+        const response = await circleFetch(
           `${CIRCLE_BASE_URL}/v1/w3s/users/social/token`,
           {
             method: "POST",
@@ -167,7 +176,7 @@ export async function POST(request: Request) {
           );
         }
 
-        const response = await fetch(
+        const response = await circleFetch(
           `${CIRCLE_BASE_URL}/v1/w3s/user/initialize`,
           {
             method: "POST",
@@ -204,7 +213,7 @@ export async function POST(request: Request) {
           );
         }
 
-        const response = await fetch(`${CIRCLE_BASE_URL}/v1/w3s/wallets`, {
+        const response = await circleFetch(`${CIRCLE_BASE_URL}/v1/w3s/wallets`, {
           method: "GET",
           headers: {
             accept: "application/json",
@@ -319,7 +328,7 @@ export async function POST(request: Request) {
           );
         }
 
-        const response = await fetch(
+        const response = await circleFetch(
           `${CIRCLE_BASE_URL}/v1/w3s/user/transactions/contractExecution`,
           {
             method: "POST",
@@ -503,7 +512,7 @@ export async function POST(request: Request) {
           [giftAddr, "0", fundData],
         ];
 
-        const response = await fetch(
+        const response = await circleFetch(
           `${CIRCLE_BASE_URL}/v1/w3s/user/transactions/contractExecution`,
           {
             method: "POST",
@@ -546,7 +555,7 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: "Missing deviceId." }, { status: 400 });
         }
 
-        const response = await fetch(`${CIRCLE_BASE_URL}/v1/w3s/users/email/token`, {
+        const response = await circleFetch(`${CIRCLE_BASE_URL}/v1/w3s/users/email/token`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -578,7 +587,7 @@ export async function POST(request: Request) {
           );
         }
 
-        const response = await fetch(
+        const response = await circleFetch(
           `${CIRCLE_BASE_URL}/v1/w3s/users/social/token`,
           {
             method: "POST",
