@@ -113,6 +113,7 @@ export function useCreateGift() {
     const toName = new URLSearchParams(window.location.search).get("toName");
     return toName ? toName.slice(0, 40) : "";
   });
+  const [recipientEmail, setRecipientEmail] = useState("");
   const creatingRef = useRef(false);
   const [creating, setCreating] = useState(false);
   const [reclaiming, setReclaiming] = useState(false);
@@ -291,6 +292,21 @@ export function useCreateGift() {
       setGiftLinkModalOpen(true);
       setCopied(false);
       setStatus(null);
+
+      const trimmedRecipientEmail = recipientEmail.trim();
+      if (trimmedRecipientEmail) {
+        void fetch("/api/send-gift-link", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            recipientEmail: trimmedRecipientEmail,
+            senderDisplayName: trimmedName,
+            amountUsdc: amount,
+            claimLink: giftLink,
+          }),
+        }).catch(() => undefined);
+      }
+
       toast("Gift funded! Share the link with your recipient.", "success");
       trackEvent({
         event: "gift_funded",
@@ -398,6 +414,8 @@ export function useCreateGift() {
     },
     setGiftMessage,
     recipientHint,
+    recipientEmail,
+    setRecipientEmail,
     onCreate,
     onReclaim,
     onCopy,

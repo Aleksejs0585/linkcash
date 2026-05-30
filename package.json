@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
-    "test": "node --test --experimental-strip-types",
+    "test": "node --test --experimental-strip-types --experimental-loader ./test-loader.mjs",
     "logs:rotate": "node scripts/rotate-logs.mjs"
   },
   "dependencies": {

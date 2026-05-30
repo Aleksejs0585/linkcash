@@ -1250,4 +1250,13 @@
   .landing-stat-divider {
     display: none;
   }
+
+  /* Hide ghost nav links on small phones — CTA buttons stay */
+  .landing-btn-ghost {
+    display: none;
+  }
+
+  .landing-nav-actions {
+    gap: 8px;
+  }
 }
