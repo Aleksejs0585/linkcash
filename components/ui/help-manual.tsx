@@ -21,6 +21,30 @@ export function HelpTrigger({ className }: { className?: string }) {
   );
 }
 
+function InfoRow({
+  icon,
+  title,
+  children,
+}: {
+  icon: string;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex gap-3">
+      <span className="mt-0.5 text-lg leading-none">{icon}</span>
+      <div className="min-w-0">
+        <p className="text-xs font-semibold uppercase tracking-wider text-white/40">
+          {title}
+        </p>
+        <div className="mt-1 text-sm leading-relaxed text-white/75">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function HelpManual() {
   const [open, setOpen] = useState(false);
 
@@ -35,113 +59,113 @@ export default function HelpManual() {
       {open && (
         <>
           {/* Backdrop */}
-          <motion.button
-            type="button"
-            aria-label="Close help"
+          <motion.div
+            key="backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[58] bg-black/60 backdrop-blur-sm"
             onClick={() => setOpen(false)}
-            className="fixed inset-0 z-[58] bg-black/50"
           />
 
-          {/* Scrollable container pinned just below the nav */}
+          {/* Bottom sheet */}
           <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="fixed inset-x-0 top-[64px] z-[59] overflow-y-auto px-4 pb-8"
-            style={{ maxHeight: "calc(100vh - 64px)" }}
-            onClick={() => setOpen(false)}
+            key="sheet"
+            initial={{ y: "100%", opacity: 0.6 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: "100%", opacity: 0 }}
+            transition={{ type: "spring", stiffness: 320, damping: 34 }}
+            className="fixed bottom-0 left-1/2 z-[59] w-full max-w-[520px] -translate-x-1/2 overflow-y-auto rounded-t-2xl border border-white/10 bg-[#111318] px-5 pb-10 pt-5 shadow-2xl"
+            style={{ maxHeight: "88vh" }}
           >
-            <aside
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="help-title"
-              className="glass-card relative mx-auto mt-3 w-full max-w-[480px] p-5 text-left text-sm shadow-2xl sm:p-6"
-              onClick={(e) => e.stopPropagation()}
-            >
+            {/* Drag handle */}
+            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" />
+
+            {/* Header */}
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-base font-semibold text-white/90">
+                How LinkCash works
+              </h2>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-white/8 text-sm text-white/50 transition hover:bg-white/15 hover:text-white/80"
                 aria-label="Close"
-                className="absolute right-4 top-4 text-2xl leading-none text-white/40 transition hover:text-white"
               >
-                ×
+                ✕
               </button>
+            </div>
 
-              <h2 id="help-title" className="app-heading pr-8 text-base">
-                How LinkCash works
-              </h2>
+            <div className="space-y-5">
+              <InfoRow icon="💸" title="Sending a gift">
+                One Circle confirmation runs a <span className="text-white/90 font-medium">batch transaction</span>:
+                it approves USDC for the gift contract and funds the gift in a single on-chain step.
+                The network fee comes from your Circle wallet — the recipient pays nothing.
+              </InfoRow>
 
-              <div className="mt-3 space-y-3 text-white/80">
-                <p>
-                  <span className="font-semibold text-white">
-                    1) Where the funds come from:
-                  </span>{" "}
-                  When you create a gift, one Circle confirmation runs a batch:
-                  approve USDC for the gift contract and fund the gift in the
-                  same onchain step. USDC comes from your Circle wallet; the
-                  network fee for that batch is paid from that wallet.
-                </p>
-                <p>
-                  <span className="font-semibold text-white">
-                    2) What the link does:
-                  </span>{" "}
-                  the URL path stores only a hash, while the secret is kept
-                  after <code>#</code>. This lets the recipient prove claim
-                  ownership.
-                </p>
-                <p>
-                  <span className="font-semibold text-white">
-                    3) Where funds are received:
-                  </span>{" "}
-                  Open the gift link and tap unwrap once: if you are not signed
-                  in, sign-in runs first, then the claim completes in the
-                  same flow. After sign-in, the recipient has a user-controlled
-                  wallet on Arc Testnet and USDC is sent to that address.
-                </p>
-                <p>
-                  <span className="font-semibold text-white">
-                    4) Who pays gas:
-                  </span>{" "}
-                  the sender pays the network fee for the create-gift batch from
-                  their Circle wallet. Claiming uses the backend relayer for
-                  gas, so the recipient does not need initial balance for that
-                  transaction.
-                </p>
-                <p>
-                  <span className="font-semibold text-white">
-                    5) How to verify:
-                  </span>{" "}
-                  after a successful claim, open the Arc Explorer link and
-                  compare the recipient address with the wallet address shown
-                  in this app after sign-in.
-                </p>
-                <p>
-                  <span className="font-semibold text-white">
-                    6) Where to view your wallet:
-                  </span>{" "}
-                  open <code>/wallet</code> to see your Arc Testnet address,
-                  USDC balance, and explorer link.
-                </p>
-                <p>
-                  <span className="font-semibold text-white">
-                    7) Sign-in and navigation:
-                  </span>{" "}
-                  when signing in with Google, the browser navigates to Google
-                  for OAuth and the system Back button only moves within
-                  Google&apos;s history. Use{" "}
-                  <span className="font-medium text-white/90">Cancel</span> on
-                  Google, switch back to your LinkCash tab, or complete
-                  sign-in. Email OTP sign-in stays on the same page. Use the in-app{" "}
-                  <span className="font-medium text-white/90">Menu</span>{" "}
-                  for Home or the product site link.
-                </p>
-              </div>
-            </aside>
+              <div className="h-px bg-white/8" />
+
+              <InfoRow icon="🔗" title="How the link works">
+                The URL path stores only a <span className="text-white/90 font-medium">hash</span>.
+                The secret that unlocks the funds lives after the{" "}
+                <code className="rounded bg-white/10 px-1 py-0.5 text-xs text-white/80">#</code>{" "}
+                — it never reaches the server, so only the person with the link can claim.
+              </InfoRow>
+
+              <div className="h-px bg-white/8" />
+
+              <InfoRow icon="🎁" title="Claiming a gift">
+                Open the gift link and tap <span className="text-white/90 font-medium">Unwrap</span>.
+                If you&apos;re not signed in, sign-in runs first — then the claim completes
+                automatically in the same flow. A wallet on Arc Testnet is created for you instantly;
+                USDC lands there right away.
+              </InfoRow>
+
+              <div className="h-px bg-white/8" />
+
+              <InfoRow icon="⛽" title="Who pays gas">
+                <ul className="mt-1 space-y-1.5">
+                  {[
+                    "Sender pays the fee for the create-gift batch from their Circle wallet.",
+                    "Claiming is relayed by the backend — the recipient needs zero initial balance.",
+                  ].map((item, i) => (
+                    <li key={i} className="flex gap-2">
+                      <span className="mt-px flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-[10px] font-bold text-emerald-400">
+                        {i + 1}
+                      </span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </InfoRow>
+
+              <div className="h-px bg-white/8" />
+
+              <InfoRow icon="🔍" title="Verifying a transaction">
+                After a successful claim, open the Arc Explorer link and compare the recipient
+                address with the wallet address shown in the app after sign-in.
+                Everything is on-chain and publicly verifiable.
+              </InfoRow>
+
+              <div className="h-px bg-white/8" />
+
+              <InfoRow icon="👛" title="Viewing your wallet">
+                Go to <code className="rounded bg-white/10 px-1 py-0.5 text-xs text-white/80">/wallet</code> to
+                see your Arc Testnet address, USDC balance, and a direct link to the explorer.
+              </InfoRow>
+
+              <div className="h-px bg-white/8" />
+
+              <InfoRow icon="🔐" title="Sign-in & navigation">
+                Google sign-in opens a new OAuth page — the browser Back button moves within
+                Google&apos;s history, not back to the app. To return:{" "}
+                tap <span className="font-medium text-white/90">Cancel</span> on Google,
+                switch back to your LinkCash tab, or complete sign-in.
+                Email OTP stays on the same page. Use the in-app{" "}
+                <span className="font-medium text-white/90">Menu</span> to navigate home.
+              </InfoRow>
+            </div>
           </motion.div>
         </>
       )}
