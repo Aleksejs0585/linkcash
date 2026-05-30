@@ -49,6 +49,162 @@ async function postCircleChallenge(
   return { challengeId: data.challengeId };
 }
 
+// ─── Info modal ────────────────────────────────────────────────────────────
+
+function InfoRow({
+  icon,
+  title,
+  children,
+}: {
+  icon: string;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex gap-3">
+      <span className="mt-0.5 text-lg leading-none">{icon}</span>
+      <div className="min-w-0">
+        <p className="text-xs font-semibold uppercase tracking-wider text-white/40">
+          {title}
+        </p>
+        <div className="mt-1 text-sm leading-relaxed text-white/75">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InfoModal({
+  open,
+  onClose,
+  request,
+}: {
+  open: boolean;
+  onClose: () => void;
+  request: RequestDetails | null;
+}) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            key="backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+            onClick={onClose}
+          />
+
+          {/* Sheet */}
+          <motion.div
+            key="sheet"
+            initial={{ y: "100%", opacity: 0.6 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: "100%", opacity: 0 }}
+            transition={{ type: "spring", stiffness: 320, damping: 34 }}
+            className="fixed bottom-0 left-0 right-0 z-50 mx-auto max-w-[480px] rounded-t-2xl border border-white/10 bg-[#111318] px-5 pb-8 pt-5 shadow-2xl"
+            style={{ left: "50%", transform: "translateX(-50%)" }}
+          >
+            {/* Drag handle */}
+            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" />
+
+            {/* Header */}
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="text-base font-semibold text-white/90">
+                How this works
+              </h2>
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-white/8 text-sm text-white/50 transition hover:bg-white/15 hover:text-white/80"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-5">
+              {/* Who & how much */}
+              {request && (
+                <InfoRow icon="📤" title="Payment request">
+                  <span className="font-medium text-white/90">
+                    {request.displayName}
+                  </span>{" "}
+                  is asking you to send{" "}
+                  <span className="font-medium text-emerald-400">
+                    {request.amountUsdc} USDC
+                  </span>
+                  {request.message ? (
+                    <>
+                      {" "}
+                      for{" "}
+                      <span className="italic text-white/60">
+                        &quot;{request.message}&quot;
+                      </span>
+                    </>
+                  ) : null}
+                  .
+                </InfoRow>
+              )}
+
+              <div className="h-px bg-white/8" />
+
+              {/* Network */}
+              <InfoRow icon="🔗" title="Network">
+                Payments run on{" "}
+                <span className="font-medium text-white/90">Arc Testnet</span>{" "}
+                — a fast, low-fee blockchain. USDC is the same stablecoin
+                worth $1 per token.
+              </InfoRow>
+
+              <div className="h-px bg-white/8" />
+
+              {/* What happens */}
+              <InfoRow icon="⚡" title="What happens when you pay">
+                <ol className="mt-1 space-y-1.5">
+                  {[
+                    "You sign in — a wallet is created for you instantly.",
+                    "You confirm the transaction once in the Circle app.",
+                    "Funds are sent on-chain directly to " +
+                      (request?.displayName ?? "the requester") +
+                      "'s wallet.",
+                    "Done — no waiting, no extra steps.",
+                  ].map((step, i) => (
+                    <li key={i} className="flex gap-2">
+                      <span className="mt-px flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-[10px] font-bold text-emerald-400">
+                        {i + 1}
+                      </span>
+                      <span>{step}</span>
+                    </li>
+                  ))}
+                </ol>
+              </InfoRow>
+
+              <div className="h-px bg-white/8" />
+
+              {/* Safety */}
+              <InfoRow icon="🔒" title="Is it safe?">
+                Yes. The transfer happens directly on the blockchain — USDC
+                goes straight to{" "}
+                <span className="font-medium text-white/90">
+                  {request?.displayName ?? "their"}
+                </span>
+                &apos;s address. No middleman holds your funds.
+              </InfoRow>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
+// ─── Pay content ────────────────────────────────────────────────────────────
+
 function PayContent({ request }: { request: RequestDetails }) {
   const {
     ready,
@@ -345,6 +501,8 @@ function PayContent({ request }: { request: RequestDetails }) {
   );
 }
 
+// ─── Page ───────────────────────────────────────────────────────────────────
+
 export default function PayPage({
   params,
 }: {
@@ -354,6 +512,7 @@ export default function PayPage({
   const [request, setRequest] = useState<RequestDetails | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [loading, setLoading] = useState(() => Boolean(requestId));
+  const [infoOpen, setInfoOpen] = useState(false);
 
   useEffect(() => {
     if (!requestId) return;
@@ -394,38 +553,58 @@ export default function PayPage({
   }
 
   return (
-    <AppShell className="flex items-center justify-center px-4 py-8 sm:px-5 sm:py-10">
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, ease: "easeOut" }}
-        className="relative z-[1] w-full max-w-[420px] space-y-3"
-      >
-        <div className="flex justify-start">
-          <MainMenu />
-        </div>
-        <GlassCard className="p-6 sm:p-8">
-          <AnimatePresence mode="wait">
-            {loading ? (
-              <motion.div
-                key="loading"
-                exit={{ opacity: 0 }}
-                className="animate-pulse space-y-4 py-4 text-center"
-                aria-hidden
-              >
-                <div className="mx-auto h-16 w-16 rounded-full bg-white/10" />
-                <div className="mx-auto h-3 w-24 rounded bg-white/8" />
-                <div className="mx-auto h-3 w-32 rounded bg-white/10" />
-                <div className="mx-auto h-10 w-40 rounded bg-white/10" />
-              </motion.div>
-            ) : request ? (
-              <motion.div key="content" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                <PayContent request={request} />
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
-        </GlassCard>
-      </motion.div>
-    </AppShell>
+    <>
+      <InfoModal
+        open={infoOpen}
+        onClose={() => setInfoOpen(false)}
+        request={request}
+      />
+
+      <AppShell className="flex items-center justify-center px-4 py-8 sm:px-5 sm:py-10">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          className="relative z-[1] w-full max-w-[420px] space-y-3"
+        >
+          {/* Top bar: menu left, help right */}
+          <div className="flex items-center justify-between">
+            <MainMenu />
+            <motion.button
+              type="button"
+              onClick={() => setInfoOpen(true)}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.93 }}
+              aria-label="How this works"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-white/12 bg-white/6 text-sm font-semibold text-white/50 transition hover:border-white/25 hover:bg-white/12 hover:text-white/80"
+            >
+              ?
+            </motion.button>
+          </div>
+
+          <GlassCard className="p-6 sm:p-8">
+            <AnimatePresence mode="wait">
+              {loading ? (
+                <motion.div
+                  key="loading"
+                  exit={{ opacity: 0 }}
+                  className="animate-pulse space-y-4 py-4 text-center"
+                  aria-hidden
+                >
+                  <div className="mx-auto h-16 w-16 rounded-full bg-white/10" />
+                  <div className="mx-auto h-3 w-24 rounded bg-white/8" />
+                  <div className="mx-auto h-3 w-32 rounded bg-white/10" />
+                  <div className="mx-auto h-10 w-40 rounded bg-white/10" />
+                </motion.div>
+              ) : request ? (
+                <motion.div key="content" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <PayContent request={request} />
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </GlassCard>
+        </motion.div>
+      </AppShell>
+    </>
   );
 }
