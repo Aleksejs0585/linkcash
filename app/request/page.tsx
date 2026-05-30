@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import AppShell from "@/components/ui/app-shell";
@@ -30,13 +30,23 @@ export default function RequestPage() {
 
   const [amount, setAmount] = useState("25");
   const [message, setMessage] = useState("");
+  const [yourName, setYourName] = useState("");
   const [loading, setLoading] = useState(false);
   const [requestLink, setRequestLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  const resolvedName = googleDisplayName?.trim() || googleEmail?.trim() || "";
+
+  // Pre-fill name once Google identity loads
+  useEffect(() => {
+    if (resolvedName && !yourName) {
+      setYourName(resolvedName);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resolvedName]);
+
   const displayName =
-    googleEmail?.trim() ||
-    googleDisplayName?.trim() ||
+    yourName.trim() ||
     (walletAddress ? `${walletAddress.slice(0, 6)}…${walletAddress.slice(-4)}` : "My wallet");
 
   const handleSubmit = async () => {
@@ -142,6 +152,7 @@ export default function RequestPage() {
                   setRequestLink(null);
                   setCopied(false);
                   setMessage("");
+                  setYourName(resolvedName);
                 }}
                 className="app-btn-secondary w-full px-4 py-2.5 text-sm"
               >
@@ -194,14 +205,24 @@ export default function RequestPage() {
             </div>
           ) : (
             <>
-              {/* Requester identity — read-only */}
-              <div className="app-panel p-4 text-left">
-                <p className="app-section-label">Requesting as</p>
-                <p className="mt-1 text-sm font-medium text-white/90">{displayName}</p>
+              {/* Your name */}
+              <div className="app-panel app-field p-4 text-left">
+                <label htmlFor="req-name" className="app-section-label">
+                  Your name
+                </label>
+                <input
+                  id="req-name"
+                  type="text"
+                  maxLength={60}
+                  value={yourName}
+                  onChange={(e) => setYourName(e.target.value)}
+                  placeholder="How should the payer see you?"
+                  className="app-input"
+                />
                 {walletSyncing ? (
-                  <p className="mt-1 text-xs text-amber-300">Wallet syncing…</p>
+                  <p className="mt-1.5 text-xs text-amber-300">Wallet syncing…</p>
                 ) : walletAddress ? (
-                  <p className="mt-1 text-xs text-white/35">
+                  <p className="mt-1.5 text-xs text-white/35">
                     {walletAddress.slice(0, 6)}…{walletAddress.slice(-4)}
                   </p>
                 ) : null}
