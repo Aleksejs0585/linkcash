@@ -126,7 +126,8 @@ export default function RequestPage() {
               <div className="rounded-xl bg-white p-3">
                 <QRCodeSVG
                   value={requestLink}
-                  size={148}
+                  size={160}
+                  level="H"
                   imageSettings={{
                     src: "/linkcash-icon-512.png",
                     height: 28,
