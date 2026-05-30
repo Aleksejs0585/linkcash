@@ -64,7 +64,7 @@ export async function createAdminSession() {
   const cookieStore = await cookies();
   cookieStore.set(ADMIN_COOKIE_NAME, encodeToken(Date.now()), {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "strict",
     secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: SESSION_TTL_SECONDS,

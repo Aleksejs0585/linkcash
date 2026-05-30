@@ -15,7 +15,10 @@ export type GiftMetadata = {
 };
 
 function stripControls(value: string): string {
-  return value.replace(/[\u0000-\u001f\u007f]/g, "");
+  // ASCII controls + Unicode bidi-override/embedding chars that can reverse or
+  // reorder displayed text (zero-width U+200B-U+200F, bidi U+202A-U+202E,
+  // bidi isolates U+2066-U+2069, BOM U+FEFF).
+  return value.replace(/[\u0000-\u001f\u007f\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]/g, "");
 }
 
 export function sanitizeSenderDisplayName(raw: unknown): string {

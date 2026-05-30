@@ -18,6 +18,7 @@ type ClaimSuccessResponse = {
 const CLAIM_ABI = ["function claim(bytes32 paymentIdHash,address receiver)"];
 const IDEMPOTENCY_PROCESSING_TTL_MS = 2 * 60_000;
 const IDEMPOTENCY_SUCCESS_TTL_MS = 24 * 60 * 60_000;
+const TX_CONFIRMATION_TIMEOUT_MS = 90_000;
 
 export function getClientIp(request: Request): string {
   const forwardedFor = request.headers.get("x-forwarded-for");
@@ -128,7 +129,15 @@ export async function submitClaim(params: {
     const contract = new Contract(contractAddress, CLAIM_ABI, relayer);
 
     const tx = await contract.claim(input.paymentIdHash, input.receiverAddress);
-    const receipt = await tx.wait();
+    const receipt = await Promise.race([
+      tx.wait(),
+      new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new Error("Transaction confirmation timeout after 90s")),
+          TX_CONFIRMATION_TIMEOUT_MS
+        )
+      ),
+    ]);
     txHash = receipt?.hash ?? (tx.hash as string);
     txConfirmed = true;
 

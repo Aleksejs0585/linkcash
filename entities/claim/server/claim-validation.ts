@@ -1,4 +1,4 @@
-import { isAddress, isHexString, keccak256 } from "ethers";
+import { isAddress, isHexString, keccak256, ZeroAddress } from "ethers";
 import { z } from "zod";
 import { HttpError } from "@/lib/server/http-errors";
 
@@ -32,6 +32,11 @@ export function parseClaimInput(body: unknown): ClaimInput {
   }
   if (!isAddress(receiverAddress)) {
     throw new HttpError(400, "receiverAddress must be a valid address.", {
+      code: "BAD_REQUEST",
+    });
+  }
+  if (receiverAddress.toLowerCase() === ZeroAddress.toLowerCase()) {
+    throw new HttpError(400, "receiverAddress cannot be the zero address.", {
       code: "BAD_REQUEST",
     });
   }
