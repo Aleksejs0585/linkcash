@@ -22,6 +22,8 @@ import type {
   SenderGiftsInput,
 } from "./gift-validation";
 
+const TX_CONFIRMATION_TIMEOUT_MS = 90_000;
+
 const GIFT_ABI = [
   "function fundGift(bytes32 paymentIdHash,uint256 amount,address refundAddress,uint64 expiresAt)",
   "function reclaimExpiredGift(bytes32 paymentIdHash)",
@@ -82,7 +84,15 @@ export async function createGift(input: CreateGiftInput) {
     input.refundAddress,
     expiresAt
   );
-  const receipt = await tx.wait();
+  const receipt = await Promise.race([
+    tx.wait(),
+    new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error("Transaction confirmation timeout after 90s")),
+        TX_CONFIRMATION_TIMEOUT_MS
+      )
+    ),
+  ]);
   const txHash = receipt?.hash ?? tx.hash;
 
   await senderGiftStore.write({
@@ -284,7 +294,15 @@ export async function reclaimGift(input: ReclaimGiftInput) {
   }
 
   const tx = await gift.reclaimExpiredGift(input.paymentIdHash);
-  const receipt = await tx.wait();
+  const receipt = await Promise.race([
+    tx.wait(),
+    new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error("Transaction confirmation timeout after 90s")),
+        TX_CONFIRMATION_TIMEOUT_MS
+      )
+    ),
+  ]);
   const txHash = receipt?.hash ?? tx.hash;
 
   await senderGiftStore.write({

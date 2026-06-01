@@ -8,6 +8,8 @@ class UpstashClient {
   }
 
   async command<T = unknown>(args: Array<string | number>): Promise<T> {
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), 5_000);
     const response = await fetch(this.url, {
       method: "POST",
       headers: {
@@ -16,7 +18,8 @@ class UpstashClient {
       },
       body: JSON.stringify(args),
       cache: "no-store",
-    });
+      signal: controller.signal,
+    }).finally(() => clearTimeout(tid));
 
     if (!response.ok) {
       throw new Error(`Upstash command failed with status ${response.status}.`);

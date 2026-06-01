@@ -1,4 +1,4 @@
-import { getAddress, isAddress, isHexString } from "ethers";
+import { getAddress, isAddress, isHexString, ZeroAddress } from "ethers";
 import { z } from "zod";
 import { HttpError } from "@/lib/server/http-errors";
 import {
@@ -85,6 +85,9 @@ export function parseCreateGiftInput(body: unknown): CreateGiftParsed {
   }
   if (!isAddress(refundAddress)) {
     throw new HttpError(400, "refundAddress must be a valid address.");
+  }
+  if (refundAddress.toLowerCase() === ZeroAddress.toLowerCase()) {
+    throw new HttpError(400, "refundAddress cannot be the zero address.");
   }
   if (
     !Number.isFinite(expiresInHours) ||
