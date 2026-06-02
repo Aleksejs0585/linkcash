@@ -5,6 +5,7 @@ import { isAddress } from "ethers";
 import { requestStore } from "@/lib/server/request-store";
 import { rateLimitedCheck } from "@/lib/server/simple-rate-limiter";
 import { HttpError, errorMessage } from "@/lib/server/http-errors";
+import { sanitizeSenderDisplayName, sanitizeGiftMessage } from "@/lib/server/gift-metadata";
 
 export const runtime = "nodejs";
 
@@ -41,7 +42,10 @@ export async function POST(request: Request) {
       throw new HttpError(400, "Invalid request payload.");
     }
 
-    const { displayName, amountUsdc, message, requesterWalletAddress } = parsed.data;
+    const { displayName: rawDisplayName, amountUsdc, message: rawMessage, requesterWalletAddress } = parsed.data;
+
+    const displayName = sanitizeSenderDisplayName(rawDisplayName);
+    const message = sanitizeGiftMessage(rawMessage);
 
     const amount = Number(amountUsdc);
     if (!Number.isFinite(amount) || amount <= 0) {

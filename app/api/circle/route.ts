@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { Contract, formatUnits, getAddress, Interface, isAddress, isHexString, JsonRpcProvider, parseUnits } from "ethers";
+
+export const runtime = "nodejs";
 import { ARC_TESTNET } from "@/utils";
 import { getArcReadEnv } from "@/lib/server/env";
 import { rateLimitedCheck } from "@/lib/server/simple-rate-limiter";

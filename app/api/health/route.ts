@@ -1,10 +1,19 @@
 import { NextResponse } from "next/server";
 import { getArcReadEnv } from "@/lib/server/env";
 import { createArcProvider } from "@/lib/server/arc-chain";
+import { rateLimitedCheck } from "@/lib/server/simple-rate-limiter";
 
 export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const rl = await rateLimitedCheck(`health:${ip}`, 20, 60_000);
+  if (rl.limited) {
+    return NextResponse.json(
+      { ok: false, error: "Too many requests." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
+    );
+  }
   const checks: Record<string, { ok: boolean; message?: string }> = {
     env: { ok: true },
     rpc: { ok: false },

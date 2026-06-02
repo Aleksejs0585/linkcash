@@ -1,12 +1,22 @@
 import { NextResponse } from "next/server";
 import { requestStore } from "@/lib/server/request-store";
+import { rateLimitedCheck } from "@/lib/server/simple-rate-limiter";
 
 export const runtime = "nodejs";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ requestId: string }> }
 ) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const rl = await rateLimitedCheck(`get-request:${ip}`, 60, 60_000);
+  if (rl.limited) {
+    return NextResponse.json(
+      { error: "Too many requests." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
+    );
+  }
+
   const { requestId } = await params;
 
   if (!requestId || !/^[0-9a-f]{24}$/.test(requestId)) {
