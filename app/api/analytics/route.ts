@@ -3,8 +3,13 @@ import { z } from "zod";
 import { productAnalyticsStore } from "@/lib/server/product-analytics-store";
 import { buildFunnelSummary } from "@/lib/server/funnel-metrics";
 import { dispatchFunnelAlerts } from "@/lib/server/funnel-alert-dispatcher";
+import { rateLimitedCheck } from "@/lib/server/simple-rate-limiter";
 
 export const runtime = "nodejs";
+
+function getClientIp(request: Request): string {
+  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+}
 
 const analyticsSchema = z
   .object({
@@ -30,6 +35,14 @@ const analyticsSchema = z
   .strict();
 
 export async function POST(request: Request) {
+  const rl = await rateLimitedCheck(`analytics:${getClientIp(request)}`, 60, 60_000);
+  if (rl.limited) {
+    return NextResponse.json(
+      { ok: false, error: "Too many requests." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
+    );
+  }
+
   try {
     const parsed = analyticsSchema.safeParse(await request.json());
     if (!parsed.success) {

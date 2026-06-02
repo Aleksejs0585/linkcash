@@ -108,10 +108,12 @@ class ProductAnalyticsStore {
         .filter((entry): entry is ProductAnalyticsEvent => entry !== null);
     } catch (error) {
       const nodeError = error as NodeJS.ErrnoException;
-      if (nodeError.code === "ENOENT") {
-        return [];
+      if (nodeError.code !== "ENOENT") {
+        console.error(
+          JSON.stringify({ event: "product_analytics_read_error", message: nodeError.message })
+        );
       }
-      throw error;
+      return [];
     }
   }
 }

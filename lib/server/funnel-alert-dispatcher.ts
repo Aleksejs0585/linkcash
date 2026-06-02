@@ -69,6 +69,8 @@ export async function dispatchFunnelAlerts(summary: FunnelSummary) {
     `\n24h open=${summary.last24h.createOpen}, funded=${summary.last24h.giftFunded}, claimed=${summary.last24h.claimSuccess}`;
 
   try {
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), 5_000);
     const response = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -78,7 +80,8 @@ export async function dispatchFunnelAlerts(summary: FunnelSummary) {
         summary: summary.last24h,
         timestamp: new Date(now).toISOString(),
       }),
-    });
+      signal: controller.signal,
+    }).finally(() => clearTimeout(tid));
 
     if (!response.ok) {
       return;
