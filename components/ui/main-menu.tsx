@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { HiOutlineMenuAlt2 } from "react-icons/hi";
 import { getProductSiteUrl } from "@/lib/client/product-site";
 
@@ -11,7 +12,9 @@ type MainMenuProps = {
 
 export default function MainMenu({ className }: MainMenuProps) {
   const [open, setOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   const rootRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const productUrl = getProductSiteUrl();
 
   useEffect(() => {
@@ -33,15 +36,18 @@ export default function MainMenu({ className }: MainMenuProps) {
   }, [open]);
 
   const handleToggle = (e: React.MouseEvent) => {
-    // Prevent the document-level click handler from immediately closing the menu
-    // that was just opened by this button press.
     e.nativeEvent.stopImmediatePropagation();
+    if (!open && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setMenuPos({ top: rect.bottom + 8, left: rect.left });
+    }
     setOpen((v) => !v);
   };
 
   return (
     <div ref={rootRef} className={`relative inline-flex ${className ?? ""}`}>
       <button
+        ref={buttonRef}
         type="button"
         aria-expanded={open}
         aria-haspopup="menu"
@@ -52,12 +58,13 @@ export default function MainMenu({ className }: MainMenuProps) {
         <HiOutlineMenuAlt2 className="h-5 w-5 shrink-0" aria-hidden />
         Menu
       </button>
-      {open ? (
+      {open && typeof document !== "undefined" ? createPortal(
         <div
           id="main-app-menu"
           role="menu"
           aria-orientation="vertical"
-          className="absolute left-0 top-full z-[200] mt-2 min-w-[200px] rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--bg2)] py-1.5 shadow-xl"
+          style={{ position: "fixed", top: menuPos.top, left: menuPos.left, zIndex: 9999 }}
+          className="min-w-[200px] rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--bg2)] py-1.5 shadow-xl"
         >
           {/* Home */}
           <Link href="/" role="menuitem" onClick={() => setOpen(false)}
@@ -113,7 +120,8 @@ export default function MainMenu({ className }: MainMenuProps) {
             Product site
             <span className="ml-1 text-xs" aria-hidden>↗</span>
           </a>
-        </div>
+        </div>,
+        document.body
       ) : null}
     </div>
   );
