@@ -7,6 +7,7 @@ export type PaymentRequest = {
   message?: string;
   createdAt: string;
   requesterWalletAddress: string;
+  requesterEmail?: string;
 };
 
 const TTL_SEC = 90 * 24 * 60 * 60;
@@ -24,6 +25,10 @@ function memoryMap(): Map<string, PaymentRequest> {
 
 function redisKey(requestId: string): string {
   return `linkcash:request:${requestId}`;
+}
+
+function walletIndexKey(walletAddress: string): string {
+  return `linkcash:wallet-requests:${walletAddress.toLowerCase()}`;
 }
 
 class RequestStore {
@@ -46,6 +51,16 @@ class RequestStore {
           message: error instanceof Error ? error.message : "unknown",
         })
       );
+    }
+
+    // Best-effort wallet index — failure here is non-fatal
+    try {
+      const wKey = walletIndexKey(req.requesterWalletAddress);
+      await this.upstash.command(["LPUSH", wKey, req.requestId]);
+      await this.upstash.command(["LTRIM", wKey, 0, 99]);
+      await this.upstash.command(["EXPIRE", wKey, TTL_SEC]);
+    } catch {
+      // index update failed; request is still accessible by ID
     }
   }
 
@@ -71,6 +86,32 @@ class RequestStore {
       );
       return null;
     }
+  }
+
+  async listByWallet(walletAddress: string): Promise<PaymentRequest[]> {
+    if (this.upstash) {
+      try {
+        const wKey = walletIndexKey(walletAddress);
+        const ids = await this.upstash.command<string[]>(["LRANGE", wKey, 0, 99]);
+        if (!ids?.length) return [];
+        const items = await Promise.all(ids.map((id) => this.read(id)));
+        return items.filter((r): r is PaymentRequest => r !== null);
+      } catch {
+        // fall through to memory scan
+      }
+    }
+
+    // Memory fallback: linear scan
+    const lower = walletAddress.toLowerCase();
+    const results: PaymentRequest[] = [];
+    for (const req of memoryMap().values()) {
+      if (req.requesterWalletAddress.toLowerCase() === lower) {
+        results.push(req);
+      }
+    }
+    return results.sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
   }
 }
 

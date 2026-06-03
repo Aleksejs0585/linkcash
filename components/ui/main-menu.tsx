@@ -92,6 +92,14 @@ export default function MainMenu({ className }: MainMenuProps) {
             My wallet
           </Link>
           <Link
+            href="/requests"
+            role="menuitem"
+            className="block rounded-lg px-3 py-2.5 text-left text-sm transition hover:bg-[var(--bg3)]"
+            onClick={() => setOpen(false)}
+          >
+            My requests
+          </Link>
+          <Link
             href="/gifts"
             role="menuitem"
             className="block rounded-lg px-3 py-2.5 text-left text-sm transition hover:bg-[var(--bg3)]"

@@ -318,6 +318,17 @@ function PayContent({ request }: { request: RequestDetails }) {
 
       setStep("success");
       setStatusMsg(null);
+
+      // Fire-and-forget: notify the requester by email
+      void fetch("/api/notify-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          requestId: request.requestId,
+          payerName,
+          amountUsdc: request.amountUsdc,
+        }),
+      }).catch(() => undefined);
     } catch (err) {
       const raw = err instanceof Error ? err.message : "Payment failed.";
       setErrorMsg(formatGiftTxError(raw));

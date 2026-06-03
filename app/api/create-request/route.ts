@@ -15,6 +15,7 @@ const schema = z
     amountUsdc: z.string().trim(),
     message: z.string().trim().max(200).optional(),
     requesterWalletAddress: z.string().trim(),
+    requesterEmail: z.string().trim().email().optional(),
   })
   .strict();
 
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
       throw new HttpError(400, "Invalid request payload.");
     }
 
-    const { displayName: rawDisplayName, amountUsdc, message: rawMessage, requesterWalletAddress } = parsed.data;
+    const { displayName: rawDisplayName, amountUsdc, message: rawMessage, requesterWalletAddress, requesterEmail } = parsed.data;
 
     const displayName = sanitizeSenderDisplayName(rawDisplayName);
     const message = sanitizeGiftMessage(rawMessage);
@@ -70,6 +71,7 @@ export async function POST(request: Request) {
       message: message || undefined,
       createdAt: new Date().toISOString(),
       requesterWalletAddress,
+      requesterEmail: requesterEmail || undefined,
     });
 
     return NextResponse.json({ requestId });

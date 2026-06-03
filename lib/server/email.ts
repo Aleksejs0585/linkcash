@@ -65,6 +65,61 @@ export async function sendGiftLinkEmail({
   }
 }
 
+export async function sendPaymentReceivedEmail({
+  to,
+  payerName,
+  amountUsdc,
+  requesterDisplayName,
+}: {
+  to: string;
+  payerName: string;
+  amountUsdc: string;
+  requesterDisplayName?: string;
+}): Promise<void> {
+  if (!RESEND_API_KEY) return;
+  if (!EMAIL_RE.test(to)) return;
+
+  const amount = `${amountUsdc} USDC`;
+  const subject = `You received ${amount} ✓`;
+  const text = [
+    requesterDisplayName ? `Hi ${requesterDisplayName},` : "Hi,",
+    "",
+    `${payerName} just sent you ${amount} via LinkCash.`,
+    "",
+    "The USDC is now in your wallet — no action needed.",
+    "",
+    "— LinkCash",
+  ].join("\n");
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8_000);
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ from: FROM_EMAIL, to, subject, text }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    if (!res.ok) {
+      const body = (await res.text()).slice(0, 200);
+      console.error(
+        JSON.stringify({ event: "payment_received_email_failed", status: res.status, body })
+      );
+    }
+  } catch (err) {
+    console.error(
+      JSON.stringify({
+        event: "payment_received_email_error",
+        message: err instanceof Error ? err.message : "unknown",
+      })
+    );
+  }
+}
+
 export async function sendGiftClaimedEmail({
   to,
   senderDisplayName,

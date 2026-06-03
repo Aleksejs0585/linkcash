@@ -9,11 +9,57 @@ import MainMenu from "@/components/ui/main-menu";
 import LoginPanel from "@/components/ui/login-panel";
 import { QRCodeSVG } from "qrcode.react";
 import { useCircleWallet } from "@/features/circle-wallet/model/circle-wallet-provider";
+import { displayNameInitials } from "@/lib/client/google-display-name";
 import { toast } from "@/lib/client/toast";
 
 type CreateRequestResponse = { requestId: string } | { error: string };
 
 const AMOUNT_PRESETS = ["5", "10", "25", "50", "100"];
+
+// ─── Live preview ─────────────────────────────────────────────────────────────
+
+function PayPreview({
+  name,
+  amount,
+  message,
+}: {
+  name: string;
+  amount: string;
+  message: string;
+}) {
+  const initials = displayNameInitials(name || "?");
+  const amountNum = parseFloat(amount);
+  const validAmount = Number.isFinite(amountNum) && amountNum > 0;
+
+  return (
+    <div className="rounded-xl border border-white/8 bg-white/4 p-4 space-y-2 text-center">
+      <p className="text-[10px] font-semibold uppercase tracking-widest text-white/25 mb-3">
+        Payer sees this
+      </p>
+      <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/8 text-xs font-semibold text-white/90">
+        {initials}
+      </div>
+      <p className="text-xs text-white/45">Payment request from</p>
+      <p className="text-sm font-semibold text-white/85">{name || "Your name"}</p>
+      {message.trim() && (
+        <p className="text-xs italic text-white/50">
+          &quot;{message.trim()}&quot;
+        </p>
+      )}
+      <div className="flex flex-col items-center gap-0">
+        <span className="text-2xl font-bold tracking-tight">
+          {validAmount ? amount : "—"}
+        </span>
+        <span className="text-xs text-white/45">USDC</span>
+      </div>
+      <div className="mt-1 rounded-[var(--radius)] border border-emerald-500/20 bg-emerald-500/10 px-4 py-1.5 text-xs font-medium text-emerald-400/70">
+        Pay {validAmount ? amount : "—"} USDC →
+      </div>
+    </div>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function RequestPage() {
   const {
@@ -70,6 +116,7 @@ export default function RequestPage() {
           amountUsdc: amount,
           message: message.trim() || undefined,
           requesterWalletAddress: walletAddress,
+          requesterEmail: googleEmail || undefined,
         }),
       });
       const data = (await res.json()) as CreateRequestResponse;
@@ -94,6 +141,23 @@ export default function RequestPage() {
     } catch {
       toast("Copy the link manually.", "info");
     }
+  };
+
+  const handleShare = async () => {
+    if (!requestLink) return;
+    if (typeof navigator !== "undefined" && "share" in navigator) {
+      try {
+        await navigator.share({
+          title: "Pay me via LinkCash",
+          text: `${displayName} is requesting ${amount} USDC`,
+          url: requestLink,
+        });
+        return;
+      } catch {
+        // user cancelled — fall through to copy
+      }
+    }
+    void handleCopy();
   };
 
   if (requestLink) {
@@ -141,11 +205,19 @@ export default function RequestPage() {
             <div className="space-y-2">
               <motion.button
                 type="button"
-                onClick={() => void handleCopy()}
+                onClick={() => void handleShare()}
                 whileTap={{ scale: 0.98 }}
                 className="accent-gradient w-full rounded-[var(--radius)] px-5 py-3 text-base font-medium"
               >
-                {copied ? "Copied ✓" : "Copy request link"}
+                Share link →
+              </motion.button>
+              <motion.button
+                type="button"
+                onClick={() => void handleCopy()}
+                whileTap={{ scale: 0.98 }}
+                className="app-btn-secondary w-full px-5 py-2.5 text-sm"
+              >
+                {copied ? "Copied ✓" : "Copy link"}
               </motion.button>
               <button
                 type="button"
@@ -155,7 +227,7 @@ export default function RequestPage() {
                   setMessage("");
                   setYourName(resolvedName);
                 }}
-                className="app-btn-secondary w-full px-4 py-2.5 text-sm"
+                className="w-full px-4 py-2 text-sm text-white/35 transition hover:text-white/60"
               >
                 Create another request
               </button>
@@ -278,6 +350,9 @@ export default function RequestPage() {
                   className="app-input resize-none"
                 />
               </div>
+
+              {/* Live preview */}
+              <PayPreview name={displayName} amount={amount} message={message} />
 
               <motion.button
                 type="button"
