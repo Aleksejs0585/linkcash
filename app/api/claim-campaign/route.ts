@@ -12,7 +12,7 @@ const schema = z
   .object({
     campaignId: z.string().trim().regex(/^[0-9a-f]{24}$/),
     walletAddress: z.string().trim(),
-    email: z.string().trim().email(),
+    email: z.string().trim().min(1).max(200),
   })
   .strict();
 

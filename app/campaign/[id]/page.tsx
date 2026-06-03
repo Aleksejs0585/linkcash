@@ -54,23 +54,26 @@ export default function CampaignClaimPage({ params }: { params: Promise<{ id: st
 
   // Auto-claim when authenticated
   useEffect(() => {
-    if (!authenticated || !walletAddress || !googleEmail || step !== "idle" || claimRef.current) return;
+    if (!authenticated || !walletAddress || step !== "idle" || claimRef.current) return;
     if (!info || info.remaining === 0) return;
     void triggerClaim();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authenticated, walletAddress, googleEmail, info, step]);
+  }, [authenticated, walletAddress, info, step]);
 
   const triggerClaim = async () => {
-    if (claimRef.current || !walletAddress || !googleEmail) return;
+    if (claimRef.current || !walletAddress) return;
     claimRef.current = true;
     setStep("claiming");
     setErrorMsg(null);
+
+    // Use googleEmail if available, otherwise fall back to wallet address as identifier
+    const claimEmail = googleEmail?.trim() || `${walletAddress.toLowerCase()}@wallet`;
 
     try {
       const res = await fetch("/api/claim-campaign", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ campaignId: id, walletAddress, email: googleEmail }),
+        body: JSON.stringify({ campaignId: id, walletAddress, email: claimEmail }),
       });
       const data = await res.json() as { ok?: boolean; txHash?: string; error?: string };
 
@@ -195,8 +198,17 @@ export default function CampaignClaimPage({ params }: { params: Promise<{ id: st
                   />
                 </div>
               ) : (
-                <div className="flex justify-center py-4">
-                  <div className="h-7 w-7 animate-spin rounded-full border-2 border-white/15 border-t-emerald-400" />
+                <div className="space-y-3">
+                  <div className="flex justify-center py-2">
+                    <div className="h-7 w-7 animate-spin rounded-full border-2 border-white/15 border-t-emerald-400" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { claimRef.current = false; void triggerClaim(); }}
+                    className="w-full text-xs text-white/35 transition hover:text-white/60"
+                  >
+                    Taking too long? Tap to retry
+                  </button>
                 </div>
               )}
             </>
