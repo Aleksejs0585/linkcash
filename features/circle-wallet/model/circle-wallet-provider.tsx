@@ -814,6 +814,21 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
     !bootstrapError &&
     !sessionHydrating;
 
+  // Persist email → walletAddress mapping whenever both are known
+  const identifiedRef = useRef<string | null>(null);
+  useEffect(() => {
+    const addr = pickArcWallet(wallets)?.address ?? null;
+    if (!addr || !googleEmail) return;
+    const key = `${addr}:${googleEmail}`;
+    if (identifiedRef.current === key) return;
+    identifiedRef.current = key;
+    void fetch("/api/identify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ walletAddress: addr, email: googleEmail }),
+    }).catch(() => undefined);
+  }, [wallets, googleEmail]);
+
   useEffect(() => {
     if (!deviceRebindRetryPendingRef.current || loginAutoRetryUsedRef.current) {
       return;

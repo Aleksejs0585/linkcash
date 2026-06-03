@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { campaignStore } from "@/lib/server/campaign-store";
+import { identityStore } from "@/lib/server/identity-store";
 import { rateLimitedCheck } from "@/lib/server/simple-rate-limiter";
 
 export const runtime = "nodejs";
@@ -24,7 +25,9 @@ export async function GET(
     return NextResponse.json({ error: "Campaign not found." }, { status: 404 });
   }
 
-  const claims = await campaignStore.getClaims(id);
+  const rawClaims = await campaignStore.getClaims(id);
+  // Enrich claims that only have wallet-based identifiers with real emails from identity store
+  const claims = await identityStore.enrichClaims(rawClaims);
 
   return NextResponse.json({
     ok: true,
