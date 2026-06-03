@@ -47,6 +47,7 @@ const k = {
   pool: (id: string) => `linkcash:camp:${id}:pool`,
   claims: (id: string) => `linkcash:camp:${id}:claims`,
   claimers: (id: string) => `linkcash:camp:${id}:claimers`,
+  byCreator: (addr: string) => `linkcash:camps-by:${addr.toLowerCase()}`,
 };
 
 class CampaignStore {
@@ -68,6 +69,10 @@ class CampaignStore {
         await this.upstash.command(["RPUSH", k.pool(campaign.campaignId), ...pool.map((e) => JSON.stringify(e))]);
         await this.upstash.command(["EXPIRE", k.pool(campaign.campaignId), TTL_SEC]);
       }
+      // Creator index
+      await this.upstash.command(["LPUSH", k.byCreator(campaign.createdBy), campaign.campaignId]);
+      await this.upstash.command(["LTRIM", k.byCreator(campaign.createdBy), 0, 49]);
+      await this.upstash.command(["EXPIRE", k.byCreator(campaign.createdBy), TTL_SEC]);
     } catch (error) {
       console.error(JSON.stringify({ event: "campaign_create_error", message: error instanceof Error ? error.message : "unknown" }));
     }
@@ -153,6 +158,25 @@ class CampaignStore {
     try {
       return (await this.upstash.command<number>(["LLEN", k.pool(campaignId)])) ?? 0;
     } catch { return 0; }
+  }
+
+  async listByCreator(createdBy: string): Promise<Campaign[]> {
+    // Memory fallback: scan all
+    if (!this.upstash) {
+      const results: Campaign[] = [];
+      for (const entry of mem().values()) {
+        if (entry.campaign.createdBy.toLowerCase() === createdBy.toLowerCase()) {
+          results.push(entry.campaign);
+        }
+      }
+      return results.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
+    try {
+      const ids = await this.upstash.command<string[]>(["LRANGE", k.byCreator(createdBy), 0, 49]);
+      if (!ids?.length) return [];
+      const items = await Promise.all(ids.map((id) => this.get(id)));
+      return items.filter((c): c is Campaign => c !== null);
+    } catch { return []; }
   }
 }
 
