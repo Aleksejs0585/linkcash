@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useRef, useState } from "react";
+import { use, useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import AppShell from "@/components/ui/app-shell";
@@ -38,6 +38,8 @@ export default function CampaignClaimPage({ params }: { params: Promise<{ id: st
   const [step, setStep] = useState<ClaimStep>("idle");
   const [txHash, setTxHash] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [emailInput, setEmailInput] = useState("");
+  const [emailSaved, setEmailSaved] = useState(false);
   const claimRef = useRef(false);
 
   // Load campaign info
@@ -98,6 +100,17 @@ export default function CampaignClaimPage({ params }: { params: Promise<{ id: st
       claimRef.current = false;
     }
   };
+
+  const handleSaveEmail = useCallback(async () => {
+    const email = emailInput.trim().toLowerCase();
+    if (!email.includes("@") || !walletAddress) return;
+    await fetch("/api/identify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ walletAddress, email }),
+    }).catch(() => undefined);
+    setEmailSaved(true);
+  }, [emailInput, walletAddress]);
 
   if (notFound) {
     return (
@@ -172,6 +185,33 @@ export default function CampaignClaimPage({ params }: { params: Promise<{ id: st
                     <p className="font-semibold text-white/90">{info.campaign.amountPerGift} USDC claimed!</p>
                     <p className="text-sm text-white/50 mt-0.5">The USDC is now in your wallet.</p>
                   </div>
+
+                  {/* Email capture if not available */}
+                  {!googleEmail && !emailSaved && (
+                    <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-left space-y-2">
+                      <p className="text-xs text-white/50">Leave your email so the organiser can contact you:</p>
+                      <div className="flex gap-2">
+                        <input
+                          type="email"
+                          value={emailInput}
+                          onChange={(e) => setEmailInput(e.target.value)}
+                          placeholder="your@email.com"
+                          className="app-input flex-1 text-sm py-1.5"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => void handleSaveEmail()}
+                          className="shrink-0 rounded-lg border border-white/15 bg-white/8 px-3 text-xs text-white/60 transition hover:bg-white/15"
+                        >
+                          Save
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {emailSaved && (
+                    <p className="text-xs text-emerald-400">Email saved ✓</p>
+                  )}
+
                   <Link href="/wallet" className="app-btn-secondary inline-flex w-full items-center justify-center px-5 py-2.5 text-sm">
                     Open my wallet →
                   </Link>
