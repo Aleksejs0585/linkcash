@@ -814,6 +814,26 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
     !bootstrapError &&
     !sessionHydrating;
 
+  // Silently refresh the Circle userToken every 25 minutes to keep session alive
+  useEffect(() => {
+    if (!authenticated || !userToken || !encryptionKey) return;
+    const session = readCircleSession();
+    if (!session?.refreshToken) return;
+
+    const id = window.setInterval(async () => {
+      const currentSession = readCircleSession();
+      if (!currentSession?.refreshToken) return;
+      const refreshed = await tryRefreshUserToken(currentSession.refreshToken);
+      if (refreshed) {
+        writeCircleSession(refreshed);
+        setUserToken(refreshed.userToken);
+        setEncryptionKey(refreshed.encryptionKey);
+      }
+    }, 25 * 60 * 1000); // 25 minutes
+
+    return () => window.clearInterval(id);
+  }, [authenticated, userToken, encryptionKey]);
+
   // Persist email → walletAddress mapping whenever both are known
   const identifiedRef = useRef<string | null>(null);
   useEffect(() => {
