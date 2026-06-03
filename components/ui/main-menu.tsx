@@ -100,6 +100,14 @@ export default function MainMenu({ className }: MainMenuProps) {
             My requests
           </Link>
           <Link
+            href="/bulk"
+            role="menuitem"
+            className="block rounded-lg px-3 py-2.5 text-left text-sm transition hover:bg-[var(--bg3)]"
+            onClick={() => setOpen(false)}
+          >
+            Bulk gifts
+          </Link>
+          <Link
             href="/gifts"
             role="menuitem"
             className="block rounded-lg px-3 py-2.5 text-left text-sm transition hover:bg-[var(--bg3)]"

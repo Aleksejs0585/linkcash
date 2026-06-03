@@ -77,6 +77,7 @@ const ACTION_LIMITS: Record<string, number> = {
   createDeviceToken: 10,
   initializeUser: 5,
   giftFundingBatchChallenge: 8,
+  bulkGiftBatchChallenge: 3,
   refreshUserToken: 20,
   listWallets: 30,
   contractExecutionChallenge: 8,
@@ -617,6 +618,139 @@ export async function POST(request: Request) {
           refreshToken?: string;
         };
         return NextResponse.json(inner, { status: 200 });
+      }
+
+      case "bulkGiftBatchChallenge": {
+        const userToken = params.userToken as string | undefined;
+        const walletId = params.walletId as string | undefined;
+        const giftsRaw = params.gifts as Array<{ paymentIdHash: string; amountUsdc: string }> | undefined;
+        const expiresInHoursRaw = params.expiresInHours;
+
+        if (!userToken || !walletId || !Array.isArray(giftsRaw) || giftsRaw.length === 0) {
+          return NextResponse.json({ error: "Missing required params." }, { status: 400 });
+        }
+        if (giftsRaw.length > 10) {
+          return NextResponse.json({ error: "Maximum 10 gifts per batch." }, { status: 400 });
+        }
+
+        const expiresInHours = Number(expiresInHoursRaw);
+        if (!Number.isFinite(expiresInHours) || expiresInHours <= 0 || expiresInHours > 720) {
+          return NextResponse.json({ error: "expiresInHours must be between 1 and 720." }, { status: 400 });
+        }
+
+        for (const g of giftsRaw) {
+          if (!isHexString(g.paymentIdHash, 32)) {
+            return NextResponse.json({ error: "Each paymentIdHash must be a bytes32 hex string." }, { status: 400 });
+          }
+          const amt = Number(g.amountUsdc);
+          if (!Number.isFinite(amt) || amt < 0.01 || amt > USDC_MAX_AMOUNT) {
+            return NextResponse.json({ error: `Invalid amountUsdc: ${g.amountUsdc}` }, { status: 400 });
+          }
+        }
+
+        let arc: { rpcUrl: string; contractAddress: string; usdcAddress: string };
+        try {
+          arc = getArcReadEnv();
+        } catch {
+          return NextResponse.json({ error: "Arc env not configured." }, { status: 503 });
+        }
+
+        let walletsRaw: unknown[];
+        try {
+          walletsRaw = await fetchCircleWallets(userToken);
+        } catch (error) {
+          return NextResponse.json({ error: error instanceof Error ? error.message : "Failed to list wallets." }, { status: 502 });
+        }
+
+        let scaAddress: string | null = null;
+        for (const row of walletsRaw) {
+          const w = parseCircleWalletRow(row);
+          if (w && w.id === walletId && w.blockchain === "ARC-TESTNET") {
+            scaAddress = w.address;
+            break;
+          }
+        }
+        if (!scaAddress) {
+          return NextResponse.json({ error: "ARC-TESTNET wallet not found for this walletId." }, { status: 400 });
+        }
+
+        // Parse amounts and calculate total
+        let totalRaw = BigInt(0);
+        const giftItems: Array<{ paymentIdHash: string; amountRaw: bigint }> = [];
+        for (const g of giftsRaw) {
+          let amountRaw: bigint;
+          try {
+            amountRaw = parseUnits(g.amountUsdc, 6);
+          } catch {
+            return NextResponse.json({ error: `Invalid amount format: ${g.amountUsdc}` }, { status: 400 });
+          }
+          totalRaw += amountRaw;
+          giftItems.push({ paymentIdHash: g.paymentIdHash, amountRaw });
+        }
+
+        // Balance pre-check
+        try {
+          const balanceProvider = new JsonRpcProvider(arc.rpcUrl, ARC_TESTNET.chainId);
+          const usdcRead = new Contract(arc.usdcAddress, ["function balanceOf(address) view returns (uint256)"], balanceProvider);
+          const balance = await Promise.race([
+            usdcRead.balanceOf(scaAddress) as Promise<bigint>,
+            new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 5_000)),
+          ]);
+          if (balance < totalRaw) {
+            const has = formatUnits(balance, 6);
+            const needs = formatUnits(totalRaw, 6);
+            return NextResponse.json({
+              error: `Insufficient USDC. Wallet has ${has} USDC but ${needs} USDC needed.`,
+            }, { status: 400 });
+          }
+        } catch (balanceErr) {
+          console.warn("[bulkGiftBatch] balance pre-check skipped:", balanceErr);
+        }
+
+        const expiresAt = BigInt(Math.floor(Date.now() / 1000) + Math.floor(expiresInHours * 3600));
+
+        // Build batch: [approve(total), fundGift×1, ..., fundGift×N]
+        const approveIface = new Interface(["function approve(address,uint256)"]);
+        const approveData = approveIface.encodeFunctionData("approve", [getAddress(arc.contractAddress), totalRaw]);
+
+        const giftIface = new Interface(["function fundGift(bytes32,uint256,address,uint64)"]);
+        const batchParameter: [string, string, string][] = [
+          [getAddress(arc.usdcAddress), "0", approveData],
+          ...giftItems.map(({ paymentIdHash, amountRaw }) => [
+            getAddress(arc.contractAddress),
+            "0",
+            giftIface.encodeFunctionData("fundGift", [paymentIdHash, amountRaw, getAddress(scaAddress!), expiresAt]),
+          ] as [string, string, string]),
+        ];
+
+        const bulkResponse = await circleFetch(
+          `${CIRCLE_BASE_URL}/v1/w3s/user/transactions/contractExecution`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${CIRCLE_API_KEY}`,
+              "X-User-Token": userToken,
+              "X-Request-Id": crypto.randomUUID(),
+            },
+            body: JSON.stringify({
+              idempotencyKey: crypto.randomUUID(),
+              walletId,
+              contractAddress: getAddress(scaAddress),
+              abiFunctionSignature: "executeBatch((address, uint256, bytes)[])",
+              abiParameters: [batchParameter],
+              feeLevel: "MEDIUM",
+            }),
+          }
+        );
+
+        const bulkData = (await bulkResponse.json()) as Record<string, unknown>;
+        if (!bulkResponse.ok) {
+          const msg = typeof bulkData.message === "string" ? bulkData.message : `Request failed (${bulkResponse.status})`;
+          return NextResponse.json({ error: msg }, { status: bulkResponse.status });
+        }
+
+        return NextResponse.json((bulkData.data as { challengeId: string }), { status: 200 });
       }
 
       default:
