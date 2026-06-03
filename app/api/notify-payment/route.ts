@@ -38,15 +38,20 @@ export async function POST(request: Request) {
 
   const { requestId, payerName, amountUsdc } = parsed.data;
 
-  // Per-requestId rate limit: send at most 1 notification per request per hour
-  const perReq = await rateLimitedCheck(`notify-payment:req:${requestId}`, 1, 3_600_000);
-  if (perReq.limited) {
-    return NextResponse.json({ ok: true }); // silent — already notified recently
+  const req = await requestStore.read(requestId);
+  if (!req) return NextResponse.json({ ok: true });
+
+  // Always mark as paid — even if no email is configured
+  void requestStore.markPaid(requestId);
+
+  if (!req.requesterEmail) {
+    return NextResponse.json({ ok: true });
   }
 
-  const req = await requestStore.read(requestId);
-  if (!req?.requesterEmail) {
-    return NextResponse.json({ ok: true }); // no email stored — nothing to send
+  // Per-requestId rate limit: send at most 1 email per request per hour
+  const perReq = await rateLimitedCheck(`notify-payment:req:${requestId}`, 1, 3_600_000);
+  if (perReq.limited) {
+    return NextResponse.json({ ok: true });
   }
 
   await sendPaymentReceivedEmail({

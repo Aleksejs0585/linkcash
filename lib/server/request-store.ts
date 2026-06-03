@@ -8,6 +8,7 @@ export type PaymentRequest = {
   createdAt: string;
   requesterWalletAddress: string;
   requesterEmail?: string;
+  paidAt?: string;
 };
 
 const TTL_SEC = 90 * 24 * 60 * 60;
@@ -85,6 +86,31 @@ class RequestStore {
         })
       );
       return null;
+    }
+  }
+
+  async markPaid(requestId: string): Promise<void> {
+    const paidAt = new Date().toISOString();
+    const key = redisKey(requestId);
+
+    // Update memory immediately
+    const cached = memoryMap().get(key);
+    if (cached) {
+      memoryMap().set(key, { ...cached, paidAt });
+    }
+
+    if (!this.upstash) return;
+
+    try {
+      const raw = await this.upstash.command<string | null>(["GET", key]);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as PaymentRequest;
+      if (parsed.paidAt) return; // already marked
+      const updated = { ...parsed, paidAt };
+      memoryMap().set(key, updated);
+      await this.upstash.command(["SET", key, JSON.stringify(updated), "EX", TTL_SEC]);
+    } catch {
+      // non-fatal
     }
   }
 
