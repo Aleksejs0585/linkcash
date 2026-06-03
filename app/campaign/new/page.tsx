@@ -75,7 +75,7 @@ export default function NewCampaignPage() {
           userToken,
           walletId: primaryWalletId,
           gifts: gifts.map(({ paymentIdHash, amountUsdc }) => ({ paymentIdHash, amountUsdc })),
-          expiresInHours: 24 * 30, // 30 days
+          expiresInHours: 24, // 24 hours
         }),
       });
       const circleData = (await circleRes.json()) as { challengeId?: string; error?: string };

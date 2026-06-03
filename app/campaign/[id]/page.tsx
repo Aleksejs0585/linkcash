@@ -83,6 +83,15 @@ export default function CampaignClaimPage({ params }: { params: Promise<{ id: st
 
       setTxHash(data.txHash);
       setStep("success");
+
+      // Ensure email→wallet mapping is stored so admin can see who claimed
+      if (googleEmail && walletAddress) {
+        void fetch("/api/identify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ walletAddress, email: googleEmail }),
+        }).catch(() => undefined);
+      }
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Claim failed. Please try again.");
       setStep("error");
