@@ -252,11 +252,13 @@ export default function RequestPage() {
                 </div>
                 <input
                   id="req-amount"
-                  type="number"
-                  min="0.01"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === "" || /^\d*\.?\d*$/.test(v)) setAmount(v);
+                  }}
                   className="app-input"
                 />
               </div>
