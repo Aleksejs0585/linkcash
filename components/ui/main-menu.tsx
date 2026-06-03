@@ -57,7 +57,7 @@ export default function MainMenu({ className }: MainMenuProps) {
           id="main-app-menu"
           role="menu"
           aria-orientation="vertical"
-          className="absolute left-0 top-full z-[200] mt-2 min-w-[220px] rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--bg2)] py-1 shadow-xl"
+          className="absolute left-0 top-full z-[200] mt-2 min-w-[220px] max-h-[80vh] overflow-y-auto rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--bg2)] py-1 shadow-xl"
         >
           <Link
             href="/"
