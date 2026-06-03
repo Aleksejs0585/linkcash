@@ -31,7 +31,7 @@ type MainMenuProps = {
 
 export default function MainMenu({ className }: MainMenuProps) {
   const [open, setOpen] = useState(false);
-  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0, maxHeight: 520 });
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const productUrl = getProductSiteUrl();
@@ -58,7 +58,15 @@ export default function MainMenu({ className }: MainMenuProps) {
     e.nativeEvent.stopImmediatePropagation();
     if (!open && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
-      setMenuPos({ top: rect.bottom + 8, left: rect.left });
+      const spaceBelow = window.innerHeight - rect.bottom - 8;
+      const spaceAbove = rect.top - 8;
+      // If not enough space below, open upward
+      const openUpward = spaceBelow < 300 && spaceAbove > spaceBelow;
+      setMenuPos({
+        top: openUpward ? Math.max(8, rect.top - Math.min(spaceAbove, 520)) : rect.bottom + 8,
+        left: rect.left,
+        maxHeight: openUpward ? spaceAbove : spaceBelow,
+      });
     }
     setOpen((v) => !v);
   };
@@ -82,7 +90,7 @@ export default function MainMenu({ className }: MainMenuProps) {
           id="main-app-menu"
           role="menu"
           aria-orientation="vertical"
-          style={{ position: "fixed", top: menuPos.top, left: menuPos.left, zIndex: 9999 }}
+          style={{ position: "fixed", top: menuPos.top, left: menuPos.left, zIndex: 9999, maxHeight: menuPos.maxHeight, overflowY: "auto" }}
           className="min-w-[240px] rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--bg2)] py-1.5 shadow-xl"
         >
           {/* Home */}
