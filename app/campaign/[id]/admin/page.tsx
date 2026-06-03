@@ -150,19 +150,28 @@ export default function CampaignAdminPage({ params }: { params: Promise<{ id: st
                   </div>
 
                   <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1">
-                    {data.claims.map((c, i) => (
-                      <motion.div key={c.txHash} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.02 }}
-                        className="flex items-center justify-between gap-3 rounded-xl border border-white/8 bg-white/4 px-3 py-2.5">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm text-white/80">{c.email}</p>
-                          <p className="text-xs text-white/35">{formatDate(c.claimedAt)}</p>
-                        </div>
-                        <div className="shrink-0 text-right">
-                          <p className="text-sm font-medium text-emerald-400">{data.campaign.amountPerGift} USDC</p>
-                          <p className="text-xs text-emerald-400/50">✓</p>
-                        </div>
-                      </motion.div>
-                    ))}
+                    {data.claims.map((c, i) => {
+                      const isRealEmail = c.email.includes("@") && !c.email.endsWith("@wallet");
+                      return (
+                        <motion.div key={c.txHash} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.02 }}
+                          className="rounded-xl border border-white/8 bg-white/4 px-3 py-2.5">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              {isRealEmail ? (
+                                <p className="truncate text-sm font-medium text-white/85">{c.email}</p>
+                              ) : (
+                                <p className="text-xs text-white/35 italic">No email</p>
+                              )}
+                              <p className="truncate text-xs text-white/35 font-mono mt-0.5">{c.walletAddress}</p>
+                              <p className="text-xs text-white/25 mt-0.5">{formatDate(c.claimedAt)}</p>
+                            </div>
+                            <div className="shrink-0 text-right">
+                              <p className="text-sm font-medium text-emerald-400">{data.campaign.amountPerGift} USDC ✓</p>
+                            </div>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
                   </div>
                 </>
               )}
