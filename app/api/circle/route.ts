@@ -629,8 +629,8 @@ export async function POST(request: Request) {
         if (!userToken || !walletId || !Array.isArray(giftsRaw) || giftsRaw.length === 0) {
           return NextResponse.json({ error: "Missing required params." }, { status: 400 });
         }
-        if (giftsRaw.length > 10) {
-          return NextResponse.json({ error: "Maximum 10 gifts per batch." }, { status: 400 });
+        if (giftsRaw.length > 50) {
+          return NextResponse.json({ error: "Maximum 50 gifts per batch." }, { status: 400 });
         }
 
         const expiresInHours = Number(expiresInHoursRaw);

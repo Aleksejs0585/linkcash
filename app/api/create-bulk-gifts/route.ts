@@ -15,7 +15,7 @@ const giftItemSchema = z.object({
 
 const schema = z
   .object({
-    gifts: z.array(giftItemSchema).min(1).max(10),
+    gifts: z.array(giftItemSchema).min(1).max(50),
     refundAddress: z.string().trim(),
     expiresInHours: z.coerce.number().default(24),
     senderDisplayName: z.string().trim(),

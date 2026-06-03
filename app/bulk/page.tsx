@@ -14,7 +14,7 @@ import { formatGiftTxError } from "@/features/create-gift/lib/gift-errors";
 import { generateSecret, generateHash, generateLink } from "@/utils";
 import { toast } from "@/lib/client/toast";
 
-const MAX_GIFTS = 10;
+const MAX_GIFTS = 50;
 
 type BulkStep = "idle" | "funding" | "confirming" | "registering" | "success" | "error";
 
@@ -154,7 +154,7 @@ function SimpleTab({
       <div className="app-panel app-field p-4">
         <label className="app-section-label">Number of gifts (max {MAX_GIFTS})</label>
         <div className="flex flex-wrap gap-2 mt-1">
-          {[1, 2, 3, 5, 10].map((n) => (
+          {[1, 5, 10, 25, 50].map((n) => (
             <button
               key={n}
               type="button"
