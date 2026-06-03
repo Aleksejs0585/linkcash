@@ -454,6 +454,18 @@ export default function BulkPage() {
               </p>
             </div>
 
+            {/* Campaign upsell */}
+            <Link
+              href="/campaign/new"
+              className="flex items-center justify-between gap-3 rounded-xl border border-emerald-500/20 bg-emerald-950/20 px-4 py-3 transition hover:border-emerald-500/40"
+            >
+              <div>
+                <p className="text-sm font-medium text-emerald-400">Want one link for everyone?</p>
+                <p className="text-xs text-white/40">Create a campaign → one URL, auto-claim, tracks emails</p>
+              </div>
+              <span className="shrink-0 text-emerald-400/60 text-lg">→</span>
+            </Link>
+
             <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
               {results.map((g, i) => (
                 <GiftLinkCard key={g.paymentIdHash} gift={g} index={i} />
