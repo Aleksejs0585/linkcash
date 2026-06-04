@@ -7,12 +7,18 @@ import OAuthReturnResume from "@/components/ui/oauth-return-resume";
 import { CircleWalletProvider } from "@/features/circle-wallet/model/circle-wallet-provider";
 import { useCircleWallet } from "@/features/circle-wallet/model/circle-wallet-provider";
 import { getOAuthReturnTarget } from "@/lib/client/oauth-return";
+import PushPermission from "@/components/ui/push-permission";
 
 type ProvidersProps = {
   children: ReactNode;
 };
 
 /** Full-screen overlay shown while the wallet initialises after an OAuth return. */
+function PushPermissionWrapper() {
+  const { walletAddress } = useCircleWallet();
+  return <PushPermission walletAddress={walletAddress} />;
+}
+
 function OAuthLoadingOverlay() {
   const { ready, walletSyncing, authenticated, authError } = useCircleWallet();
   const pathname = usePathname();
@@ -44,6 +50,7 @@ export default function Providers({ children }: ProvidersProps) {
     <CircleWalletProvider>
       <OAuthReturnResume />
       <OAuthLoadingOverlay />
+      <PushPermissionWrapper />
       {children}
     </CircleWalletProvider>
   );

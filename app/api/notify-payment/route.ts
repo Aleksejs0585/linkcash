@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requestStore } from "@/lib/server/request-store";
 import { sendPaymentReceivedEmail } from "@/lib/server/email";
+import { sendPushToWallet } from "@/lib/server/push-sender";
 import { rateLimitedCheck } from "@/lib/server/simple-rate-limiter";
 
 export const runtime = "nodejs";
@@ -43,6 +44,13 @@ export async function POST(request: Request) {
 
   // Always mark as paid — even if no email is configured
   void requestStore.markPaid(requestId);
+
+  // Push notification to the requester
+  void sendPushToWallet(req.requesterWalletAddress, {
+    title: "Payment received!",
+    body: `${payerName} sent you ${amountUsdc} USDC`,
+    url: "/wallet",
+  });
 
   if (!req.requesterEmail) {
     return NextResponse.json({ ok: true });

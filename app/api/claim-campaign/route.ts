@@ -5,6 +5,7 @@ import { campaignStore } from "@/lib/server/campaign-store";
 import { submitClaim } from "@/entities/claim/server/claim-service";
 import { parseClaimInput } from "@/entities/claim/server/claim-validation";
 import { rateLimitedCheck } from "@/lib/server/simple-rate-limiter";
+import { sendPushToWallet } from "@/lib/server/push-sender";
 
 export const runtime = "nodejs";
 
@@ -92,6 +93,13 @@ export async function POST(request: Request) {
       txHash: result.txHash,
       claimedAt: new Date().toISOString(),
       walletAddress: walletAddress.toLowerCase(),
+    });
+
+    // Push to campaign creator: someone claimed
+    void sendPushToWallet(campaign.createdBy, {
+      title: "Gift claimed!",
+      body: `Someone claimed ${campaign.amountPerGift} USDC from "${campaign.title}"`,
+      url: `/campaign/${campaignId}/admin`,
     });
 
     return NextResponse.json({
