@@ -61,7 +61,7 @@ class SenderGiftStore {
     }
   }
 
-  async readRecent(limit = 200): Promise<SenderGiftEvent[]> {
+  async readRecent(limit = 2000): Promise<SenderGiftEvent[]> {
     try {
       const content = await readFile(this.logPath, "utf8");
       if (!content.trim()) return [];

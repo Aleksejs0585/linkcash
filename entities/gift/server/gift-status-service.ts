@@ -3,6 +3,34 @@ import { claimAuditStore } from "@/lib/server/claim-audit-store";
 import { senderGiftStore } from "@/lib/server/sender-gift-store";
 import { getGiftByHash } from "./gift-service";
 
+// In-process cache: avoids re-reading 3000 log entries on every status poll.
+// Terminal states (claimed/reclaimed) are cached for 1 hour; active for 15s.
+type CacheEntry = { result: PublicGiftStatusResult; expiresAt: number };
+const gState = globalThis as typeof globalThis & { __statusCache?: Map<string, CacheEntry> };
+function statusCache(): Map<string, CacheEntry> {
+  if (!gState.__statusCache) gState.__statusCache = new Map();
+  return gState.__statusCache;
+}
+function pruneCache() {
+  const cache = statusCache();
+  if (cache.size < 500) return;
+  const now = Date.now();
+  for (const [k, v] of cache) {
+    if (v.expiresAt <= now) cache.delete(k);
+  }
+}
+function getCached(hash: string): PublicGiftStatusResult | null {
+  const entry = statusCache().get(hash);
+  if (!entry || entry.expiresAt <= Date.now()) return null;
+  return entry.result;
+}
+function setCached(hash: string, result: PublicGiftStatusResult) {
+  const isTerminal = result.status === "claimed" || result.status === "reclaimed";
+  const ttl = isTerminal ? 3_600_000 : 15_000;
+  statusCache().set(hash, { result, expiresAt: Date.now() + ttl });
+  pruneCache();
+}
+
 export type PublicGiftStatus =
   | "active"
   | "claimed"
@@ -46,8 +74,11 @@ function toTxRef(txHash?: string) {
 }
 
 export async function getPublicGiftStatus(
-  paymentIdHash: string
+  paymentIdHash: string,
 ): Promise<PublicGiftStatusResult> {
+  const cached = getCached(paymentIdHash);
+  if (cached) return cached;
+
   const [giftResult, senderEvents, claimEvents] = await Promise.all([
     getGiftByHash({ hash: paymentIdHash }),
     senderGiftStore.readRecent(1000),
@@ -149,7 +180,7 @@ export async function getPublicGiftStatus(
     },
   ];
 
-  return {
+  const result: PublicGiftStatusResult = {
     ok: true,
     paymentIdHash,
     status,
@@ -164,5 +195,7 @@ export async function getPublicGiftStatus(
     },
     timeline,
   };
+  setCached(paymentIdHash, result);
+  return result;
 }
 

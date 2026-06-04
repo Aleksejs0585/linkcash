@@ -36,9 +36,30 @@ class UpstashClient {
   }
 }
 
+// Singleton — one client per serverless instance per URL/token pair
+const globalState = globalThis as typeof globalThis & {
+  __upstashClient?: UpstashClient | null;
+  __upstashUrl?: string;
+  __upstashToken?: string;
+};
+
 export function getUpstashClient(): UpstashClient | null {
   const url = process.env.UPSTASH_REDIS_REST_URL?.trim();
   const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
   if (!url || !token) return null;
-  return new UpstashClient(url, token);
+
+  // Return cached instance if credentials haven't changed
+  if (
+    globalState.__upstashClient &&
+    globalState.__upstashUrl === url &&
+    globalState.__upstashToken === token
+  ) {
+    return globalState.__upstashClient;
+  }
+
+  const client = new UpstashClient(url, token);
+  globalState.__upstashClient = client;
+  globalState.__upstashUrl = url;
+  globalState.__upstashToken = token;
+  return client;
 }

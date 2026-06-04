@@ -27,7 +27,14 @@ export async function GET(
       return NextResponse.json(result, { status: result.status === "not_found" ? 404 : 400 });
     }
 
-    return NextResponse.json(result);
+    // Terminal states (claimed/reclaimed) never change — cache aggressively.
+    // Active/expired gifts change — short cache only.
+    const isTerminal = result.status === "claimed" || result.status === "reclaimed";
+    const cacheControl = isTerminal
+      ? "public, max-age=3600, stale-while-revalidate=86400"
+      : "public, max-age=15, stale-while-revalidate=30";
+
+    return NextResponse.json(result, { headers: { "Cache-Control": cacheControl } });
   } catch (error) {
     if (error instanceof HttpError) {
       return NextResponse.json(
