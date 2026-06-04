@@ -7,8 +7,12 @@ const vapidSubject = process.env.VAPID_SUBJECT?.trim() ?? "mailto:noreply@linkca
 
 let vapidConfigured = false;
 if (vapidPublic && vapidPrivate) {
-  webpush.setVapidDetails(vapidSubject, vapidPublic, vapidPrivate);
-  vapidConfigured = true;
+  try {
+    webpush.setVapidDetails(vapidSubject, vapidPublic, vapidPrivate);
+    vapidConfigured = true;
+  } catch (err) {
+    console.error("[push] Invalid VAPID keys — push notifications disabled:", err instanceof Error ? err.message : err);
+  }
 }
 
 export type PushPayload = {
