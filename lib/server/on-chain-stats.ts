@@ -8,10 +8,12 @@ const ABI = [
   "event GiftClaimed(bytes32 indexed paymentIdHash, address indexed recipient, uint256 amount)",
 ];
 
-const LOG_CHUNK = 8_000;
-const MAX_CHUNKS = 30; // ~240k blocks ≈ last few days; full-range query tried first
-const STATS_TIMEOUT_MS = 20_000;
-const WATERMARK_KEY = "linkcash:stats-watermark";
+// Arc testnet limits eth_getLogs to 10,000 block range
+const CHUNK = 9_000;
+// Max chunks per call — stays within 20s timeout
+const MAX_CHUNKS_PER_CALL = 5;
+const CURSOR_KEY = "linkcash:stats-cursor-v2";
+const TIMEOUT_MS = 18_000;
 
 export type OnChainStats = {
   totalClaimed: number;
@@ -19,31 +21,77 @@ export type OnChainStats = {
   totalFunded: number;
 };
 
-// In-process watermark so stats never go backward within a serverless instance
-const gState = globalThis as typeof globalThis & {
-  __statsWatermark?: OnChainStats;
+type Cursor = {
+  stats: OnChainStats;
+  nextBlock: number; // next block to scan forward from
 };
 
-async function loadWatermark(): Promise<OnChainStats | null> {
-  // Memory first
-  if (gState.__statsWatermark) return gState.__statsWatermark;
-  // Redis
+// Known on-chain minimums before incremental tracking started
+const SEED: OnChainStats = {
+  totalClaimed: 48,
+  totalUsdcClaimed: "480",
+  totalFunded: 48,
+};
+
+const gState = globalThis as typeof globalThis & {
+  __statsCursor?: Cursor;
+};
+
+async function loadCursor(): Promise<Cursor | null> {
+  if (gState.__statsCursor) return gState.__statsCursor;
   const upstash = getUpstashClient();
   if (!upstash) return null;
   try {
-    const raw = await upstash.command<string | null>(["GET", WATERMARK_KEY]);
+    const raw = await upstash.command<string | null>(["GET", CURSOR_KEY]);
     if (!raw) return null;
-    return JSON.parse(raw) as OnChainStats;
+    const c = JSON.parse(raw) as Cursor;
+    gState.__statsCursor = c;
+    return c;
   } catch { return null; }
 }
 
-async function saveWatermark(stats: OnChainStats): Promise<void> {
-  gState.__statsWatermark = stats;
+async function saveCursor(cursor: Cursor): Promise<void> {
+  gState.__statsCursor = cursor;
   const upstash = getUpstashClient();
   if (!upstash) return;
   try {
-    await upstash.command(["SET", WATERMARK_KEY, JSON.stringify(stats), "EX", 30 * 24 * 60 * 60]);
+    await upstash.command(["SET", CURSOR_KEY, JSON.stringify(cursor), "EX", 30 * 24 * 60 * 60]);
   } catch { /* non-fatal */ }
+}
+
+async function scanForward(
+  contract: Contract,
+  from: number,
+  to: number,
+  base: OnChainStats
+): Promise<{ stats: OnChainStats; scannedTo: number }> {
+  let funded = base.totalFunded;
+  let claimed = base.totalClaimed;
+  let totalRaw = BigInt(Math.round(parseFloat(base.totalUsdcClaimed) * 1_000_000));
+  let scannedTo = from - 1;
+  let chunks = 0;
+
+  for (let start = from; start <= to && chunks < MAX_CHUNKS_PER_CALL; start += CHUNK, chunks++) {
+    const end = Math.min(start + CHUNK - 1, to);
+    const [fundedLogs, claimedLogs] = await Promise.all([
+      contract.queryFilter(contract.filters.GiftFunded(), start, end),
+      contract.queryFilter(contract.filters.GiftClaimed(), start, end),
+    ]);
+    funded += fundedLogs.length;
+    claimed += claimedLogs.length;
+    for (const log of claimedLogs) {
+      try {
+        const amount = (log as { args?: { amount?: bigint } }).args?.amount;
+        if (typeof amount === "bigint") totalRaw += amount;
+      } catch { /* skip */ }
+    }
+    scannedTo = end;
+  }
+
+  return {
+    stats: { totalFunded: funded, totalClaimed: claimed, totalUsdcClaimed: formatUnits(totalRaw, 6) },
+    scannedTo,
+  };
 }
 
 async function loadOnChainStatsInner(): Promise<OnChainStats> {
@@ -52,72 +100,45 @@ async function loadOnChainStatsInner(): Promise<OnChainStats> {
   const contract = new Contract(contractAddress, ABI, provider);
   const latest = await provider.getBlockNumber();
 
-  async function fetchAllLogs(filter: ReturnType<Contract["filters"]["GiftFunded"]>) {
-    // Full-history query first — fast when RPC supports it
-    try {
-      const all = await contract.queryFilter(filter, 0, latest);
-      if (Array.isArray(all) && all.length >= 0) return all;
-    } catch { /* fall through to chunked */ }
+  const cursor = await loadCursor();
 
-    // Chunked fallback: scan backward from latest
-    const logs = [];
-    let toBlock = latest;
-    for (let i = 0; i < MAX_CHUNKS && toBlock >= 0; i++) {
-      const fromBlock = Math.max(0, toBlock - LOG_CHUNK);
-      const batch = await contract.queryFilter(filter, fromBlock, toBlock);
-      logs.push(...batch);
-      if (fromBlock === 0) break;
-      toBlock = fromBlock - 1;
-    }
-    return logs;
+  if (!cursor) {
+    // First run: start tracking from latest block forward, use SEED for history
+    const newCursor: Cursor = { stats: SEED, nextBlock: latest + 1 };
+    await saveCursor(newCursor);
+    return SEED;
   }
 
-  const [fundedLogs, claimedLogs] = await Promise.all([
-    fetchAllLogs(contract.filters.GiftFunded()),
-    fetchAllLogs(contract.filters.GiftClaimed()),
-  ]);
-
-  let totalRaw = BigInt(0);
-  for (const log of claimedLogs) {
-    try {
-      const amount = (log as { args?: { amount?: bigint } }).args?.amount;
-      if (typeof amount === "bigint") totalRaw += amount;
-    } catch { /* skip */ }
+  if (cursor.nextBlock > latest) {
+    // No new blocks since last scan
+    return cursor.stats;
   }
 
-  return {
-    totalClaimed: claimedLogs.length,
-    totalUsdcClaimed: formatUnits(totalRaw, 6),
-    totalFunded: fundedLogs.length,
-  };
+  // Scan new blocks since last cursor
+  const { stats: updated, scannedTo } = await scanForward(
+    contract,
+    cursor.nextBlock,
+    latest,
+    cursor.stats
+  );
+
+  const newCursor: Cursor = { stats: updated, nextBlock: scannedTo + 1 };
+  await saveCursor(newCursor);
+  return updated;
 }
 
-// Known minimum floor — last confirmed on-chain values before RPC issues started.
-// Replaced by real data on first successful query; never goes below this.
-const SEED: OnChainStats = { totalClaimed: 48, totalUsdcClaimed: "480", totalFunded: 48 };
-
 export async function loadOnChainStats(): Promise<OnChainStats> {
-  const watermark = await loadWatermark() ?? SEED;
+  const cursor = await loadCursor();
+  const fallback = cursor?.stats ?? SEED;
 
   try {
-    const fresh = await Promise.race([
+    return await Promise.race([
       loadOnChainStatsInner(),
       new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("stats timeout")), STATS_TIMEOUT_MS)
+        setTimeout(() => reject(new Error("stats timeout")), TIMEOUT_MS)
       ),
     ]);
-
-    // Only accept fresh data if it's >= watermark (prevents partial-scan regressions)
-    if (
-      fresh.totalClaimed >= watermark.totalClaimed &&
-      parseFloat(fresh.totalUsdcClaimed) >= parseFloat(watermark.totalUsdcClaimed)
-    ) {
-      void saveWatermark(fresh);
-      return fresh;
-    }
-
-    return watermark;
   } catch {
-    return watermark;
+    return fallback;
   }
 }
