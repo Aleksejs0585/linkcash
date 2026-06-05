@@ -70,11 +70,11 @@ export default function LiveStats({ initial }: { initial: OnChainStats }) {
   }, []);
 
   const claimedDisplay =
-    stats.totalClaimed > 0 ? `${stats.totalClaimed.toLocaleString()}+` : "48+";
+    stats.totalClaimed > 0 ? `${stats.totalClaimed.toLocaleString()}+` : "—";
   const usdcDisplay =
     parseFloat(stats.totalUsdcClaimed) > 0
       ? formatUsdcStat(stats.totalUsdcClaimed)
-      : "$480+";
+      : "—";
 
   return (
     <>
