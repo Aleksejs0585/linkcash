@@ -6,6 +6,7 @@ import { submitClaim } from "@/entities/claim/server/claim-service";
 import { parseClaimInput } from "@/entities/claim/server/claim-validation";
 import { rateLimitedCheck } from "@/lib/server/simple-rate-limiter";
 import { sendPushToWallet } from "@/lib/server/push-sender";
+import { errorMessage } from "@/lib/server/http-errors";
 
 export const runtime = "nodejs";
 
@@ -108,14 +109,27 @@ export async function POST(request: Request) {
       amountUsdc: campaign.amountPerGift,
     });
   } catch (error) {
-    // If claim fails, push the gift back to the pool so it can be retried
-    // We use a best-effort re-push; if it fails the gift is lost (acceptable on testnet)
-    const upstash = (await import("@/lib/server/upstash-client")).getUpstashClient();
-    if (upstash) {
-      upstash.command(["LPUSH", `linkcash:camp:${campaignId}:pool`, JSON.stringify(poolEntry)]).catch(() => undefined);
+    const rawMsg = error instanceof Error ? error.message : "";
+
+    // "gift claimed" or "gift missing" = on-chain state is final — don't re-queue
+    const alreadyFinalized =
+      rawMsg.includes("gift claimed") ||
+      rawMsg.includes("gift missing") ||
+      rawMsg.includes("CALL_EXCEPTION");
+
+    if (!alreadyFinalized) {
+      // Transient error — push slot back so another attempt can succeed
+      const upstash = (await import("@/lib/server/upstash-client")).getUpstashClient();
+      if (upstash) {
+        upstash.command(["LPUSH", `linkcash:camp:${campaignId}:pool`, JSON.stringify(poolEntry)]).catch(() => undefined);
+      }
     }
 
-    const msg = error instanceof Error ? error.message : "Claim failed.";
-    return NextResponse.json({ error: msg }, { status: 500 });
+    // Show friendly message — never leak raw ethers/RPC noise
+    const friendly = alreadyFinalized
+      ? "This gift was already claimed. Please try again or contact the campaign organiser."
+      : errorMessage(error, "Claim failed. Please try again.");
+
+    return NextResponse.json({ error: friendly }, { status: alreadyFinalized ? 409 : 500 });
   }
 }
