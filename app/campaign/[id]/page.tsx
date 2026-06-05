@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useRef, useState, useCallback } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import AppShell from "@/components/ui/app-shell";
@@ -38,8 +38,6 @@ export default function CampaignClaimPage({ params }: { params: Promise<{ id: st
   const [step, setStep] = useState<ClaimStep>("idle");
   const [txHash, setTxHash] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [emailInput, setEmailInput] = useState("");
-  const [emailSaved, setEmailSaved] = useState(false);
   const claimRef = useRef(false);
 
   // Load campaign info
@@ -54,28 +52,27 @@ export default function CampaignClaimPage({ params }: { params: Promise<{ id: st
       .catch(() => setNotFound(true));
   }, [id]);
 
-  // Auto-claim when authenticated
+  const hasRealEmail = Boolean(googleEmail?.trim() && !googleEmail.includes("@wallet"));
+
+  // Auto-claim only when we have a real verified email from the session
   useEffect(() => {
-    if (!authenticated || !walletAddress || step !== "idle" || claimRef.current) return;
+    if (!authenticated || !walletAddress || !hasRealEmail || step !== "idle" || claimRef.current) return;
     if (!info || info.remaining === 0) return;
     void triggerClaim();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authenticated, walletAddress, info, step]);
+  }, [authenticated, walletAddress, hasRealEmail, info, step]);
 
   const triggerClaim = async () => {
-    if (claimRef.current || !walletAddress) return;
+    if (claimRef.current || !walletAddress || !googleEmail) return;
     claimRef.current = true;
     setStep("claiming");
     setErrorMsg(null);
-
-    // Use googleEmail if available, otherwise fall back to wallet address as identifier
-    const claimEmail = googleEmail?.trim() || `${walletAddress.toLowerCase()}@wallet`;
 
     try {
       const res = await fetch("/api/claim-campaign", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ campaignId: id, walletAddress, email: claimEmail }),
+        body: JSON.stringify({ campaignId: id, walletAddress, email: googleEmail.trim() }),
       });
       const data = await res.json() as { ok?: boolean; txHash?: string; error?: string };
 
@@ -86,31 +83,18 @@ export default function CampaignClaimPage({ params }: { params: Promise<{ id: st
       setTxHash(data.txHash);
       setStep("success");
 
-      // Ensure email→wallet mapping is stored so admin can see who claimed
-      if (googleEmail && walletAddress) {
-        void fetch("/api/identify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ walletAddress, email: googleEmail }),
-        }).catch(() => undefined);
-      }
+      // Store email→wallet mapping so admin page shows who claimed
+      void fetch("/api/identify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ walletAddress, email: googleEmail.trim() }),
+      }).catch(() => undefined);
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Claim failed. Please try again.");
       setStep("error");
       claimRef.current = false;
     }
   };
-
-  const handleSaveEmail = useCallback(async () => {
-    const email = emailInput.trim().toLowerCase();
-    if (!email.includes("@") || !walletAddress) return;
-    await fetch("/api/identify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ walletAddress, email }),
-    }).catch(() => undefined);
-    setEmailSaved(true);
-  }, [emailInput, walletAddress]);
 
   if (notFound) {
     return (
@@ -184,34 +168,8 @@ export default function CampaignClaimPage({ params }: { params: Promise<{ id: st
                   <div>
                     <p className="font-semibold text-white/90">{info.campaign.amountPerGift} USDC claimed!</p>
                     <p className="text-sm text-white/50 mt-0.5">The USDC is now in your wallet.</p>
+                    {googleEmail && <p className="text-xs text-white/35 mt-1">{googleEmail}</p>}
                   </div>
-
-                  {/* Email capture if not available */}
-                  {!googleEmail && !emailSaved && (
-                    <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-left space-y-2">
-                      <p className="text-xs text-white/50">Leave your email so the organiser can contact you:</p>
-                      <div className="flex gap-2">
-                        <input
-                          type="email"
-                          value={emailInput}
-                          onChange={(e) => setEmailInput(e.target.value)}
-                          placeholder="your@email.com"
-                          className="app-input flex-1 text-sm py-1.5"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => void handleSaveEmail()}
-                          className="shrink-0 rounded-lg border border-white/15 bg-white/8 px-3 text-xs text-white/60 transition hover:bg-white/15"
-                        >
-                          Save
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                  {emailSaved && (
-                    <p className="text-xs text-emerald-400">Email saved ✓</p>
-                  )}
-
                   <Link href="/wallet" className="app-btn-secondary inline-flex w-full items-center justify-center px-5 py-2.5 text-sm">
                     Open my wallet →
                   </Link>
@@ -242,6 +200,20 @@ export default function CampaignClaimPage({ params }: { params: Promise<{ id: st
                     onGoogleLogin={() => void login()}
                     onEmailLogin={loginWithEmail}
                     googleLabel={`Claim ${info.campaign.amountPerGift} USDC with Google →`}
+                    buttonSize="large"
+                    authError={authError}
+                  />
+                </div>
+              ) : authenticated && !hasRealEmail ? (
+                // Authenticated but no verified email — require Google sign-in
+                <div className="space-y-3">
+                  <p className="text-center text-sm text-white/55">
+                    Sign in with Google or email to verify your identity and claim.
+                  </p>
+                  <LoginPanel
+                    onGoogleLogin={() => void login()}
+                    onEmailLogin={loginWithEmail}
+                    googleLabel={`Sign in with Google to claim →`}
                     buttonSize="large"
                     authError={authError}
                   />

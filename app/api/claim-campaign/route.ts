@@ -48,6 +48,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "walletAddress must be a valid address." }, { status: 400 });
   }
 
+  // Require a real verified email — reject wallet-based fallback identifiers
+  if (!email.includes("@") || email.endsWith("@wallet") || !email.includes(".")) {
+    return NextResponse.json({ error: "Please sign in with Google or email to claim." }, { status: 400 });
+  }
+
   // Load campaign
   const campaign = await campaignStore.get(campaignId);
   if (!campaign) {
