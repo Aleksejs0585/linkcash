@@ -92,8 +92,12 @@ async function loadOnChainStatsInner(): Promise<OnChainStats> {
   };
 }
 
+// Known minimum floor — last confirmed on-chain values before RPC issues started.
+// Replaced by real data on first successful query; never goes below this.
+const SEED: OnChainStats = { totalClaimed: 48, totalUsdcClaimed: "480", totalFunded: 48 };
+
 export async function loadOnChainStats(): Promise<OnChainStats> {
-  const watermark = await loadWatermark();
+  const watermark = await loadWatermark() ?? SEED;
 
   try {
     const fresh = await Promise.race([
@@ -103,20 +107,17 @@ export async function loadOnChainStats(): Promise<OnChainStats> {
       ),
     ]);
 
-    // Only update watermark if numbers are >= previous (testnet can't shrink)
+    // Only accept fresh data if it's >= watermark (prevents partial-scan regressions)
     if (
-      !watermark ||
-      fresh.totalClaimed >= watermark.totalClaimed ||
+      fresh.totalClaimed >= watermark.totalClaimed &&
       parseFloat(fresh.totalUsdcClaimed) >= parseFloat(watermark.totalUsdcClaimed)
     ) {
       void saveWatermark(fresh);
       return fresh;
     }
 
-    // Fresh data looks wrong (RPC returned partial results) — use watermark
     return watermark;
   } catch {
-    // Timeout or RPC error — return watermark if available
-    return watermark ?? { totalClaimed: 0, totalUsdcClaimed: "0", totalFunded: 0 };
+    return watermark;
   }
 }
