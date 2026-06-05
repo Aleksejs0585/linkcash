@@ -202,7 +202,7 @@ export default function GiftStatusPage() {
                     <span>
                       Expires:{" "}
                       <span className="text-white/80">
-                        {new Date(result.expiresAt * 1000).toLocaleString()}
+                        {new Date(result.expiresAt * 1000).toLocaleString("en-US")}
                       </span>
                     </span>
                   )}
@@ -296,7 +296,7 @@ export default function GiftStatusPage() {
                       </p>
                       {step.timestamp && (
                         <p className="mt-1 text-[11px] text-white/35">
-                          {new Date(step.timestamp).toLocaleString()}
+                          {new Date(step.timestamp).toLocaleString("en-US")}
                         </p>
                       )}
                       {step.explorerUrl && step.txHash && (

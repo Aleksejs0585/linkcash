@@ -69,7 +69,7 @@ export default function LiveStats({ initial }: { initial: OnChainStats }) {
     return () => clearInterval(id);
   }, []);
 
-  const claimedDisplay = `${stats.totalClaimed.toLocaleString()}+`;
+  const claimedDisplay = `${stats.totalClaimed.toLocaleString("en-US")}+`;
   const usdcDisplay = formatUsdcStat(stats.totalUsdcClaimed);
 
   return (

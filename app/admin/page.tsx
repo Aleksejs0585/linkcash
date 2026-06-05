@@ -460,7 +460,7 @@ export default function AdminPage() {
                   >
                     <p className="font-medium text-white/90">{item.event}</p>
                     <p className="mt-1 text-white/60">
-                      {new Date(item.timestamp).toLocaleString()}
+                      {new Date(item.timestamp).toLocaleString("en-US")}
                     </p>
                     <p className="mt-1 text-white/60">ip: {item.ip}</p>
                     {item.receiverAddress && (

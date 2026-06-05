@@ -22,7 +22,7 @@ type AdminData = {
 };
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString(undefined, {
+  return new Date(iso).toLocaleString("en-US", {
     day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
   });
 }
