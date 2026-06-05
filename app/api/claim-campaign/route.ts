@@ -111,14 +111,13 @@ export async function POST(request: Request) {
   } catch (error) {
     const rawMsg = error instanceof Error ? error.message : "";
 
-    // "gift claimed" or "gift missing" = on-chain state is final — don't re-queue
-    const alreadyFinalized =
-      rawMsg.includes("gift claimed") ||
-      rawMsg.includes("gift missing") ||
-      rawMsg.includes("CALL_EXCEPTION");
+    // "gift claimed" = on-chain state is final — gift already claimed, don't re-queue
+    const giftAlreadyClaimed = rawMsg.includes("gift claimed");
+    // "gift missing" = invalid pool entry — also don't re-queue (won't succeed on retry)
+    const giftInvalid = rawMsg.includes("gift missing");
 
-    if (!alreadyFinalized) {
-      // Transient error — push slot back so another attempt can succeed
+    if (!giftAlreadyClaimed && !giftInvalid) {
+      // Transient error (network, timeout) — push slot back so another attempt can succeed
       const upstash = (await import("@/lib/server/upstash-client")).getUpstashClient();
       if (upstash) {
         upstash.command(["LPUSH", `linkcash:camp:${campaignId}:pool`, JSON.stringify(poolEntry)]).catch(() => undefined);
@@ -126,10 +125,10 @@ export async function POST(request: Request) {
     }
 
     // Show friendly message — never leak raw ethers/RPC noise
-    const friendly = alreadyFinalized
+    const friendly = giftAlreadyClaimed
       ? "This gift was already claimed. Please try again or contact the campaign organiser."
       : errorMessage(error, "Claim failed. Please try again.");
 
-    return NextResponse.json({ error: friendly }, { status: alreadyFinalized ? 409 : 500 });
+    return NextResponse.json({ error: friendly }, { status: giftAlreadyClaimed ? 409 : 500 });
   }
 }
