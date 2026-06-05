@@ -188,49 +188,53 @@ export function useCreateGift() {
   const onCreate = async () => {
     if (!ready || creating || creatingRef.current) return;
     creatingRef.current = true;
+
+    // Helper: fail with message and release the lock so retry works without reload
+    const fail = (msg: string) => {
+      creatingRef.current = false;
+      setStatus(msg);
+    };
+
     if (!authenticated) {
+      creatingRef.current = false;
       void login();
       return;
     }
     if (walletSyncing) {
-      setStatus("Wallet is still setting up. Please wait a moment and try again.");
+      fail("Wallet is still setting up. Please wait a moment and try again.");
       return;
     }
     if (!senderWalletAddress) {
-      setStatus("No sender wallet yet. Finish Google sign-in and wallet setup, then try again.");
+      fail("No sender wallet yet. Finish Google sign-in and wallet setup, then try again.");
       return;
     }
     if (!giftContractAddress) {
-      setStatus(
-        "Set NEXT_PUBLIC_CONTRACT_ADDRESS to the deployed gift contract (same as CONTRACT_ADDRESS)."
-      );
+      fail("Set NEXT_PUBLIC_CONTRACT_ADDRESS to the deployed gift contract (same as CONTRACT_ADDRESS).");
       return;
     }
     if (!primaryWalletId || !userToken) {
-      setStatus("Wallet is not ready for signing. Try again in a moment.");
+      fail("Wallet is not ready for signing. Try again in a moment.");
       return;
     }
 
     const hoursNum = Number(expiresInHours);
     if (!Number.isFinite(hoursNum) || hoursNum <= 0 || hoursNum > 720) {
-      setStatus("Expiry must be between 1 and 720 hours.");
+      fail("Expiry must be between 1 and 720 hours.");
       return;
     }
 
     const trimmedName = senderNameInputValue.trim().replace(/\s+/g, " ");
     if (!trimmedName) {
-      setStatus(
-        "Add how the recipient should see you (your email is filled in by default after sign-in)."
-      );
+      fail("Add how the recipient should see you (your email is filled in by default after sign-in).");
       return;
     }
     if (trimmedName.length > SENDER_DISPLAY_NAME_MAX) {
-      setStatus(`Name must be ${SENDER_DISPLAY_NAME_MAX} characters or fewer.`);
+      fail(`Name must be ${SENDER_DISPLAY_NAME_MAX} characters or fewer.`);
       return;
     }
     const trimmedMessage = giftMessage.trim().replace(/\s+/g, " ");
     if (trimmedMessage.length > GIFT_MESSAGE_MAX) {
-      setStatus(`Message must be ${GIFT_MESSAGE_MAX} characters or fewer.`);
+      fail(`Message must be ${GIFT_MESSAGE_MAX} characters or fewer.`);
       return;
     }
 

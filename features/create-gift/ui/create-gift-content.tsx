@@ -75,7 +75,7 @@ export function CreateGiftContent() {
         onReclaim={() => void onReclaim()}
         onShareClick={onShareClick}
       />
-      <GlassCard className="relative z-[1] max-w-[460px] space-y-6 p-5 text-center sm:p-8">
+      <GlassCard className="relative z-[1] max-w-[420px] space-y-6 p-5 text-center sm:p-8">
         <div className="flex items-center justify-between">
           <MainMenu />
           <HelpTrigger />
@@ -335,7 +335,11 @@ export function CreateGiftContent() {
           </motion.div>
         )}
 
-        {status && <p className="break-all text-sm text-white/75">{status}</p>}
+        {status && (
+          <p className={`break-all text-sm ${creating ? "text-white/75" : "text-rose-400"}`}>
+            {status}
+          </p>
+        )}
         {authenticated && authError && (
           <p className="text-center text-sm text-rose-400">{authError}</p>
         )}
