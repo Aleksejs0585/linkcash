@@ -867,7 +867,14 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
 
     loginAutoRetryUsedRef.current = true;
     saveOAuthReturnTarget();
-    void performGoogleLogin().catch((e) => {
+    // Retry with whichever method was actually in flight — calling
+    // performGoogleLogin() here for an email-OTP attempt pops Google's
+    // account chooser right after the user finishes entering their code.
+    const pendingEmail = pendingEmailRef.current;
+    const retry = pendingEmail
+      ? performEmailLogin(pendingEmail)
+      : performGoogleLogin();
+    void retry.catch((e) => {
       deviceRebindRetryPendingRef.current = false;
       const raw = e instanceof Error ? e.message : "Sign-in failed to start.";
       if (isAuthCancellation(raw)) {
@@ -882,6 +889,7 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
     deviceEncryptionKey,
     deviceIdResetKey,
     performGoogleLogin,
+    performEmailLogin,
   ]);
 
   const login = useCallback(async () => {
