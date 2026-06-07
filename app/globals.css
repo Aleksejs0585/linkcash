@@ -98,7 +98,7 @@ body::before {
   transform: translate(-50%, -50%);
   background: radial-gradient(
     circle,
-    rgba(0, 229, 160, 0.14) 0%,
+    rgba(59, 142, 240, 0.14) 0%,
     rgba(91, 71, 245, 0.06) 40%,
     transparent 72%
   );
@@ -112,7 +112,7 @@ body::before {
   transform: translateX(-50%);
   background: radial-gradient(
     circle,
-    rgba(0, 229, 160, 0.12) 0%,
+    rgba(59, 142, 240, 0.12) 0%,
     rgba(91, 71, 245, 0.05) 45%,
     transparent 75%
   );
@@ -144,7 +144,7 @@ body::before {
   color: #000;
   background: var(--accent);
   border: none;
-  box-shadow: 0 12px 32px rgba(0, 229, 160, 0.22);
+  box-shadow: 0 12px 32px rgba(59, 142, 240, 0.22);
   transition:
     transform 180ms ease,
     background 180ms ease,
@@ -154,7 +154,7 @@ body::before {
 .accent-gradient:hover:not(:disabled) {
   transform: translateY(-1px);
   background: var(--accent-hover);
-  box-shadow: 0 14px 36px rgba(0, 229, 160, 0.3);
+  box-shadow: 0 14px 36px rgba(59, 142, 240, 0.3);
 }
 
 .accent-gradient:active:not(:disabled) {
@@ -237,8 +237,8 @@ body::before {
 }
 
 .app-input:focus {
-  border-color: rgba(0, 229, 160, 0.45);
-  box-shadow: 0 0 0 2px rgba(0, 229, 160, 0.12);
+  border-color: rgba(59, 142, 240, 0.45);
+  box-shadow: 0 0 0 2px rgba(59, 142, 240, 0.12);
 }
 
 .app-link {
@@ -280,7 +280,7 @@ body::before {
 
 .status-pill-reclaimed {
   color: var(--accent);
-  border-color: rgba(0, 229, 160, 0.3);
+  border-color: rgba(59, 142, 240, 0.3);
   background: var(--accent-dim);
 }
 
