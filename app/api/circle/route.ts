@@ -577,7 +577,14 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: msg }, { status: response.status });
         }
 
-        const inner = data.data as { otpToken: string };
+        // /users/email/token mints its own device token bound to the OTP —
+        // the SDK must verify with THIS token, not a separately-created one
+        // (Circle allows only one active token per deviceId).
+        const inner = data.data as {
+          otpToken: string;
+          deviceToken: string;
+          deviceEncryptionKey: string;
+        };
         return NextResponse.json(inner, { status: 200 });
       }
 

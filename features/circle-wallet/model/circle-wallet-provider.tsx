@@ -459,17 +459,17 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
 
       loginInFlightRef.current = true;
       try {
-        // Mint a fresh device token right before signing in (same as
-        // performGoogleLogin) — Circle only allows one active token per
-        // deviceId, and a stale cookie-cached token makes verifyOtp() fail
-        // with "device token is invalid" mid-flow.
-        const { deviceToken: dt, deviceEncryptionKey: dek } =
-          await createDeviceToken(deviceId);
-        applySdkLoginConfigs(sdk, deviceId, dt, dek);
-
-        let data: { otpToken: string };
+        // /users/email/token mints its own device token bound to the OTP —
+        // Circle allows only one active token per deviceId, so we must verify
+        // with THIS token (not one from a separate createDeviceToken call or
+        // stale cookies), or verifyOtp() fails with "device token is invalid".
+        let data: { otpToken: string; deviceToken: string; deviceEncryptionKey: string };
         try {
-          data = await postCircle<{ otpToken: string }>({
+          data = await postCircle<{
+            otpToken: string;
+            deviceToken: string;
+            deviceEncryptionKey: string;
+          }>({
             action: "sendEmailOtp",
             email,
             deviceId,
@@ -484,12 +484,15 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
         }
 
         pendingEmailRef.current = email;
+        // Keep the cookie cache in sync with the token Circle will actually
+        // verify against, so a later bootstrap doesn't reuse a stale one.
+        stampDeviceBindingCookies(deviceId, data.deviceToken, data.deviceEncryptionKey);
 
         sdk.updateConfigs({
           appSettings: { appId },
           loginConfigs: {
-            deviceToken: dt,
-            deviceEncryptionKey: dek,
+            deviceToken: data.deviceToken,
+            deviceEncryptionKey: data.deviceEncryptionKey,
             otpToken: data.otpToken,
           },
         });
@@ -499,7 +502,7 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
         loginInFlightRef.current = false;
       }
     },
-    [applySdkLoginConfigs, createDeviceToken, deviceId]
+    [deviceId]
   );
 
   useEffect(() => {
