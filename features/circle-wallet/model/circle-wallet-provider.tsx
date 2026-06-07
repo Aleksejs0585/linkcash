@@ -453,12 +453,20 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
       if (!sdk) {
         throw new Error("Wallet is still loading. Try again in a moment.");
       }
-      if (!deviceId || !deviceToken || !deviceEncryptionKey) {
-        throw new Error("Wallet is still loading. Try again in a moment.");
+      if (!deviceId) {
+        throw new Error("Missing device id.");
       }
 
       loginInFlightRef.current = true;
       try {
+        // Mint a fresh device token right before signing in (same as
+        // performGoogleLogin) — Circle only allows one active token per
+        // deviceId, and a stale cookie-cached token makes verifyOtp() fail
+        // with "device token is invalid" mid-flow.
+        const { deviceToken: dt, deviceEncryptionKey: dek } =
+          await createDeviceToken(deviceId);
+        applySdkLoginConfigs(sdk, deviceId, dt, dek);
+
         let data: { otpToken: string };
         try {
           data = await postCircle<{ otpToken: string }>({
@@ -480,8 +488,8 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
         sdk.updateConfigs({
           appSettings: { appId },
           loginConfigs: {
-            deviceToken,
-            deviceEncryptionKey,
+            deviceToken: dt,
+            deviceEncryptionKey: dek,
             otpToken: data.otpToken,
           },
         });
@@ -491,7 +499,7 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
         loginInFlightRef.current = false;
       }
     },
-    [deviceId, deviceToken, deviceEncryptionKey]
+    [applySdkLoginConfigs, createDeviceToken, deviceId]
   );
 
   useEffect(() => {
