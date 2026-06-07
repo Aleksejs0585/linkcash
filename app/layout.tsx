@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { DM_Sans, Syne } from "next/font/google";
+import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
 import HelpManual from "@/components/ui/help-manual";
@@ -27,14 +27,22 @@ export const metadata: Metadata = {
   },
 };
 
-const syne = Syne({
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-landing-display",
 });
 
-const dmSans = DM_Sans({
+const spaceGroteskBody = Space_Grotesk({
   subsets: ["latin"],
+  weight: ["400", "500"],
   variable: "--font-landing-body",
+});
+
+const jetBrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "700"],
+  variable: "--font-landing-mono",
 });
 
 type RootLayoutProps = {
@@ -51,7 +59,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <link rel="dns-prefetch" href="https://oauth2.googleapis.com" />
       </head>
       <body
-        className={`${dmSans.className} ${syne.variable} ${dmSans.variable} bg-app antialiased`}
+        className={`${spaceGroteskBody.className} ${spaceGrotesk.variable} ${spaceGroteskBody.variable} ${jetBrainsMono.variable} bg-app antialiased`}
       >
         <Providers>{children}</Providers>
         <HelpManual />

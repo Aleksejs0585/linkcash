@@ -12,7 +12,8 @@ import { getArcExplorerTxUrl } from "@/utils";
 import LinkCashLogo from "@/components/ui/linkcash-logo";
 import { HelpTrigger } from "@/components/ui/help-manual";
 import LandingFaq from "./landing-faq";
-import DemoFlow from "./demo-flow";
+import HeroScene from "./hero-scene";
+import StepsConnector from "./steps-connector";
 import LiveStats from "./live-stats";
 
 export type { LandingTxExample };
@@ -86,12 +87,9 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
           </a>
         </div>
 
-        {/* Demo flow */}
+        {/* Hero animation: gift composed → sealed into a link → claimed on the recipient's phone */}
         <div className="mt-10 flex justify-center">
-          <div className="relative">
-            <div className="absolute inset-0 -z-10 blur-3xl opacity-30 rounded-full" style={{ background: "radial-gradient(ellipse at center, #7c3aed 0%, #06b6d4 60%, transparent 100%)" }} aria-hidden />
-            <DemoFlow />
-          </div>
+          <HeroScene />
         </div>
 
         <div className="landing-stats">
@@ -146,22 +144,20 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
             Sender funds onchain. Recipient clicks a link. That&apos;s it.
           </p>
 
-          <div className="landing-steps">
-            {LANDING_STEPS.map((step, index) => (
-              <div key={step.num} className="landing-step">
-                <div className="landing-step-num">{step.num}</div>
-                <div className="landing-step-icon" aria-hidden>
-                  {step.icon}
-                </div>
-                <h3>{step.title}</h3>
-                <p>{step.text}</p>
-                {index < LANDING_STEPS.length - 1 ? (
-                  <div className="landing-step-connector" aria-hidden>
-                    →
+          <div className="landing-steps-wrap">
+            <StepsConnector />
+            <div className="landing-steps">
+              {LANDING_STEPS.map((step) => (
+                <div key={step.num} className="landing-step">
+                  <div className="landing-step-num">{step.num}</div>
+                  <div className="landing-step-icon" aria-hidden>
+                    {step.icon}
                   </div>
-                ) : null}
-              </div>
-            ))}
+                  <h3>{step.title}</h3>
+                  <p>{step.text}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>

@@ -2,22 +2,33 @@
 
 :root {
   color-scheme: dark;
-  --bg: #0a0a0f;
-  --bg2: #111118;
-  --bg3: #18181f;
+  --bg: #06080f;
+  --bg2: #0a0e1a;
+  --bg3: #10141f;
   --border: rgba(255, 255, 255, 0.07);
   --border2: rgba(255, 255, 255, 0.12);
-  --text: #f0f0f4;
-  --muted: #8888a0;
-  --accent: #00e5a0;
-  --accent-hover: #00f5b0;
-  --accent-dim: rgba(0, 229, 160, 0.08);
-  --accent-dim2: rgba(0, 229, 160, 0.15);
-  --arc: #5b47f5;
+  --border-soft: rgba(255, 255, 255, 0.06);
+  --text: #eef2f9;
+  --muted: #94a0b8;
+  --muted-2: #6b7691;
+  --accent: #3b8ef0;
+  --accent-hover: #5ea6ff;
+  --accent-dim: rgba(59, 142, 240, 0.08);
+  --accent-dim2: rgba(59, 142, 240, 0.15);
+  --accent-2: #5ea6ff;
+  --accent-deep: #2775ca;
+  --accent-glow: rgba(59, 142, 240, 0.45);
+  --arc: #2fd27a;
+  --arc-2: #54e39a;
+  --arc-glow: rgba(47, 210, 122, 0.4);
+  --surface: rgba(255, 255, 255, 0.035);
+  --surface-2: rgba(255, 255, 255, 0.055);
   --radius: 14px;
   --radius-sm: 8px;
-  --font-display: var(--font-landing-display), "Syne", sans-serif;
-  --font-body: var(--font-landing-body), "DM Sans", sans-serif;
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --font-display: var(--font-landing-display), "Space Grotesk", sans-serif;
+  --font-body: var(--font-landing-body), "Space Grotesk", sans-serif;
+  --font-mono: var(--font-landing-mono), "JetBrains Mono", monospace;
 }
 
 html {
