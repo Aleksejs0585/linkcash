@@ -459,11 +459,21 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
 
       loginInFlightRef.current = true;
       try {
-        const data = await postCircle<{ otpToken: string }>({
-          action: "sendEmailOtp",
-          email,
-          deviceId,
-        });
+        let data: { otpToken: string };
+        try {
+          data = await postCircle<{ otpToken: string }>({
+            action: "sendEmailOtp",
+            email,
+            deviceId,
+          });
+        } catch (err) {
+          if (err instanceof Error && /smtp/i.test(err.message)) {
+            throw new Error(
+              "Couldn't send a code to this email provider right now. Try Gmail, or sign in with Google instead."
+            );
+          }
+          throw err;
+        }
 
         pendingEmailRef.current = email;
 
