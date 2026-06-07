@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { LOGO_MARK_DATA_URI } from "@/lib/brand-logo";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
@@ -24,39 +25,13 @@ export default function OgImage() {
             display: "flex",
             width: 240,
             height: 240,
-            borderRadius: 67,
-            background: "linear-gradient(135deg, #22c55e, #16a34a)",
-            alignItems: "center",
-            justifyContent: "center",
-            position: "relative",
+            borderRadius: 56,
             flexShrink: 0,
-            boxShadow: "0 32px 80px rgba(34,197,94,0.35)",
+            boxShadow: "0 32px 80px rgba(35,181,110,0.35)",
+            overflow: "hidden",
           }}
         >
-          <div
-            style={{
-              position: "absolute",
-              width: 135,
-              height: 53,
-              borderRadius: 30,
-              border: "19px solid white",
-              top: 60,
-              left: 90,
-              transform: "rotate(-45deg)",
-            }}
-          />
-          <div
-            style={{
-              position: "absolute",
-              width: 135,
-              height: 53,
-              borderRadius: 30,
-              border: "19px solid white",
-              top: 135,
-              left: 15,
-              transform: "rotate(-45deg)",
-            }}
-          />
+          <img src={LOGO_MARK_DATA_URI} width={240} height={240} alt="" />
         </div>
 
         {/* Text */}
@@ -77,7 +52,7 @@ export default function OgImage() {
             }}
           >
             <span style={{ color: "#ffffff" }}>Link</span>
-            <span style={{ color: "#22c55e" }}>Cash</span>
+            <span style={{ color: "#23B56E" }}>Cash</span>
           </div>
           <div
             style={{
@@ -102,7 +77,7 @@ export default function OgImage() {
                 width: 8,
                 height: 8,
                 borderRadius: 4,
-                background: "#22c55e",
+                background: "#23B56E",
               }}
             />
             <span style={{ fontSize: 22, color: "#555566", letterSpacing: "0.02em" }}>

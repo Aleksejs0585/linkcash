@@ -52,8 +52,8 @@ export default async function PayOgImage({ params }: Props) {
             width: 200,
             height: 200,
             borderRadius: 56,
-            background: "linear-gradient(135deg, #22c55e22, #16a34a22)",
-            border: "2px solid #22c55e44",
+            background: "linear-gradient(135deg, #23B56E22, #1c8f5822)",
+            border: "2px solid #23B56E44",
             alignItems: "center",
             justifyContent: "center",
             flexShrink: 0,
@@ -68,7 +68,7 @@ export default async function PayOgImage({ params }: Props) {
           <div
             style={{
               fontSize: 26,
-              color: "#6ee7a0",
+              color: "#7ddcae",
               letterSpacing: "0.12em",
               textTransform: "uppercase",
               fontWeight: 600,
@@ -93,7 +93,7 @@ export default async function PayOgImage({ params }: Props) {
             style={{
               fontSize: 80,
               fontWeight: 800,
-              color: "#22c55e",
+              color: "#23B56E",
               letterSpacing: "-2px",
               lineHeight: 1,
             }}

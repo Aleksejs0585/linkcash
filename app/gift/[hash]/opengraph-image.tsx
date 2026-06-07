@@ -50,11 +50,11 @@ export default async function GiftOgImage({ params }: Props) {
             width: 220,
             height: 220,
             borderRadius: 60,
-            background: "linear-gradient(135deg, #22c55e, #16a34a)",
+            background: "linear-gradient(135deg, #23B56E, #1c8f58)",
             alignItems: "center",
             justifyContent: "center",
             flexShrink: 0,
-            boxShadow: "0 32px 80px rgba(34,197,94,0.35)",
+            boxShadow: "0 32px 80px rgba(35,181,110,0.35)",
             fontSize: 100,
           }}
         >
@@ -66,7 +66,7 @@ export default async function GiftOgImage({ params }: Props) {
           <div
             style={{
               fontSize: 28,
-              color: "#6ee7a0",
+              color: "#7ddcae",
               letterSpacing: "0.12em",
               textTransform: "uppercase",
               fontWeight: 600,
@@ -91,7 +91,7 @@ export default async function GiftOgImage({ params }: Props) {
             style={{
               fontSize: 72,
               fontWeight: 800,
-              color: "#22c55e",
+              color: "#23B56E",
               letterSpacing: "-2px",
               lineHeight: 1,
             }}
