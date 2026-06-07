@@ -13,7 +13,6 @@ import LinkCashLogo from "@/components/ui/linkcash-logo";
 import { HelpTrigger } from "@/components/ui/help-manual";
 import LandingFaq from "./landing-faq";
 import HeroScene from "./hero-scene";
-import StepsConnector from "./steps-connector";
 import LiveStats from "./live-stats";
 import LiveTicker from "./live-ticker";
 import CursorGlow from "./cursor-glow";
@@ -155,7 +154,6 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
           </Reveal>
 
           <div className="landing-steps-wrap">
-            <StepsConnector />
             <div className="landing-steps">
               {LANDING_STEPS.map((step, index) => (
                 <Reveal key={step.num} className="landing-step" delay={Math.min(index, 5) * 0.07}>

@@ -860,27 +860,6 @@
   margin-top: 64px;
 }
 
-.landing-steps-line-track {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 38px;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--border-soft);
-  z-index: 0;
-  overflow: hidden;
-}
-
-.landing-steps-line {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--accent), var(--arc));
-  transform-origin: left;
-  box-shadow: 0 0 16px var(--accent-glow);
-}
-
 .landing-steps {
   position: relative;
   z-index: 1;
@@ -1373,23 +1352,6 @@
   position: relative;
 }
 
-.landing-roadmap::before {
-  content: "";
-  position: absolute;
-  top: 52px;
-  left: calc(16.66% + 8px);
-  right: calc(16.66% + 8px);
-  height: 1px;
-  background: linear-gradient(
-    to right,
-    var(--accent) 0%,
-    var(--arc) 50%,
-    var(--border-soft) 100%
-  );
-  pointer-events: none;
-  z-index: 0;
-}
-
 .landing-roadmap-phase {
   background: var(--surface);
   border: 1px solid var(--border-soft);
@@ -1740,10 +1702,6 @@
 
   .landing-roadmap {
     grid-template-columns: 1fr;
-  }
-
-  .landing-roadmap::before {
-    display: none;
   }
 
   .landing-steps {
