@@ -42,8 +42,6 @@ export function CreateGiftContent() {
     createCopyVariant,
     shareLinks,
     recipientHint,
-    recipientEmail,
-    setRecipientEmail,
     setAmount,
     setExpiresInHours,
     setSenderDisplayName,
@@ -139,28 +137,6 @@ export function CreateGiftContent() {
                 placeholder="Happy birthday! 🎉"
                 className="app-input resize-none"
               />
-            </motion.div>
-
-            <motion.div
-              {...FADE_IN}
-              transition={{ ...FIELD_TRANSITION, delay: 0.09 }}
-              className="app-panel app-field p-4 text-left"
-            >
-              <label htmlFor="recipientEmail" className="app-section-label">
-                Recipient&apos;s email (optional)
-              </label>
-              <input
-                id="recipientEmail"
-                type="email"
-                value={recipientEmail}
-                onChange={(event) => setRecipientEmail(event.target.value)}
-                placeholder="friend@example.com"
-                className="app-input"
-                autoComplete="email"
-              />
-              <p className="mt-2 text-xs text-white/45">
-                They&apos;ll get a link to claim the gift. Leave blank to share manually.
-              </p>
             </motion.div>
 
             <motion.div

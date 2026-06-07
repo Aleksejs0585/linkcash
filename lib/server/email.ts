@@ -7,64 +7,6 @@ if (!RESEND_API_KEY) {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export async function sendGiftLinkEmail({
-  to,
-  senderDisplayName,
-  amountUsdc,
-  claimLink,
-}: {
-  to: string;
-  senderDisplayName: string;
-  amountUsdc: string;
-  claimLink: string;
-}): Promise<void> {
-  if (!RESEND_API_KEY) return;
-  if (!EMAIL_RE.test(to)) return;
-
-  const amount = `${amountUsdc} USDC`;
-  const subject = `${senderDisplayName} sent you ${amount} 🎁`;
-  const text = [
-    `You received ${amount} from ${senderDisplayName}!`,
-    "",
-    "Claim your gift here — no wallet needed, just sign in with Google or email:",
-    claimLink,
-    "",
-    "The link expires automatically, so claim it soon.",
-    "",
-    "What is USDC? It's digital money — 1 USDC = $1 USD. When you claim, a wallet is created for you automatically.",
-    "",
-    "— LinkCash",
-  ].join("\n");
-
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8_000);
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ from: FROM_EMAIL, to, subject, text }),
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-    if (!res.ok) {
-      const body = (await res.text()).slice(0, 200);
-      console.error(
-        JSON.stringify({ event: "gift_link_email_send_failed", status: res.status, body })
-      );
-    }
-  } catch (err) {
-    console.error(
-      JSON.stringify({
-        event: "gift_link_email_send_error",
-        message: err instanceof Error ? err.message : "unknown",
-      })
-    );
-  }
-}
-
 export async function sendPaymentReceivedEmail({
   to,
   payerName,
