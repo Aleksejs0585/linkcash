@@ -15,6 +15,12 @@ import LandingFaq from "./landing-faq";
 import HeroScene from "./hero-scene";
 import StepsConnector from "./steps-connector";
 import LiveStats from "./live-stats";
+import LiveTicker from "./live-ticker";
+import CursorGlow from "./cursor-glow";
+import FloatingCoins from "./floating-coins";
+import CountUp from "./count-up";
+import MagneticLink from "./magnetic-link";
+import Reveal from "./reveal";
 
 export type { LandingTxExample };
 
@@ -27,6 +33,7 @@ type LandingPageProps = {
 export default function LandingPage({ txExamples, stats }: LandingPageProps) {
   return (
     <div className="landing-page">
+      <CursorGlow />
       <nav className="landing-nav">
         <Link href="/" className="landing-nav-logo">
           <LinkCashLogo />
@@ -52,6 +59,7 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
       <section className="landing-hero">
         <div className="landing-hero-glow" aria-hidden />
         <div className="landing-hero-glow2" aria-hidden />
+        <FloatingCoins />
 
         <div className="landing-hero-label">
           <span className="landing-hero-label-dot" aria-hidden />
@@ -74,12 +82,12 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
         </p>
 
         <div className="landing-hero-cta">
-          <Link href="/create" className="landing-btn-primary landing-btn-large">
+          <MagneticLink href="/create" className="landing-btn-primary landing-btn-large">
             Send a gift →
-          </Link>
-          <Link href="/request" className="landing-btn-outline landing-btn-large">
+          </MagneticLink>
+          <MagneticLink href="/request" className="landing-btn-outline landing-btn-large">
             Request payment →
-          </Link>
+          </MagneticLink>
         </div>
         <div className="mt-4 text-center">
           <a href="#how" className="text-sm text-white/40 hover:text-white/70 transition">
@@ -94,7 +102,7 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
 
         <div className="landing-stats">
           <div>
-            <span className="landing-stat-num">&lt; 60s</span>
+            <CountUp className="landing-stat-num" to={60} prefix="< " suffix="s" />
             <span className="landing-stat-label">Time to first claim</span>
           </div>
           <div className="landing-stat-divider" aria-hidden />
@@ -134,28 +142,30 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
 
       <section id="how" className="landing-section">
         <div className="landing-container">
-          <div className="landing-section-label">How it works</div>
-          <h2>
-            Four steps.
-            <br />
-            One seamless flow.
-          </h2>
-          <p className="landing-section-sub">
-            Sender funds onchain. Recipient clicks a link. That&apos;s it.
-          </p>
+          <Reveal>
+            <div className="landing-section-label">How it works</div>
+            <h2>
+              Four steps.
+              <br />
+              One seamless flow.
+            </h2>
+            <p className="landing-section-sub">
+              Sender funds onchain. Recipient clicks a link. That&apos;s it.
+            </p>
+          </Reveal>
 
           <div className="landing-steps-wrap">
             <StepsConnector />
             <div className="landing-steps">
-              {LANDING_STEPS.map((step) => (
-                <div key={step.num} className="landing-step">
+              {LANDING_STEPS.map((step, index) => (
+                <Reveal key={step.num} className="landing-step" delay={Math.min(index, 5) * 0.07}>
                   <div className="landing-step-num">{step.num}</div>
                   <div className="landing-step-icon" aria-hidden>
                     {step.icon}
                   </div>
                   <h3>{step.title}</h3>
                   <p>{step.text}</p>
-                </div>
+                </Reveal>
               ))}
             </div>
           </div>
@@ -165,23 +175,21 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
       <section className="landing-section landing-claim-section">
         <div className="landing-container">
           <div className="landing-claim-layout">
-            <div className="landing-claim-phone">
-              <div className="landing-phone-frame">
-                <div className="landing-phone-glow" aria-hidden />
-                <div className="landing-claim-card">
-                  <div className="landing-claim-avatar" aria-hidden>🎁</div>
-                  <div className="landing-claim-from">Gift from</div>
-                  <div className="landing-claim-name">Alex K.</div>
-                  <div className="landing-claim-msg">&quot;Happy birthday! 🎉&quot;</div>
-                  <div className="landing-claim-amount">25.00</div>
-                  <div className="landing-claim-token">USDC · Arc Testnet</div>
-                  <div className="landing-claim-expiry">⏱ Expires in 23h 41m</div>
-                  <div className="landing-claim-btn">Claim with Google or email →</div>
-                  <div className="landing-claim-login">No wallet or account needed</div>
-                </div>
+            <Reveal className="landing-claim-phone">
+              <div className="landing-claim-card">
+                <div className="landing-claim-glow" aria-hidden />
+                <div className="landing-claim-avatar" aria-hidden>🎁</div>
+                <div className="landing-claim-from">Gift from</div>
+                <div className="landing-claim-name">Alex K.</div>
+                <div className="landing-claim-msg">&quot;Happy birthday! 🎉&quot;</div>
+                <div className="landing-claim-amount">25.00</div>
+                <div className="landing-claim-token">USDC · Arc Testnet</div>
+                <div className="landing-claim-expiry">⏱ Expires in 23h 41m</div>
+                <div className="landing-claim-btn">Claim with Google or email →</div>
+                <div className="landing-claim-login">No wallet or account needed</div>
               </div>
-            </div>
-            <div className="landing-claim-info">
+            </Reveal>
+            <Reveal className="landing-claim-info" delay={0.1}>
               <div className="landing-section-label">Recipient experience</div>
               <h2>The smoothest onboarding in crypto.</h2>
               <ul className="landing-claim-features">
@@ -195,30 +203,32 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
                   </li>
                 ))}
               </ul>
-            </div>
+            </Reveal>
           </div>
         </div>
       </section>
 
       <section className="landing-section">
         <div className="landing-container">
-          <div className="landing-section-label">Use cases</div>
-          <h2>Built for real flows.</h2>
-          <p className="landing-section-sub">
-            From personal gifts to growth campaigns — any USDC transfer that
-            starts with a link.
-          </p>
+          <Reveal>
+            <div className="landing-section-label">Use cases</div>
+            <h2>Built for real flows.</h2>
+            <p className="landing-section-sub">
+              From personal gifts to growth campaigns — any USDC transfer that
+              starts with a link.
+            </p>
+          </Reveal>
 
           <div className="landing-use-cases">
-            {LANDING_USE_CASES.map((card) => (
-              <div key={card.title} className="landing-use-card">
+            {LANDING_USE_CASES.map((card, index) => (
+              <Reveal key={card.title} className="landing-use-card" delay={Math.min(index, 5) * 0.07}>
                 <span className="landing-use-card-icon" aria-hidden>
                   {card.icon}
                 </span>
                 <h3>{card.title}</h3>
                 <p>{card.text}</p>
                 <span className="landing-use-tag">{card.tag}</span>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -226,18 +236,21 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
 
       <section id="roadmap" className="landing-section landing-roadmap-section">
         <div className="landing-container">
-          <div className="landing-section-label">Roadmap</div>
-          <h2>Where we&apos;re going.</h2>
-          <p className="landing-section-sub">
-            From testnet proof to mainnet infrastructure — a clear path to
-            production USDC gifting on Arc.
-          </p>
+          <Reveal>
+            <div className="landing-section-label">Roadmap</div>
+            <h2>Where we&apos;re going.</h2>
+            <p className="landing-section-sub">
+              From testnet proof to mainnet infrastructure — a clear path to
+              production USDC gifting on Arc.
+            </p>
+          </Reveal>
 
           <div className="landing-roadmap">
-            {LANDING_ROADMAP.map((phase) => (
-              <div
+            {LANDING_ROADMAP.map((phase, index) => (
+              <Reveal
                 key={phase.phase}
                 className={`landing-roadmap-phase landing-roadmap-phase--${phase.status}`}
+                delay={Math.min(index, 5) * 0.07}
               >
                 <div className="landing-roadmap-phase-header">
                   <span className="landing-roadmap-phase-tag">{phase.phase}</span>
@@ -264,7 +277,7 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
                     </li>
                   ))}
                 </ul>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -273,12 +286,18 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
       {txExamples.length > 0 && (
       <section className="landing-section" style={{ paddingTop: 0 }}>
         <div className="landing-container">
-          <div className="landing-section-label">Live transactions</div>
-          <h2>Recent claims on Arc.</h2>
-          <p className="landing-section-sub" style={{ marginBottom: 40 }}>
-            All transactions are verifiable on the Arc testnet explorer.
-          </p>
+          <Reveal>
+            <div className="landing-section-label">Live transactions</div>
+            <h2>Recent claims on Arc.</h2>
+            <p className="landing-section-sub" style={{ marginBottom: 0 }}>
+              All transactions are verifiable on the Arc testnet explorer.
+            </p>
+          </Reveal>
+        </div>
 
+        <LiveTicker items={txExamples} />
+
+        <div className="landing-container">
           <div className="landing-tx-panel">
             {txExamples.map((item) => (
               <a
@@ -313,31 +332,35 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
 
       <section className="landing-section landing-faq-section">
         <div className="landing-container">
-          <div className="landing-section-label">FAQ</div>
-          <h2>Common questions.</h2>
+          <Reveal>
+            <div className="landing-section-label">FAQ</div>
+            <h2>Common questions.</h2>
+          </Reveal>
           <LandingFaq />
         </div>
       </section>
 
       <section className="landing-footer-cta">
         <div className="landing-footer-cta-glow" aria-hidden />
-        <div className="landing-section-label">Get started</div>
-        <h2>
-          Ready to send
-          <br />
-          <span style={{ color: "var(--lp-accent)" }}>or get paid?</span>
-        </h2>
-        <p>
-          One link. Under 60 seconds. No crypto experience needed on either
-          side.
-        </p>
+        <Reveal>
+          <div className="landing-section-label">Get started</div>
+          <h2>
+            Ready to send
+            <br />
+            <span style={{ color: "var(--accent-2)" }}>or get paid?</span>
+          </h2>
+          <p>
+            One link. Under 60 seconds. No crypto experience needed on either
+            side.
+          </p>
+        </Reveal>
         <div className="landing-hero-cta">
-          <Link href="/create" className="landing-btn-primary landing-btn-large">
+          <MagneticLink href="/create" className="landing-btn-primary landing-btn-large">
             Send a gift →
-          </Link>
-          <Link href="/request" className="landing-btn-outline">
+          </MagneticLink>
+          <MagneticLink href="/request" className="landing-btn-outline">
             Request payment →
-          </Link>
+          </MagneticLink>
         </div>
       </section>
 

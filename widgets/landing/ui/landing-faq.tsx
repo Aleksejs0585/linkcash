@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { LANDING_FAQ } from "../model/content";
+import Reveal from "./reveal";
 
 export default function LandingFaq() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
@@ -11,9 +12,10 @@ export default function LandingFaq() {
       {LANDING_FAQ.map((item, index) => {
         const isOpen = openIndex === index;
         return (
-          <div
+          <Reveal
             key={item.q}
             className={`landing-faq-item${isOpen ? " open" : ""}`}
+            delay={Math.min(index, 5) * 0.07}
           >
             <button
               type="button"
@@ -29,7 +31,7 @@ export default function LandingFaq() {
             <div className="landing-faq-a">
               <div className="landing-faq-a-inner">{item.a}</div>
             </div>
-          </div>
+          </Reveal>
         );
       })}
     </div>
