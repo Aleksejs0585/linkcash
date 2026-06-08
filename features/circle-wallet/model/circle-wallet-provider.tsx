@@ -246,6 +246,30 @@ function hasPendingOAuthHashResponse(): boolean {
   return /[#&](id_token|access_token|code)=/.test(window.location.hash);
 }
 
+/**
+ * Reads the `email` claim straight out of Google's `id_token` (a JWT) in the
+ * redirect hash, before the SDK consumes and clears it. Circle's verified
+ * `oAuthInfo.email` is occasionally absent when an already-signed-in user
+ * re-links/verifies Google (vs. a fresh sign-up) — decoding the token
+ * ourselves gives a reliable fallback since Google always includes `email`
+ * for the `openid email profile` scopes the SDK requests.
+ */
+function extractEmailFromOAuthHash(): string | null {
+  if (typeof window === "undefined") return null;
+  const match = /[#&]id_token=([^&]+)/.exec(window.location.hash);
+  if (!match) return null;
+  try {
+    const payload = decodeURIComponent(match[1]).split(".")[1];
+    if (!payload) return null;
+    const json = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
+    const claims = JSON.parse(json) as { email?: unknown };
+    const email = typeof claims.email === "string" ? claims.email.trim().toLowerCase() : null;
+    return email && email.includes("@") ? email : null;
+  } catch {
+    return null;
+  }
+}
+
 function CircleWalletInner({ children }: { children: ReactNode }) {
   const sdkRef = useRef<W3SSdk | null>(null);
   const deviceBootstrapRecoveryAttempted = useRef(false);
@@ -253,6 +277,7 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
   const loginAutoRetryUsedRef = useRef(false);
   const loginInFlightRef = useRef(false);
   const pendingEmailRef = useRef<string | null>(null);
+  const pendingHashEmailRef = useRef<string | null>(null);
   const sessionHydrateAttemptedRef = useRef(false);
   const [sdkReady, setSdkReady] = useState(false);
   const [deviceId, setDeviceId] = useState("");
@@ -275,9 +300,11 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
   const [googleEmail, setGoogleEmail] = useState<string | null>(() =>
     readGoogleEmail()
   );
-  const [oauthCallbackPending, setOauthCallbackPending] = useState(() =>
-    hasPendingOAuthHashResponse()
-  );
+  const [oauthCallbackPending, setOauthCallbackPending] = useState(() => {
+    const pending = hasPendingOAuthHashResponse();
+    if (pending) pendingHashEmailRef.current = extractEmailFromOAuthHash();
+    return pending;
+  });
 
   // Safety net: if the SDK never resolves the pending hash (e.g. verification
   // hangs), don't block the app forever — let ready/navigation proceed.
@@ -619,9 +646,15 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
             persistGoogleDisplayName(profileName);
             setGoogleDisplayName(profileName);
           }
-          // For email OTP login oAuthInfo is absent — fall back to the address we sent the code to
-          const profileEmail = extractGoogleEmail(result) ?? pendingEmailRef.current;
+          // For email OTP login oAuthInfo is absent — fall back to the address we sent
+          // the code to. For Google logins where Circle's verified oAuthInfo lacks an
+          // email (seen when an already-signed-in user re-links/verifies Google rather
+          // than signing up fresh), fall back to the email claim decoded straight from
+          // Google's id_token in the redirect hash.
+          const profileEmail =
+            extractGoogleEmail(result) ?? pendingEmailRef.current ?? pendingHashEmailRef.current;
           pendingEmailRef.current = null;
+          pendingHashEmailRef.current = null;
           if (profileEmail) {
             persistGoogleEmail(profileEmail);
             setGoogleEmail(profileEmail);
