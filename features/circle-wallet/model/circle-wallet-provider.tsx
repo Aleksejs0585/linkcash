@@ -435,14 +435,30 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
 
     loginInFlightRef.current = true;
     try {
-      const { deviceToken: dt, deviceEncryptionKey: dek } =
-        await createDeviceToken(deviceId);
-      applySdkLoginConfigs(sdk, deviceId, dt, dek);
+      // Skip minting a new device token when there's already an active
+      // session — Circle allows only one active token per deviceId, so
+      // doing so invalidates the current session's binding mid-flow and
+      // the Google popup silently closes with no result (e.g. when a
+      // signed-in user re-verifies/links their Google account to claim).
+      if (userToken && deviceToken && deviceEncryptionKey) {
+        applySdkLoginConfigs(sdk, deviceId, deviceToken, deviceEncryptionKey);
+      } else {
+        const { deviceToken: dt, deviceEncryptionKey: dek } =
+          await createDeviceToken(deviceId);
+        applySdkLoginConfigs(sdk, deviceId, dt, dek);
+      }
       await sdk.performLogin(SocialLoginProvider.GOOGLE);
     } finally {
       loginInFlightRef.current = false;
     }
-  }, [applySdkLoginConfigs, createDeviceToken, deviceId]);
+  }, [
+    applySdkLoginConfigs,
+    createDeviceToken,
+    deviceId,
+    deviceToken,
+    deviceEncryptionKey,
+    userToken,
+  ]);
 
   const performEmailLogin = useCallback(
     async (email: string) => {
