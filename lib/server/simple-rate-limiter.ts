@@ -74,3 +74,19 @@ export async function rateLimitedCheck(
 ): Promise<{ limited: boolean; retryAfter: number }> {
   return upstashCheck(key, maxPerWindow, windowMs);
 }
+
+/** Undo a rate-limit hit for a transient failure so a legitimate retry isn't
+ *  stuck behind the original window (e.g. claim attempt errored before it
+ *  could complete — don't make the user wait out the lock for nothing). */
+export async function releaseRateLimit(key: string): Promise<void> {
+  const upstash = getUpstashClient();
+  if (upstash) {
+    try {
+      await upstash.command(["DEL", `rl:${key}`]);
+      return;
+    } catch {
+      // fall through to memory store below
+    }
+  }
+  store.delete(key);
+}

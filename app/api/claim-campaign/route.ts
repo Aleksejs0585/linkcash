@@ -4,7 +4,7 @@ import { isAddress } from "ethers";
 import { campaignStore } from "@/lib/server/campaign-store";
 import { submitClaim } from "@/entities/claim/server/claim-service";
 import { parseClaimInput } from "@/entities/claim/server/claim-validation";
-import { rateLimitedCheck } from "@/lib/server/simple-rate-limiter";
+import { rateLimitedCheck, releaseRateLimit } from "@/lib/server/simple-rate-limiter";
 import { sendPushToWallet } from "@/lib/server/push-sender";
 import { errorMessage } from "@/lib/server/http-errors";
 
@@ -66,7 +66,8 @@ export async function POST(request: Request) {
   }
 
   // Per-campaign+wallet rate limit to prevent race exploitation
-  const claimRl = await rateLimitedCheck(`claim-campaign:${campaignId}:${walletAddress}`, 1, 300_000);
+  const claimLockKey = `claim-campaign:${campaignId}:${walletAddress}`;
+  const claimRl = await rateLimitedCheck(claimLockKey, 1, 300_000);
   if (claimRl.limited) {
     return NextResponse.json({ error: "Claim already in progress. Try again shortly." }, { status: 429 });
   }
@@ -127,6 +128,10 @@ export async function POST(request: Request) {
       if (upstash) {
         upstash.command(["LPUSH", `linkcash:camp:${campaignId}:pool`, JSON.stringify(poolEntry)]).catch(() => undefined);
       }
+      // ...and don't leave the claimer locked out for 5 minutes over a transient
+      // failure — the lock was meant to stop concurrent double-claims, not to
+      // punish a legitimate retry after an error that wasn't their fault.
+      void releaseRateLimit(claimLockKey);
     }
 
     // Show friendly message — never leak raw ethers/RPC noise
