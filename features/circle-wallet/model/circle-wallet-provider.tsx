@@ -233,6 +233,19 @@ function canReuseStampedDeviceCookies(boundDeviceId: string): boolean {
   );
 }
 
+/**
+ * True right after a Google OAuth redirect lands back on the site — the SDK
+ * still has to verify the hash's id_token via an async iframe round-trip
+ * before onLoginComplete fires. Used to hold `ready` low so OAuthReturnResume
+ * doesn't navigate away (using a stale, already-authenticated session) before
+ * that verification — and the resulting session swap — actually completes.
+ */
+function hasPendingOAuthHashResponse(): boolean {
+  if (typeof window === "undefined") return false;
+  if (!window.localStorage.getItem("socialLoginProvider")) return false;
+  return /[#&](id_token|access_token|code)=/.test(window.location.hash);
+}
+
 function CircleWalletInner({ children }: { children: ReactNode }) {
   const sdkRef = useRef<W3SSdk | null>(null);
   const deviceBootstrapRecoveryAttempted = useRef(false);
@@ -262,6 +275,17 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
   const [googleEmail, setGoogleEmail] = useState<string | null>(() =>
     readGoogleEmail()
   );
+  const [oauthCallbackPending, setOauthCallbackPending] = useState(() =>
+    hasPendingOAuthHashResponse()
+  );
+
+  // Safety net: if the SDK never resolves the pending hash (e.g. verification
+  // hangs), don't block the app forever — let ready/navigation proceed.
+  useEffect(() => {
+    if (!oauthCallbackPending) return;
+    const id = window.setTimeout(() => setOauthCallbackPending(false), 15000);
+    return () => window.clearTimeout(id);
+  }, [oauthCallbackPending]);
 
   const walletAddress = useMemo(
     () => pickArcWallet(wallets)?.address ?? null,
@@ -546,6 +570,10 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
             | undefined
         ) => {
           if (cancelled) return;
+
+          // The SDK has resolved whatever hash-based redirect response was
+          // pending (success or failure) — safe to let ready/navigation proceed.
+          setOauthCallbackPending(false);
 
           if (error) {
             const err = error as { message?: string };
@@ -849,7 +877,8 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
     Boolean(deviceToken) &&
     Boolean(deviceEncryptionKey) &&
     !bootstrapError &&
-    !sessionHydrating;
+    !sessionHydrating &&
+    !oauthCallbackPending;
 
   // Silently refresh the Circle userToken every 25 minutes to keep session alive
   useEffect(() => {
