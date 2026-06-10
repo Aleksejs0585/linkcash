@@ -1476,6 +1476,10 @@
   background: var(--accent-2);
 }
 
+.landing-roadmap-item.done .landing-roadmap-item-dot {
+  background: var(--arc-2);
+}
+
 /* FAQ */
 .landing-faq-section {
   background: var(--surface);

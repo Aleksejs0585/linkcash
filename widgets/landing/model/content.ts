@@ -93,7 +93,7 @@ export const LANDING_ROADMAP = [
     status: "active" as const,
     date: "Q3–Q4 2026",
     items: [
-      "Batch gift creation (multi-recipient)",
+      { text: "Batch gift creation (multi-recipient)", done: true },
       "Mobile PWA — offline-first experience",
       "CCTP cross-chain gifts (testnet)",
       "Public API for developer integrations",

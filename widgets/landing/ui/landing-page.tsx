@@ -267,12 +267,16 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
                 <h3 className="landing-roadmap-phase-title">{phase.title}</h3>
                 <div className="landing-roadmap-date">{phase.date}</div>
                 <ul className="landing-roadmap-items">
-                  {phase.items.map((item) => (
-                    <li key={item} className="landing-roadmap-item">
-                      <span className="landing-roadmap-item-dot" aria-hidden />
-                      {item}
-                    </li>
-                  ))}
+                  {phase.items.map((item) => {
+                    const text = typeof item === "string" ? item : item.text;
+                    const done = typeof item !== "string" && item.done;
+                    return (
+                      <li key={text} className={`landing-roadmap-item${done ? " done" : ""}`}>
+                        <span className="landing-roadmap-item-dot" aria-hidden />
+                        {text}
+                      </li>
+                    );
+                  })}
                 </ul>
               </Reveal>
             ))}
