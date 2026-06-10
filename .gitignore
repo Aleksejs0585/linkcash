@@ -20,6 +20,9 @@ coverage/
 *.log
 *.tsbuildinfo
 
+# Claude Code local settings (may contain secrets in permitted commands)
+.claude/settings.local.json
+
 node_modules
 .next
 .env
