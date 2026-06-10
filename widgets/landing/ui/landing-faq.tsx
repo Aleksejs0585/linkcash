@@ -29,7 +29,24 @@ export default function LandingFaq() {
               </span>
             </button>
             <div className="landing-faq-a">
-              <div className="landing-faq-a-inner">{item.a}</div>
+              <div className="landing-faq-a-inner">
+                {item.a}
+                {"links" in item && item.links && (
+                  <div className="landing-faq-links">
+                    {item.links.map((link) => (
+                      <a
+                        key={link.href}
+                        href={link.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="landing-faq-link"
+                      >
+                        {link.label} →
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </Reveal>
         );

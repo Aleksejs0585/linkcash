@@ -17,7 +17,6 @@ import LiveStats from "./live-stats";
 import LiveTicker from "./live-ticker";
 import CursorGlow from "./cursor-glow";
 import FloatingCoins from "./floating-coins";
-import CountUp from "./count-up";
 import MagneticLink from "./magnetic-link";
 import Reveal from "./reveal";
 
@@ -101,7 +100,7 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
 
         <div className="landing-stats">
           <div>
-            <CountUp className="landing-stat-num" to={60} prefix="< " suffix="s" />
+            <span className="landing-stat-num">&lt; 60s</span>
             <span className="landing-stat-label">Time to first claim</span>
           </div>
           <div className="landing-stat-divider" aria-hidden />
@@ -146,7 +145,7 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
             <h2>
               Four steps.
               <br />
-              One seamless flow.
+              One link.
             </h2>
             <p className="landing-section-sub">
               Sender funds onchain. Recipient clicks a link. That&apos;s it.
@@ -390,6 +389,22 @@ export default function LandingPage({ txExamples, stats }: LandingPageProps) {
             rel="noreferrer"
           >
             Get testnet USDC
+          </a>
+          <a
+            href="https://github.com/Aleksejs0585/linkcash"
+            className="landing-footer-link"
+            target="_blank"
+            rel="noreferrer"
+          >
+            GitHub
+          </a>
+          <a
+            href="https://x.com/0xApollo440"
+            className="landing-footer-link"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Twitter
           </a>
         </div>
       </footer>

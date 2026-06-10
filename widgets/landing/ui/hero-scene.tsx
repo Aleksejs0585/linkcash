@@ -73,8 +73,8 @@ export default function HeroScene() {
   const cancelledRef = useRef(false);
 
   const [stage, setStage] = useState<Stage>("compose");
-  const [composeAmount, setComposeAmount] = useState(0);
-  const [claimAmount, setClaimAmount] = useState(0);
+  const [composeAmount, setComposeAmount] = useState(25);
+  const [claimAmount, setClaimAmount] = useState(25);
   const [chipKey, setChipKey] = useState(0);
 
   useEffect(() => {

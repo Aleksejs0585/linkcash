@@ -6,6 +6,7 @@ export const ARC_TESTNET = {
   rpcUrl: "https://rpc.testnet.arc.network",
   explorerBaseUrl: "https://testnet.arcscan.app",
   usdcErc20Address: "0x3600000000000000000000000000000000000000",
+  giftContractAddress: "0x93fEF97173Af2Da909Fe83961421199B9dB17111",
 } as const;
 
 export function generateSecret(): string {

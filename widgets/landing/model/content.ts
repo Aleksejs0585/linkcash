@@ -1,3 +1,5 @@
+import { ARC_TESTNET, getArcExplorerAddressUrl } from "@/utils";
+
 export const LANDING_STEPS = [
   {
     num: "01",
@@ -21,7 +23,7 @@ export const LANDING_STEPS = [
     num: "04",
     icon: "✅",
     title: "Funds arrive",
-    text: "Relayer submits the claim gaslessly. USDC lands in wallet in under a second. Verifiable onchain.",
+    text: "A relayer submits the claim onchain — settlement takes under a second. That's the whole flow, start to finish, in under 60 seconds.",
   },
 ] as const;
 
@@ -116,6 +118,16 @@ export const LANDING_FAQ = [
   {
     q: "Is this safe? Where do my funds go?",
     a: "USDC is locked in a verified smart contract on Arc — not held by us. The contract code is open source. Only the recipient (who has the secret link) can claim. If unclaimed, you get it back after expiry. We never touch your funds.",
+    links: [
+      {
+        label: "Verified contract on ArcScan",
+        href: `${getArcExplorerAddressUrl(ARC_TESTNET.giftContractAddress)}?tab=contract`,
+      },
+      {
+        label: "Source code on GitHub",
+        href: "https://github.com/Aleksejs0585/linkcash",
+      },
+    ],
   },
   {
     q: "What happens if the recipient never claims?",

@@ -1545,13 +1545,31 @@
   max-width: 90%;
 }
 
+.landing-faq-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-top: 10px;
+}
+
+.landing-faq-link {
+  font-size: 13px;
+  color: var(--accent-2);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.landing-faq-link:hover {
+  color: var(--text);
+}
+
 .landing-faq-item.open .landing-faq-chevron {
   transform: rotate(180deg);
   color: var(--accent-2);
 }
 
 .landing-faq-item.open .landing-faq-a {
-  max-height: 240px;
+  max-height: 320px;
 }
 
 /* Footer CTA */
