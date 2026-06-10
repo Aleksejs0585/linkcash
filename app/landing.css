@@ -336,6 +336,7 @@
 
 .hero-scene-caption {
   margin-top: 14px;
+  margin-bottom: 28px;
   font-family: var(--font-mono);
   font-size: 13px;
   font-weight: 500;
