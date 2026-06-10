@@ -1,0 +1,60 @@
+#!/bin/sh
+# Pre-commit hook: block commits that look like they leak secrets.
+#
+# Blocks:
+#   1. Staged .claude/settings.local.json (may contain secrets in permitted commands)
+#   2. Staged .env* files other than .env.example
+#   3. Added lines that set PRIVATE_KEY / MNEMONIC / SECRET_KEY / CIRCLE_API_KEY to a value
+#   4. Added lines containing a 0x + 64 hex char value near the words key/private/secret/mnemonic
+#
+# Bypass (only if you're SURE it's a false positive): git commit --no-verify
+
+fail=0
+
+# --- 1 & 2: filename checks -------------------------------------------------
+staged_files=$(git diff --cached --name-only --diff-filter=ACMR)
+
+while IFS= read -r f; do
+  [ -z "$f" ] && continue
+
+  case "$f" in
+    *.claude/settings.local.json)
+      echo "BLOCKED: '$f' must not be committed (may contain secrets in permitted commands)." >&2
+      fail=1
+      ;;
+  esac
+
+  base=$(basename "$f")
+  case "$base" in
+    .env|.env.*)
+      if [ "$base" != ".env.example" ]; then
+        echo "BLOCKED: '$f' looks like an env file with secrets (only .env.example is allowed)." >&2
+        fail=1
+      fi
+      ;;
+  esac
+done <<EOF
+$staged_files
+EOF
+
+# --- 3 & 4: content checks on added lines -----------------------------------
+added_lines=$(git diff --cached -U0 -- . ':!*package-lock.json' | grep -E '^\+[^+]' || true)
+
+if printf '%s\n' "$added_lines" | grep -E '(PRIVATE_KEY|MNEMONIC|SECRET_KEY|CIRCLE_API_KEY)[[:space:]]*=[[:space:]]*[A-Za-z0-9]' >/dev/null; then
+  echo "BLOCKED: an added line sets PRIVATE_KEY / MNEMONIC / SECRET_KEY / CIRCLE_API_KEY to a non-empty value." >&2
+  fail=1
+fi
+
+if printf '%s\n' "$added_lines" | grep -iE '0x[0-9a-fA-F]{64}' | grep -qiE 'key|private|secret|mnemonic'; then
+  echo "BLOCKED: an added line contains a 64-hex-char value (looks like a private key) near 'key/private/secret/mnemonic'." >&2
+  fail=1
+fi
+
+if [ "$fail" -ne 0 ]; then
+  echo "" >&2
+  echo "Commit aborted by pre-commit hook (scripts/git-hooks/pre-commit)." >&2
+  echo "If this is a false positive, use: git commit --no-verify" >&2
+  exit 1
+fi
+
+exit 0
