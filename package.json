@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "test": "node --test --experimental-strip-types --experimental-loader ./test-loader.mjs",
-    "logs:rotate": "node scripts/rotate-logs.mjs"
+    "logs:rotate": "node scripts/rotate-logs.mjs",
+    "postinstall": "git config core.hooksPath scripts/git-hooks || exit 0"
   },
   "dependencies": {
     "@circle-fin/w3s-pw-web-sdk": "^1.1.11",
