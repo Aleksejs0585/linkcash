@@ -358,6 +358,25 @@ function CircleWalletInner({ children }: { children: ReactNode }) {
 
         if (current.length > 0) {
           setWallets(current);
+
+          // Warm-up for accounts whose PIN/wallet was set up on another device:
+          // re-run initializeUser so Circle refreshes this user's security
+          // config before the first real sdk.execute() challenge. Without this,
+          // the first challenge in a new session can fail with "encryptedUserSecret,
+          // storageKey, and pinCodeUserShare must be provided" (cold start).
+          // Code 155106 (already initialized) is the expected response and is
+          // ignored either way — only unexpected (e.g. network) failures are logged.
+          try {
+            await postCircle({ action: "initializeUser", userToken: token });
+          } catch (e) {
+            console.warn(
+              JSON.stringify({
+                event: "circle_sdk_warmup_failed",
+                message: e instanceof Error ? e.message : "unknown",
+              })
+            );
+          }
+
           return;
         }
 
