@@ -34,8 +34,15 @@ type ActivityItem = {
   txHash: string;
 };
 
+type OnChainKpi = {
+  totalFunded: number;
+  totalClaimed: number;
+  totalUsdcClaimed: string;
+};
+
 type StatsData = {
   ok: boolean;
+  onChain?: OnChainKpi;
   kpi?: { allTime: KpiBlock; last24h: KpiBlock };
   daily?: DailyRow[];
   funnelSteps?: FunnelStep[];
@@ -88,28 +95,35 @@ export default function StatsPage() {
           </div>
         )}
 
-        {data?.kpi && (
+        {(data?.onChain || data?.kpi) && (
           <>
-            {/* KPI cards */}
+            {/* KPI cards — on-chain data is the source of truth */}
             <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-              {([
-                { label: "Gifts funded", k24: data.kpi.last24h.giftsFunded, all: data.kpi.allTime.giftsFunded, isMoney: false },
-                { label: "Claims", k24: data.kpi.last24h.claimsCompleted, all: data.kpi.allTime.claimsCompleted, isMoney: false },
-                { label: "Volume (USDC)", k24: data.kpi.last24h.volumeUsdc, all: data.kpi.allTime.volumeUsdc, isMoney: true },
-                { label: "Unique wallets", k24: data.kpi.last24h.uniqueWallets, all: data.kpi.allTime.uniqueWallets, isMoney: false },
-              ]).map((card) => (
-                <GlassCard key={card.label} className="p-4">
-                  <p className="text-[10px] sm:text-xs uppercase tracking-[0.15em] text-white/50">
-                    {card.label}
-                  </p>
-                  <p className="mt-2 text-xl sm:text-2xl font-bold tabular-nums">
-                    {card.isMoney ? `$${card.all.toFixed(2)}` : card.all}
-                  </p>
-                  <p className="mt-1 text-[10px] sm:text-xs text-white/40">
-                    24h: {card.isMoney ? `$${card.k24.toFixed(2)}` : card.k24}
-                  </p>
-                </GlassCard>
-              ))}
+              {(() => {
+                const oc = data.onChain;
+                const k24 = data.kpi?.last24h;
+                const usdcAll = oc ? parseFloat(oc.totalUsdcClaimed) : (data.kpi?.allTime.volumeUsdc ?? 0);
+                return ([
+                  { label: "Gifts funded", all: oc?.totalFunded ?? data.kpi?.allTime.giftsFunded ?? 0, sub: k24 ? `24h: ${k24.giftsFunded}` : undefined },
+                  { label: "Claims", all: oc?.totalClaimed ?? data.kpi?.allTime.claimsCompleted ?? 0, sub: k24 ? `24h: ${k24.claimsCompleted}` : undefined },
+                  { label: "USDC claimed", all: `$${usdcAll.toFixed(2)}`, sub: k24 ? `24h: $${k24.volumeUsdc.toFixed(2)}` : undefined },
+                  { label: "Unique wallets", all: data.kpi?.allTime.uniqueWallets ?? 0, sub: k24 ? `24h: ${k24.uniqueWallets}` : undefined },
+                ]).map((card) => (
+                  <GlassCard key={card.label} className="p-4">
+                    <p className="text-[10px] sm:text-xs uppercase tracking-[0.15em] text-white/50">
+                      {card.label}
+                    </p>
+                    <p className="mt-2 text-xl sm:text-2xl font-bold tabular-nums">
+                      {card.all}
+                    </p>
+                    {card.sub && (
+                      <p className="mt-1 text-[10px] sm:text-xs text-white/40">
+                        {card.sub}
+                      </p>
+                    )}
+                  </GlassCard>
+                ));
+              })()}
             </div>
 
             {/* Daily chart */}

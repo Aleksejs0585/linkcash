@@ -1,12 +1,19 @@
 import { productAnalyticsStore } from "./product-analytics-store";
 import { senderGiftStore } from "./sender-gift-store";
 import { liveActivityStore } from "./live-activity-store";
+import { loadOnChainStats } from "./on-chain-stats";
 
 export type KpiBlock = {
   giftsFunded: number;
   claimsCompleted: number;
   volumeUsdc: number;
   uniqueWallets: number;
+};
+
+export type OnChainKpi = {
+  totalFunded: number;
+  totalClaimed: number;
+  totalUsdcClaimed: string;
 };
 
 export type DailyRow = {
@@ -32,6 +39,7 @@ export type ActivityItem = {
 };
 
 export type AnalyticsSnapshot = {
+  onChain: OnChainKpi;
   kpi: { allTime: KpiBlock; last24h: KpiBlock };
   daily: DailyRow[];
   funnelSteps: FunnelStep[];
@@ -49,11 +57,19 @@ function formatUsdc(raw: string): number {
 }
 
 export async function buildAnalyticsSnapshot(): Promise<AnalyticsSnapshot> {
-  const [analyticsEvents, giftEvents, recentActivity] = await Promise.all([
-    productAnalyticsStore.readRecent(10_000),
-    senderGiftStore.readRecent(50_000),
-    liveActivityStore.readRecent(30),
-  ]);
+  const [analyticsEvents, giftEvents, recentActivity, chainStats] =
+    await Promise.all([
+      productAnalyticsStore.readRecent(10_000),
+      senderGiftStore.readRecent(50_000),
+      liveActivityStore.readRecent(30),
+      loadOnChainStats(),
+    ]);
+
+  const onChain: OnChainKpi = {
+    totalFunded: chainStats.totalFunded,
+    totalClaimed: chainStats.totalClaimed,
+    totalUsdcClaimed: chainStats.totalUsdcClaimed,
+  };
 
   const now = Date.now();
   const day24h = now - 24 * 60 * 60 * 1000;
@@ -144,5 +160,5 @@ export async function buildAnalyticsSnapshot(): Promise<AnalyticsSnapshot> {
     .sort((a, b) => b.opens - a.opens)
     .slice(0, 10);
 
-  return { kpi, daily, funnelSteps, topSources, recentActivity };
+  return { onChain, kpi, daily, funnelSteps, topSources, recentActivity };
 }

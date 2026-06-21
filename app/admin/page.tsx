@@ -48,8 +48,15 @@ type SourceRow = {
   claimed: number;
 };
 
+type OnChainKpi = {
+  totalFunded: number;
+  totalClaimed: number;
+  totalUsdcClaimed: string;
+};
+
 type AnalyticsData = {
   ok: boolean;
+  onChain?: OnChainKpi;
   kpi?: { allTime: KpiBlock; last24h: KpiBlock };
   daily?: DailyRow[];
   funnelSteps?: FunnelStep[];
@@ -424,24 +431,27 @@ export default function AdminPage() {
               <>
                 {/* KPI cards */}
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  {([
-                    { label: "Gifts funded", k24: analyticsData.kpi.last24h.giftsFunded, all: analyticsData.kpi.allTime.giftsFunded, isMoney: false },
-                    { label: "Claims", k24: analyticsData.kpi.last24h.claimsCompleted, all: analyticsData.kpi.allTime.claimsCompleted, isMoney: false },
-                    { label: "Volume (USDC)", k24: analyticsData.kpi.last24h.volumeUsdc, all: analyticsData.kpi.allTime.volumeUsdc, isMoney: true },
-                    { label: "Unique wallets", k24: analyticsData.kpi.last24h.uniqueWallets, all: analyticsData.kpi.allTime.uniqueWallets, isMoney: false },
-                  ]).map((card) => (
-                    <div key={card.label} className="app-panel p-4">
-                      <p className="text-xs uppercase tracking-[0.15em] text-white/60">
-                        {card.label}
-                      </p>
-                      <p className="mt-2 text-2xl font-bold tabular-nums">
-                        {card.isMoney ? `$${card.all.toFixed(2)}` : card.all}
-                      </p>
-                      <p className="mt-1 text-xs text-white/50">
-                        24h: {card.isMoney ? `$${card.k24.toFixed(2)}` : card.k24}
-                      </p>
-                    </div>
-                  ))}
+                  {(() => {
+                    const oc = analyticsData.onChain;
+                    const k24 = analyticsData.kpi!.last24h;
+                    const usdcAll = oc ? parseFloat(oc.totalUsdcClaimed) : analyticsData.kpi!.allTime.volumeUsdc;
+                    return ([
+                      { label: "Gifts funded", all: oc?.totalFunded ?? analyticsData.kpi!.allTime.giftsFunded, sub: `24h: ${k24.giftsFunded}` },
+                      { label: "Claims", all: oc?.totalClaimed ?? analyticsData.kpi!.allTime.claimsCompleted, sub: `24h: ${k24.claimsCompleted}` },
+                      { label: "USDC claimed", all: `$${usdcAll.toFixed(2)}`, sub: `24h: $${k24.volumeUsdc.toFixed(2)}` },
+                      { label: "Unique wallets", all: analyticsData.kpi!.allTime.uniqueWallets, sub: `24h: ${k24.uniqueWallets}` },
+                    ]).map((card) => (
+                      <div key={card.label} className="app-panel p-4">
+                        <p className="text-xs uppercase tracking-[0.15em] text-white/60">
+                          {card.label}
+                        </p>
+                        <p className="mt-2 text-2xl font-bold tabular-nums">
+                          {card.all}
+                        </p>
+                        <p className="mt-1 text-xs text-white/50">{card.sub}</p>
+                      </div>
+                    ));
+                  })()}
                 </div>
 
                 {/* Daily chart */}
