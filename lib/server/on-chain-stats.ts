@@ -10,9 +10,9 @@ const ABI = [
 
 // Arc testnet limits eth_getLogs to 10,000 block range
 const CHUNK = 9_000;
-// Max chunks per call — stays within 20s timeout
-const MAX_CHUNKS_PER_CALL = 5;
-const CURSOR_KEY = "linkcash:stats-cursor-v2";
+// Max chunks per call — aggressive to catch up from block 0 quickly
+const MAX_CHUNKS_PER_CALL = 30;
+const CURSOR_KEY = "linkcash:stats-cursor-v3";
 const TIMEOUT_MS = 18_000;
 
 export type OnChainStats = {
@@ -26,11 +26,10 @@ type Cursor = {
   nextBlock: number; // next block to scan forward from
 };
 
-// Known on-chain minimums before incremental tracking started
-const SEED: OnChainStats = {
-  totalClaimed: 48,
-  totalUsdcClaimed: "480",
-  totalFunded: 48,
+const ZERO: OnChainStats = {
+  totalClaimed: 0,
+  totalUsdcClaimed: "0",
+  totalFunded: 0,
 };
 
 const gState = globalThis as typeof globalThis & {
@@ -103,10 +102,11 @@ async function loadOnChainStatsInner(): Promise<OnChainStats> {
   const cursor = await loadCursor();
 
   if (!cursor) {
-    // First run: start tracking from latest block forward, use SEED for history
-    const newCursor: Cursor = { stats: SEED, nextBlock: latest + 1 };
+    // First run: full scan from block 0
+    const { stats, scannedTo } = await scanForward(contract, 0, latest, ZERO);
+    const newCursor: Cursor = { stats, nextBlock: scannedTo + 1 };
     await saveCursor(newCursor);
-    return SEED;
+    return stats;
   }
 
   if (cursor.nextBlock > latest) {
@@ -129,7 +129,7 @@ async function loadOnChainStatsInner(): Promise<OnChainStats> {
 
 export async function loadOnChainStats(): Promise<OnChainStats> {
   const cursor = await loadCursor();
-  const fallback = cursor?.stats ?? SEED;
+  const fallback = cursor?.stats ?? ZERO;
 
   try {
     return await Promise.race([
