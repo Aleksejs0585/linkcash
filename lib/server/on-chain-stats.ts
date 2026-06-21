@@ -1,29 +1,15 @@
-import { Contract, formatUnits } from "ethers";
-import { createArcProviderWithContractCheck } from "./arc-chain";
-import { getArcReadEnv } from "./env";
+import { formatUnits } from "ethers";
 import { getUpstashClient } from "./upstash-client";
 
-const ABI = [
-  "event GiftFunded(bytes32 indexed paymentIdHash, address indexed funder, address indexed refundAddress, uint256 amount, uint64 expiresAt)",
-  "event GiftClaimed(bytes32 indexed paymentIdHash, address indexed recipient, uint256 amount)",
-];
-
-// Arc testnet limits eth_getLogs to 10,000 block range
-const CHUNK = 9_000;
-// Max chunks per call — aggressive to catch up from block 0 quickly
-const MAX_CHUNKS_PER_CALL = 30;
-const CURSOR_KEY = "linkcash:stats-cursor-v3";
-const TIMEOUT_MS = 18_000;
+const EXPLORER_BASE = "https://testnet.arcscan.app/api/v2";
+const CONTRACT = "0x93fEF97173Af2Da909Fe83961421199B9dB17111";
+const CACHE_KEY = "linkcash:stats-explorer-v1";
+const CACHE_TTL = 5 * 60;
 
 export type OnChainStats = {
   totalClaimed: number;
   totalUsdcClaimed: string;
   totalFunded: number;
-};
-
-type Cursor = {
-  stats: OnChainStats;
-  nextBlock: number; // next block to scan forward from
 };
 
 const ZERO: OnChainStats = {
@@ -33,120 +19,109 @@ const ZERO: OnChainStats = {
 };
 
 const gState = globalThis as typeof globalThis & {
-  __statsCursor?: Cursor;
+  __explorerStats?: { data: OnChainStats; fetchedAt: number };
 };
 
-async function loadCursor(): Promise<Cursor | null> {
-  if (gState.__statsCursor) return gState.__statsCursor;
-  const upstash = getUpstashClient();
-  if (!upstash) return null;
-  try {
-    const raw = await upstash.command<string | null>(["GET", CURSOR_KEY]);
-    if (!raw) return null;
-    const c = JSON.parse(raw) as Cursor;
-    gState.__statsCursor = c;
-    return c;
-  } catch { return null; }
-}
+async function fetchAllLogs(): Promise<OnChainStats> {
+  let funded = 0;
+  let claimed = 0;
+  let totalRaw = BigInt(0);
 
-async function saveCursor(cursor: Cursor): Promise<void> {
-  gState.__statsCursor = cursor;
-  const upstash = getUpstashClient();
-  if (!upstash) return;
-  try {
-    await upstash.command(["SET", CURSOR_KEY, JSON.stringify(cursor), "EX", 30 * 24 * 60 * 60]);
-  } catch { /* non-fatal */ }
-}
+  let url = `${EXPLORER_BASE}/addresses/${CONTRACT}/logs`;
+  let pages = 0;
+  const MAX_PAGES = 50;
 
-async function scanForward(
-  contract: Contract,
-  from: number,
-  to: number,
-  base: OnChainStats
-): Promise<{ stats: OnChainStats; scannedTo: number }> {
-  let funded = base.totalFunded;
-  let claimed = base.totalClaimed;
-  let totalRaw = BigInt(Math.round(parseFloat(base.totalUsdcClaimed) * 1_000_000));
-  let scannedTo = from - 1;
-  let chunks = 0;
+  while (url && pages < MAX_PAGES) {
+    const res = await fetch(url, {
+      headers: { accept: "application/json" },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) break;
 
-  for (let start = from; start <= to && chunks < MAX_CHUNKS_PER_CALL; start += CHUNK, chunks++) {
-    const end = Math.min(start + CHUNK - 1, to);
-    const [fundedLogs, claimedLogs] = await Promise.all([
-      contract.queryFilter(contract.filters.GiftFunded(), start, end),
-      contract.queryFilter(contract.filters.GiftClaimed(), start, end),
-    ]);
-    funded += fundedLogs.length;
-    claimed += claimedLogs.length;
-    for (const log of claimedLogs) {
-      try {
-        const amount = (log as { args?: { amount?: bigint } }).args?.amount;
-        if (typeof amount === "bigint") totalRaw += amount;
-      } catch { /* skip */ }
-    }
-    scannedTo = end;
-
-    // Save progress after each chunk so timeout doesn't lose work
-    const snapshot: OnChainStats = {
-      totalFunded: funded,
-      totalClaimed: claimed,
-      totalUsdcClaimed: formatUnits(totalRaw, 6),
+    const data = (await res.json()) as {
+      items: Array<{
+        decoded?: {
+          method_call?: string;
+          parameters?: Array<{ name: string; value: string }>;
+        };
+      }>;
+      next_page_params?: {
+        block_number: number;
+        index: number;
+        items_count: number;
+      };
     };
-    void saveCursor({ stats: snapshot, nextBlock: scannedTo + 1 });
+
+    for (const item of data.items) {
+      const method = item.decoded?.method_call ?? "";
+      if (method.startsWith("GiftFunded")) {
+        funded++;
+      } else if (method.startsWith("GiftClaimed")) {
+        claimed++;
+        const amountParam = item.decoded?.parameters?.find(
+          (p) => p.name === "amount"
+        );
+        if (amountParam?.value) {
+          try {
+            totalRaw += BigInt(amountParam.value);
+          } catch { /* skip malformed */ }
+        }
+      }
+    }
+
+    pages++;
+    if (data.next_page_params) {
+      const p = data.next_page_params;
+      url = `${EXPLORER_BASE}/addresses/${CONTRACT}/logs?block_number=${p.block_number}&index=${p.index}&items_count=${p.items_count}`;
+    } else {
+      url = "";
+    }
   }
 
   return {
-    stats: { totalFunded: funded, totalClaimed: claimed, totalUsdcClaimed: formatUnits(totalRaw, 6) },
-    scannedTo,
+    totalFunded: funded,
+    totalClaimed: claimed,
+    totalUsdcClaimed: formatUnits(totalRaw, 6),
   };
 }
 
-async function loadOnChainStatsInner(): Promise<OnChainStats> {
-  const { rpcUrl, contractAddress } = getArcReadEnv();
-  const provider = await createArcProviderWithContractCheck(rpcUrl, contractAddress);
-  const contract = new Contract(contractAddress, ABI, provider);
-  const latest = await provider.getBlockNumber();
-
-  const cursor = await loadCursor();
-
-  if (!cursor) {
-    // First run: full scan from block 0
-    const { stats, scannedTo } = await scanForward(contract, 0, latest, ZERO);
-    const newCursor: Cursor = { stats, nextBlock: scannedTo + 1 };
-    await saveCursor(newCursor);
-    return stats;
+async function loadFromCache(): Promise<OnChainStats | null> {
+  if (gState.__explorerStats && Date.now() - gState.__explorerStats.fetchedAt < CACHE_TTL * 1000) {
+    return gState.__explorerStats.data;
   }
-
-  if (cursor.nextBlock > latest) {
-    // No new blocks since last scan
-    return cursor.stats;
+  const upstash = getUpstashClient();
+  if (!upstash) return null;
+  try {
+    const raw = await upstash.command<string | null>(["GET", CACHE_KEY]);
+    if (!raw) return null;
+    const data = JSON.parse(raw) as OnChainStats;
+    gState.__explorerStats = { data, fetchedAt: Date.now() };
+    return data;
+  } catch {
+    return null;
   }
+}
 
-  // Scan new blocks since last cursor
-  const { stats: updated, scannedTo } = await scanForward(
-    contract,
-    cursor.nextBlock,
-    latest,
-    cursor.stats
-  );
-
-  const newCursor: Cursor = { stats: updated, nextBlock: scannedTo + 1 };
-  await saveCursor(newCursor);
-  return updated;
+async function saveToCache(stats: OnChainStats): Promise<void> {
+  gState.__explorerStats = { data: stats, fetchedAt: Date.now() };
+  const upstash = getUpstashClient();
+  if (!upstash) return;
+  try {
+    await upstash.command([
+      "SET", CACHE_KEY, JSON.stringify(stats), "EX", String(CACHE_TTL),
+    ]);
+  } catch { /* non-fatal */ }
 }
 
 export async function loadOnChainStats(): Promise<OnChainStats> {
-  const cursor = await loadCursor();
-  const fallback = cursor?.stats ?? ZERO;
+  const cached = await loadFromCache();
+  if (cached) return cached;
 
   try {
-    return await Promise.race([
-      loadOnChainStatsInner(),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("stats timeout")), TIMEOUT_MS)
-      ),
-    ]);
+    const stats = await fetchAllLogs();
+    await saveToCache(stats);
+    return stats;
   } catch {
-    return fallback;
+    return ZERO;
   }
 }
