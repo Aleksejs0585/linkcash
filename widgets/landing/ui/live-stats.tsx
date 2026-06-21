@@ -49,7 +49,12 @@ export default function LiveStats({ initial }: { initial: OnChainStats }) {
       try {
         const res = await fetch("/api/stats");
         if (!res.ok) return;
-        const data = (await res.json()) as OnChainStats;
+        const raw = (await res.json()) as
+          | OnChainStats
+          | { onChain?: OnChainStats };
+        const data: OnChainStats =
+          "onChain" in raw && raw.onChain ? raw.onChain : (raw as OnChainStats);
+        if (!Number.isFinite(data.totalClaimed)) return;
         const now = Date.now();
         const floorExpired = floorSetAt.current !== null && now - floorSetAt.current > FLOOR_TTL_MS;
         if (

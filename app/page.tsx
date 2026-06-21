@@ -21,7 +21,7 @@ const getCachedLiveTxExamples = unstable_cache(
 
 const getCachedOnChainStats = unstable_cache(
   async () => loadOnChainStats(),
-  ["landing-onchain-stats-v1"],
+  ["landing-onchain-stats-v2"],
   { revalidate: 300 }
 );
 
