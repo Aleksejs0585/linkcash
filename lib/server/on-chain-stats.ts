@@ -85,6 +85,14 @@ async function scanForward(
       } catch { /* skip */ }
     }
     scannedTo = end;
+
+    // Save progress after each chunk so timeout doesn't lose work
+    const snapshot: OnChainStats = {
+      totalFunded: funded,
+      totalClaimed: claimed,
+      totalUsdcClaimed: formatUnits(totalRaw, 6),
+    };
+    void saveCursor({ stats: snapshot, nextBlock: scannedTo + 1 });
   }
 
   return {
