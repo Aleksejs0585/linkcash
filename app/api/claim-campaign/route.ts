@@ -117,28 +117,29 @@ export async function POST(request: Request) {
   } catch (error) {
     const rawMsg = error instanceof Error ? error.message : "";
 
-    // "gift claimed" = on-chain state is final — gift already claimed, don't re-queue
-    const giftAlreadyClaimed = rawMsg.includes("gift claimed");
-    // "gift missing" = invalid pool entry — also don't re-queue (won't succeed on retry)
-    const giftInvalid = rawMsg.includes("gift missing");
+    const giftClaimed = rawMsg.includes("gift claimed");
+    const giftMissing = rawMsg.includes("gift missing");
+    const giftExpired = rawMsg.includes("gift expired");
+    const onChainFinal = giftClaimed || giftMissing || giftExpired;
 
-    if (!giftAlreadyClaimed && !giftInvalid) {
-      // Transient error (network, timeout) — push slot back so another attempt can succeed
+    if (!onChainFinal) {
+      // Transient error — push slot back + release lock for retry
       const upstash = (await import("@/lib/server/upstash-client")).getUpstashClient();
       if (upstash) {
         upstash.command(["LPUSH", `linkcash:camp:${campaignId}:pool`, JSON.stringify(poolEntry)]).catch(() => undefined);
       }
-      // ...and don't leave the claimer locked out for 5 minutes over a transient
-      // failure — the lock was meant to stop concurrent double-claims, not to
-      // punish a legitimate retry after an error that wasn't their fault.
       void releaseRateLimit(claimLockKey);
     }
 
-    // Show friendly message — never leak raw ethers/RPC noise
-    const friendly = giftAlreadyClaimed
-      ? "This gift was already claimed. Please try again or contact the campaign organiser."
-      : errorMessage(error, "Claim failed. Please try again.");
+    const friendly = giftClaimed
+      ? "This gift was already claimed. Please try again."
+      : giftExpired
+        ? "This campaign's gifts have expired. Contact the organiser."
+        : giftMissing
+          ? "Gift not found on chain. Contact the organiser."
+          : errorMessage(error, "Claim failed. Please try again.");
 
-    return NextResponse.json({ error: friendly }, { status: giftAlreadyClaimed ? 409 : 500 });
+    const status = giftClaimed ? 409 : giftExpired ? 410 : 500;
+    return NextResponse.json({ error: friendly }, { status });
   }
 }

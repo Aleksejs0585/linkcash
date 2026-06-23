@@ -26,7 +26,7 @@ type ApiData = {
   claimed: number;
 };
 
-type ClaimStep = "idle" | "claiming" | "success" | "error" | "already_claimed" | "exhausted";
+type ClaimStep = "idle" | "claiming" | "success" | "error" | "already_claimed" | "exhausted" | "expired";
 
 export default function CampaignClaimPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -77,7 +77,11 @@ export default function CampaignClaimPage({ params }: { params: Promise<{ id: st
       const data = await res.json() as { ok?: boolean; txHash?: string; error?: string };
 
       if (res.status === 409) { setStep("already_claimed"); return; }
-      if (res.status === 410) { setStep("exhausted"); return; }
+      if (res.status === 410) {
+        const msg = data.error ?? "";
+        setStep(msg.includes("expired") ? "expired" : "exhausted");
+        return;
+      }
       if (!res.ok || !data.txHash) throw new Error(data.error ?? "Claim failed.");
 
       setTxHash(data.txHash);
@@ -152,7 +156,13 @@ export default function CampaignClaimPage({ params }: { params: Promise<{ id: st
               </div>
 
               {/* Auth / claim section */}
-              {step === "exhausted" ? (
+              {step === "expired" ? (
+                <div className="rounded-xl border border-amber-500/25 bg-amber-950/20 py-6 text-center">
+                  <p className="text-2xl mb-2">⏰</p>
+                  <p className="text-sm text-amber-400">This campaign&apos;s gifts have expired.</p>
+                  <p className="text-xs text-white/40 mt-1">Contact the organiser for a new campaign.</p>
+                </div>
+              ) : step === "exhausted" ? (
                 <div className="rounded-xl border border-white/10 bg-white/5 py-6 text-center">
                   <p className="text-2xl mb-2">😔</p>
                   <p className="text-sm text-white/60">All gifts have been claimed.</p>

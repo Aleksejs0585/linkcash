@@ -75,7 +75,7 @@ export default function NewCampaignPage() {
           userToken,
           walletId: primaryWalletId,
           gifts: gifts.map(({ paymentIdHash, amountUsdc }) => ({ paymentIdHash, amountUsdc })),
-          expiresInHours: 24, // 24 hours
+          expiresInHours: 24 * 7, // 7 days
         }),
       });
       const circleData = (await circleRes.json()) as { challengeId?: string; error?: string };
@@ -262,7 +262,7 @@ export default function NewCampaignPage() {
               </motion.button>
 
               <p className="text-center text-xs text-white/30">
-                Gifts expire in 30 days · One claim per person
+                Gifts expire in 7 days · One claim per person
               </p>
             </>
           )}
